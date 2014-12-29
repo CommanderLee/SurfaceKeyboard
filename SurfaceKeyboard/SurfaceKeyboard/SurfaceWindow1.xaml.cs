@@ -125,13 +125,57 @@ namespace SurfaceKeyboard
             Point touchPos = e.TouchDevice.GetPosition(this);
 
             /// Show the information
-            StatusText.Text = String.Format("X:{0}, Y:{1}, Time:{2}", touchPos.X, touchPos.Y, timeStamp);
+            StatusText.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
 
             /// Save the information
             handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
         }
 
         private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            /// Save the touchdown seq to file
+            string fName = DateTime.Now.ToString();
+
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fName + ".csv", true))
+            {
+                file.WriteLine("X, Y, Time");
+                foreach (HandPoint point in handPoints)
+                {
+                    file.WriteLine(point.ToString());
+                }
+            }
+
+            /// Clear the timer and storage
+            isStart = false;
+            handPoints.Clear();
+        }
+
+        private void Canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            /// Get touchdown time
+            double timeStamp = 0;
+            if (!isStart)
+            {
+                isStart = true;
+                startTime = DateTime.Now;
+                timeStamp = 0;
+            }
+            else
+            {
+                timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
+            }
+
+            /// Get touchdown position
+            Point touchPos = e.GetPosition(this);
+
+            /// Show the information
+            StatusText.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
+
+            /// Save the information
+            handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
+        }
+
+        private void SaveBtn_Click(object sender, RoutedEventArgs e)
         {
             /// Save the touchdown seq to file
             string fName = DateTime.Now.ToString();

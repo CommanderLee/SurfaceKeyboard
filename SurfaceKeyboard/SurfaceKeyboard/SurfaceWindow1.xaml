@@ -7,18 +7,20 @@
     <Canvas Background="LightBlue" 
             Width="1500" 
             Height="800" 
-            TouchDown="Canvas_TouchDown">
+            TouchDown="Canvas_TouchDown"
+            MouseLeftButtonDown="Canvas_MouseLeftButtonDown">
         
         <TextBlock Name="StatusText" 
-                   Width="150" 
+                   Width="450" 
                    Height="80">Touch the screen to start</TextBlock>
         
         <Button Name="SaveBtn" 
                 Width="150" 
                 Height="80" 
-                TouchDown="SaveBtn_TouchDown" 
                 Canvas.Left="1350" 
-                Canvas.Top="0">Save</Button>
+                Canvas.Top="0"
+                TouchDown="SaveBtn_TouchDown"
+                Click="SaveBtn_Click">Save</Button>
         
     </Canvas>
 </s:SurfaceWindow>

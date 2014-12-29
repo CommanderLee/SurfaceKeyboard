@@ -23,8 +23,9 @@ namespace SurfaceKeyboard
     /// </summary>
     public partial class SurfaceWindow1 : SurfaceWindow
     {
-        private bool        isStart;
-        private DateTime    startTime;
+        private bool            isStart;
+        private DateTime        startTime;
+        private List<HandPoint> handPoints = new List<HandPoint>();
 
         /// <summary>
         /// Default constructor.
@@ -127,15 +128,26 @@ namespace SurfaceKeyboard
             StatusText.Text = String.Format("X:{0}, Y:{1}, Time:{2}", touchPos.X, touchPos.Y, timeStamp);
 
             /// Save the information
-            
+            handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
         }
 
         private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
         {
             /// Save the touchdown seq to file
-            
-            /// Clear the timer
+            string fName = DateTime.Now.ToString();
+
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fName + ".csv", true))
+            {
+                file.WriteLine("X, Y, Time");
+                foreach (HandPoint point in handPoints)
+                {
+                    file.WriteLine(point.ToString());
+                }
+            }
+
+            /// Clear the timer and storage
             isStart = false;
+            handPoints.Clear();
         }
     }
 }

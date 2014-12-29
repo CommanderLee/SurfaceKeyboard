@@ -23,6 +23,9 @@ namespace SurfaceKeyboard
     /// </summary>
     public partial class SurfaceWindow1 : SurfaceWindow
     {
+        private bool        isStart;
+        private DateTime    startTime;
+
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -32,6 +35,8 @@ namespace SurfaceKeyboard
 
             // Add handlers for window availability events
             AddWindowAvailabilityHandlers();
+
+            isStart = false;
         }
 
         /// <summary>
@@ -98,6 +103,39 @@ namespace SurfaceKeyboard
         private void OnWindowUnavailable(object sender, EventArgs e)
         {
             //TODO: disable audio, animations here
+        }
+
+        private void Canvas_TouchDown(object sender, TouchEventArgs e)
+        {
+            /// Get touchdown time
+            double timeStamp = 0;
+            if (!isStart)
+            {
+                isStart = true;
+                startTime = DateTime.Now; 
+                timeStamp = 0;
+            }
+            else
+            {
+                timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
+            }
+
+            /// Get touchdown position
+            Point touchPos = e.TouchDevice.GetPosition(this);
+
+            /// Show the information
+            StatusText.Text = String.Format("X:{0}, Y:{1}, Time:{2}", touchPos.X, touchPos.Y, timeStamp);
+
+            /// Save the information
+            
+        }
+
+        private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            /// Save the touchdown seq to file
+            
+            /// Clear the timer
+            isStart = false;
         }
     }
 }

@@ -4,7 +4,21 @@
     xmlns:s="http://schemas.microsoft.com/surface/2008"
     Title="SurfaceKeyboard"
     >
-  <Grid>
-
-  </Grid>
+    <Canvas Background="LightBlue" 
+            Width="1500" 
+            Height="800" 
+            TouchDown="Canvas_TouchDown">
+        
+        <TextBlock Name="StatusText" 
+                   Width="150" 
+                   Height="80">Touch the screen to start</TextBlock>
+        
+        <Button Name="SaveBtn" 
+                Width="150" 
+                Height="80" 
+                TouchDown="SaveBtn_TouchDown" 
+                Canvas.Left="1350" 
+                Canvas.Top="0">Save</Button>
+        
+    </Canvas>
 </s:SurfaceWindow>

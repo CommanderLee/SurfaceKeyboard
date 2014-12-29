@@ -11,7 +11,7 @@
             MouseLeftButtonDown="Canvas_MouseLeftButtonDown">
         
         <TextBlock Name="StatusText" 
-                   Width="450" 
+                   Width="800" 
                    Height="80">Touch the screen to start</TextBlock>
         
         <Button Name="SaveBtn" 

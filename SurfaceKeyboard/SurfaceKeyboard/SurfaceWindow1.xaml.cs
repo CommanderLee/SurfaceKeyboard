@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -134,9 +135,11 @@ namespace SurfaceKeyboard
         private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
         {
             /// Save the touchdown seq to file
-            string fName = DateTime.Now.ToString();
+            string fPath = Directory.GetCurrentDirectory() + '\\';
+            string fName = String.Format("{0:MM-dd_hh_mm_ss}", DateTime.Now) + ".csv";
+            StatusText.Text = fPath + fName;
 
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fName + ".csv", true))
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
             {
                 file.WriteLine("X, Y, Time");
                 foreach (HandPoint point in handPoints)
@@ -178,9 +181,11 @@ namespace SurfaceKeyboard
         private void SaveBtn_Click(object sender, RoutedEventArgs e)
         {
             /// Save the touchdown seq to file
-            string fName = DateTime.Now.ToString();
+            string fPath = Directory.GetCurrentDirectory() + '\\';
+            string fName = String.Format("{0:MM-dd_hh_mm_ss}", DateTime.Now) + ".csv";
+            StatusText.Text = fPath + fName;
 
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fName + ".csv", true))
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
             {
                 file.WriteLine("X, Y, Time");
                 foreach (HandPoint point in handPoints)

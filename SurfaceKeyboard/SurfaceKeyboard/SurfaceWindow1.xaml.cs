@@ -28,6 +28,10 @@ namespace SurfaceKeyboard
         private DateTime        startTime;
         private List<HandPoint> handPoints = new List<HandPoint>();
 
+        private const int       borderY = 80;
+
+        private bool            isMouse = false;
+
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -107,34 +111,51 @@ namespace SurfaceKeyboard
             //TODO: disable audio, animations here
         }
 
+        private void loadTaksText()
+        {
+            // Load task text from file
+
+        }
+
+        private void updateTaskText()
+        {
+            // Select next text for the textblock
+
+        }
+
         private void Canvas_TouchDown(object sender, TouchEventArgs e)
         {
-            /// Get touchdown time
-            double timeStamp = 0;
-            if (!isStart)
-            {
-                isStart = true;
-                startTime = DateTime.Now; 
-                timeStamp = 0;
-            }
-            else
-            {
-                timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-            }
-
-            /// Get touchdown position
+            // Get touchdown position
             Point touchPos = e.TouchDevice.GetPosition(this);
 
-            /// Show the information
-            StatusText.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
+            if (touchPos.Y > borderY)
+            {
+                // Get touchdown time
+                double timeStamp = 0;
+                if (!isStart)
+                {
+                    isStart = true;
+                    startTime = DateTime.Now;
+                    timeStamp = 0;
+                }
+                else
+                {
+                    timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
+                }
 
-            /// Save the information
-            handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
+
+
+                // Show the information
+                StatusText.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
+
+                // Save the information
+                handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
+            }
         }
 
         private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
         {
-            /// Save the touchdown seq to file
+            // Save the touchdown seq to file
             string fPath = Directory.GetCurrentDirectory() + '\\';
             string fName = String.Format("{0:MM-dd_hh_mm_ss}", DateTime.Now) + ".csv";
             StatusText.Text = fPath + fName;
@@ -148,55 +169,71 @@ namespace SurfaceKeyboard
                 }
             }
 
-            /// Clear the timer and storage
+            // Clear the timer and storage
             isStart = false;
             handPoints.Clear();
         }
 
         private void Canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            /// Get touchdown time
-            double timeStamp = 0;
-            if (!isStart)
+            if (isMouse)
             {
-                isStart = true;
-                startTime = DateTime.Now;
-                timeStamp = 0;
+                // Get touchdown time
+                double timeStamp = 0;
+                if (!isStart)
+                {
+                    isStart = true;
+                    startTime = DateTime.Now;
+                    timeStamp = 0;
+                }
+                else
+                {
+                    timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
+                }
+
+                // Get touchdown position
+                Point touchPos = e.GetPosition(this);
+
+                // Show the information
+                StatusText.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
+
+                // Save the information
+                handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
             }
-            else
-            {
-                timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-            }
-
-            /// Get touchdown position
-            Point touchPos = e.GetPosition(this);
-
-            /// Show the information
-            StatusText.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
-
-            /// Save the information
-            handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
         }
 
         private void SaveBtn_Click(object sender, RoutedEventArgs e)
         {
-            /// Save the touchdown seq to file
-            string fPath = Directory.GetCurrentDirectory() + '\\';
-            string fName = String.Format("{0:MM-dd_hh_mm_ss}", DateTime.Now) + ".csv";
-            StatusText.Text = fPath + fName;
-
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
+            if (isMouse)
             {
-                file.WriteLine("X, Y, Time");
-                foreach (HandPoint point in handPoints)
-                {
-                    file.WriteLine(point.ToString());
-                }
-            }
+                // Save the touchdown seq to file
+                string fPath = Directory.GetCurrentDirectory() + '\\';
+                string fName = String.Format("{0:MM-dd_hh_mm_ss}", DateTime.Now) + ".csv";
+                StatusText.Text = fPath + fName;
 
-            /// Clear the timer and storage
-            isStart = false;
-            handPoints.Clear();
+                using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
+                {
+                    file.WriteLine("X, Y, Time");
+                    foreach (HandPoint point in handPoints)
+                    {
+                        file.WriteLine(point.ToString());
+                    }
+                }
+
+                // Clear the timer and storage
+                isStart = false;
+                handPoints.Clear();
+            }
+        }
+
+        private void NextBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+
+        }
+
+        private void NextBtn_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

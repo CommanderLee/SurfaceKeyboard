@@ -31,8 +31,6 @@ namespace SurfaceKeyboard
         private int             taskNo;
         private string[]        taskTexts;
 
-        private const int       borderY = 80;
-
         private bool            isMouse = false;
 
         /// <summary>
@@ -133,34 +131,30 @@ namespace SurfaceKeyboard
             TaskTextBlk.Text = taskTexts[taskNo % textSize];
         }
 
-        private void Canvas_TouchDown(object sender, TouchEventArgs e)
+        private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
         {
+            // Get touchdown time
+            double timeStamp = 0;
+            if (!isStart)
+            {
+                isStart = true;
+                startTime = DateTime.Now;
+                timeStamp = 0;
+            }
+            else
+            {
+                timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
+            }
+
             // Get touchdown position
             Point touchPos = e.TouchDevice.GetPosition(this);
 
-            if (touchPos.Y > borderY)
-            {
-                // Get touchdown time
-                double timeStamp = 0;
-                if (!isStart)
-                {
-                    isStart = true;
-                    startTime = DateTime.Now;
-                    timeStamp = 0;
-                }
-                else
-                {
-                    timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-                }
+            // Show the information
+            StatusTextBlk.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
 
-
-
-                // Show the information
-                StatusTextBlk.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
-
-                // Save the information
-                handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
-            }
+            // Save the information
+            handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
+      
         }
 
         private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
@@ -184,7 +178,7 @@ namespace SurfaceKeyboard
             handPoints.Clear();
         }
 
-        private void Canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void InputCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (isMouse)
             {

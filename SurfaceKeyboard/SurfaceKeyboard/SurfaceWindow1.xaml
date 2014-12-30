@@ -4,42 +4,58 @@
     xmlns:s="http://schemas.microsoft.com/surface/2008"
     Title="SurfaceKeyboard"
     >
-    <Canvas Background="LightBlue" 
-            Width="1500" 
-            Height="800" 
-            TouchDown="Canvas_TouchDown"
-            MouseLeftButtonDown="Canvas_MouseLeftButtonDown">
-        
-        <TextBlock Name="StatusTextBlk" 
-                   Width="300" 
-                   Height="80"/>
+    <DockPanel LastChildFill="True"
+               Width="1500"
+               Height="800">
+        <Border Height="80"
+                Background="LightBlue"
+                BorderBrush="WhiteSmoke"
+                BorderThickness="2"
+                DockPanel.Dock="Top">
+            <Canvas Name="MenuCanvas">
+                <TextBlock Name="StatusTextBlk"
+                   Canvas.Left="0"
+                   Canvas.Top="0"
+                   Width="320" 
+                   Height="80"
+                   FontSize="15">Touch anywhere to start</TextBlock>
 
-        <TextBlock Name="TaskTextBlk" 
+                <TextBlock Name="TaskTextBlk" 
                    Canvas.Left="342"
                    Canvas.Top="0"
                    Width="750"
                    Height="80"
                    FontSize="30" />
-        
-        <Button Name="NextBtn"
+
+                <Button Name="NextBtn"
                 Width="150"
-                Height="80"
+                Height="75"
                 Canvas.Left="1150"
                 Canvas.Top="0"
                 FontSize="40"
                 TouchDown="NextBtn_TouchDown"
                 Click="NextBtn_Click">Next</Button>
-        
-        <Button Name="SaveBtn" 
+
+                <Button Name="SaveBtn" 
                 Width="150" 
-                Height="80" 
-                Canvas.Left="1350" 
+                Height="75" 
+                Canvas.Left="1346" 
                 Canvas.Top="0"
                 FontSize="40"
                 TouchDown="SaveBtn_TouchDown"
                 Click="SaveBtn_Click">Save</Button>
+            </Canvas>    
+        </Border>
         
+        <Border BorderBrush="WhiteSmoke"
+                BorderThickness="2">
+            <Canvas Name="InputCanvas"
+                    Background="AliceBlue"
+                    TouchDown="InputCanvas_TouchDown"
+                    MouseLeftButtonDown="InputCanvas_MouseLeftButtonDown">
+            </Canvas>
+        </Border>
+                
+    </DockPanel>
 
-        
-    </Canvas>
 </s:SurfaceWindow>

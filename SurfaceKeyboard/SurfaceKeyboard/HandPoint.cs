@@ -10,9 +10,9 @@ namespace SurfaceKeyboard
         private double HP_X;
         private double HP_Y;
         private double HP_Time;
-        private int    HP_ID;
+        private string HP_ID;
 
-        public HandPoint(double x, double y, double time, int id)
+        public HandPoint(double x, double y, double time, string id)
         {
             HP_X = x;
             HP_Y = y;

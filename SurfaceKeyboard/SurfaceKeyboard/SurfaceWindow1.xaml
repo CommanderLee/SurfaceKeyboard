@@ -30,18 +30,20 @@
                 <Button Name="NextBtn"
                 Width="150"
                 Height="75"
-                Canvas.Left="1150"
+                Canvas.Left="1190"
                 Canvas.Top="0"
                 FontSize="40"
+                BorderThickness="2"
                 TouchDown="NextBtn_TouchDown"
                 Click="NextBtn_Click">Next</Button>
 
                 <Button Name="SaveBtn" 
                 Width="150" 
                 Height="75" 
-                Canvas.Left="1346" 
+                Canvas.Left="1345" 
                 Canvas.Top="0"
                 FontSize="40"
+                BorderThickness="2"
                 TouchDown="SaveBtn_TouchDown"
                 Click="SaveBtn_Click">Save</Button>
             </Canvas>    

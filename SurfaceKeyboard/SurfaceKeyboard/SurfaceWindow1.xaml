@@ -16,15 +16,16 @@
                 <TextBlock Name="StatusTextBlk"
                    Canvas.Left="0"
                    Canvas.Top="0"
-                   Width="320" 
+                   Width="300" 
                    Height="80"
                    FontSize="15">Touch anywhere to start</TextBlock>
 
                 <TextBlock Name="TaskTextBlk" 
-                   Canvas.Left="342"
+                   Canvas.Left="320"
                    Canvas.Top="0"
-                   Width="750"
+                   Width="850"
                    Height="80"
+                   FontFamily="Courier New"
                    FontSize="30" />
 
                 <Button Name="NextBtn"

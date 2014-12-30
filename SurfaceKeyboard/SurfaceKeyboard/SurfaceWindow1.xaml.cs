@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -132,7 +133,12 @@ namespace SurfaceKeyboard
         private void updateTaskText()
         {
             // Select next text for the textblock
-            TaskTextBlk.Text = taskTexts[taskNo % taskSize];
+            string currText = taskTexts[taskNo % taskSize];
+            Regex rgx = new Regex(@"[^\s]");
+            string typeText = rgx.Replace(currText, "*");
+            if (hpNo <= typeText.Length)
+                typeText = typeText.Substring(0, hpNo);
+            TaskTextBlk.Text = currText + "\n" + typeText;
         }
 
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
@@ -160,6 +166,7 @@ namespace SurfaceKeyboard
             // Save the information
             handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp, taskNo + "-" + hpNo));
             hpNo++;
+            updateTaskText();
         }
 
         private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
@@ -210,6 +217,7 @@ namespace SurfaceKeyboard
                 // Save the information
                 handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp, taskNo + "-" + hpNo));
                 hpNo++;
+                updateTaskText();
             }
         }
 

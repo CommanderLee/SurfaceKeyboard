@@ -29,6 +29,7 @@ namespace SurfaceKeyboard
         private List<HandPoint> handPoints = new List<HandPoint>();
 
         private int             taskNo;
+        private int             taskSize;
         private string[]        taskTexts;
 
         private bool            isMouse = false;
@@ -122,13 +123,13 @@ namespace SurfaceKeyboard
             string fPath = Directory.GetCurrentDirectory() + "\\";
             string fName = "TaskText.txt";
             taskTexts = System.IO.File.ReadAllLines(fPath + fName);
+            taskSize = taskTexts.Length;
         }
 
         private void updateTaskText()
         {
             // Select next text for the textblock
-            int textSize = taskTexts.Length;
-            TaskTextBlk.Text = taskTexts[taskNo % textSize];
+            TaskTextBlk.Text = taskTexts[taskNo % taskSize];
         }
 
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
@@ -150,10 +151,11 @@ namespace SurfaceKeyboard
             Point touchPos = e.TouchDevice.GetPosition(this);
 
             // Show the information
-            StatusTextBlk.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
+            StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}", 
+                taskNo + 1, taskSize, handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
 
             // Save the information
-            handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
+            handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp, taskNo));
       
         }
 
@@ -166,7 +168,7 @@ namespace SurfaceKeyboard
 
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
             {
-                file.WriteLine("X, Y, Time");
+                file.WriteLine("X, Y, Time, TaskNo");
                 foreach (HandPoint point in handPoints)
                 {
                     file.WriteLine(point.ToString());
@@ -199,10 +201,11 @@ namespace SurfaceKeyboard
                 Point touchPos = e.GetPosition(this);
 
                 // Show the information
-                StatusTextBlk.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
+                StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
+                    taskNo + 1, taskSize, handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
 
                 // Save the information
-                handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
+                handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp, taskNo));
             }
         }
 
@@ -217,7 +220,7 @@ namespace SurfaceKeyboard
 
                 using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
                 {
-                    file.WriteLine("X, Y, Time");
+                    file.WriteLine("X, Y, Time, TaskNo");
                     foreach (HandPoint point in handPoints)
                     {
                         file.WriteLine(point.ToString());

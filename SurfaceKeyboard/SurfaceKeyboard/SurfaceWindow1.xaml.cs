@@ -25,17 +25,32 @@ namespace SurfaceKeyboard
     /// </summary>
     public partial class SurfaceWindow1 : SurfaceWindow
     {
+        // The start time of the app
         private bool            isStart;
         private DateTime        startTime;
 
-        private int             hpNo;
-        private List<HandPoint> handPoints = new List<HandPoint>();
+        // Number of the hand points and the list to store them
+        private int                 hpNo;
+        private List<HandPoint>     handPoints = new List<HandPoint>();
 
-        private int             taskNo;
-        private int             taskSize;
-        private string[]        taskTexts;
+        // Number of the task texts, its size, and the array
+        private int                 taskNo;
+        private int                 taskSize;
+        private string[]            taskTexts;
 
-        private bool            isMouse = false;
+        // Constants for the gesture
+        // A gesture will be triggered if it occured within 500 ms.
+        private const double        MOVE_TIME_LIMIT = 500;
+        // Threshold for backspace and enter
+        private const double        BACK_THRE = 50;
+        private const double        ENTER_THRE = 50;
+
+        // Variables about the gesture
+        // The queue of the movements
+        private Queue<HandPoint>    movement = new Queue<HandPoint>();
+
+        // Mark true if using mouse instead of fingers
+        private bool                isMouse = false;
 
         /// <summary>
         /// Default constructor.
@@ -50,6 +65,7 @@ namespace SurfaceKeyboard
             isStart = false;
             taskNo = 0;
             hpNo = 0;
+            movement.Clear();
 
             loadTaksText();
             updateTaskText();
@@ -137,8 +153,18 @@ namespace SurfaceKeyboard
             Regex rgx = new Regex(@"[^\s]");
             string typeText = rgx.Replace(currText, "*");
             if (hpNo <= typeText.Length)
-                typeText = typeText.Substring(0, hpNo);
+                typeText = typeText.Substring(0, hpNo) + "_";
             TaskTextBlk.Text = currText + "\n" + typeText;
+        }
+
+        private bool checkBackspaceGesture()
+        {
+            return true;
+        }
+
+        private bool checkEnterGesture()
+        {
+            return false;
         }
 
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
@@ -229,18 +255,57 @@ namespace SurfaceKeyboard
             }
         }
 
-        private void NextBtn_TouchDown(object sender, TouchEventArgs e)
+        // Call when press the next button or do the 'next' gesture
+        private void gotoNextText()
         {
             taskNo++;
             hpNo = 0;
             updateTaskText();
+            movement.Clear();
+        }
+
+        private void NextBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            gotoNextText();
         }
 
         private void NextBtn_Click(object sender, RoutedEventArgs e)
         {
             if (isMouse)
             {
-                NextBtn_TouchDown(null, null);
+                gotoNextText();
+            }
+        }
+
+        private void InputCanvas_TouchMove(object sender, TouchEventArgs e)
+        {
+            /**
+             * Gesture Handler
+             * 1. Push the new point into the queue.
+             * 2. Check if the finger move for certain threshold within time limit
+             * 2.1 If satisfied, clear the queue and call the function
+             * 2.2 If not, go to the next gesture
+             * - Zhen. Dec.30th, 2014.
+             * */
+            // Push to the movement queue
+            Point touchPos = e.TouchDevice.GetPosition(this);
+            double timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
+            movement.Enqueue(new HandPoint(touchPos.X, touchPos.Y, timeStamp, taskNo + "-" + hpNo));
+
+            // Check: Time and Distance
+            // TODO: Check Time
+            if (checkBackspaceGesture())
+            {
+                // Delete one character (or one word)
+                if (--hpNo < 0)
+                    hpNo = 0;
+                updateTaskText();
+            }
+            else if (checkEnterGesture())
+            {
+                // Output 'Enter' if applicable
+
+                gotoNextText();
             }
         }
     }

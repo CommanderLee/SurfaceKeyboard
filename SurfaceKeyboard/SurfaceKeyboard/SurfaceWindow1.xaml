@@ -55,6 +55,7 @@
             <Canvas Name="InputCanvas"
                     Background="AliceBlue"
                     TouchDown="InputCanvas_TouchDown"
+                    TouchMove="InputCanvas_TouchMove"
                     MouseLeftButtonDown="InputCanvas_MouseLeftButtonDown">
             </Canvas>
         </Border>

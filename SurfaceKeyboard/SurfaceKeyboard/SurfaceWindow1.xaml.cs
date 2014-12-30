@@ -28,6 +28,9 @@ namespace SurfaceKeyboard
         private DateTime        startTime;
         private List<HandPoint> handPoints = new List<HandPoint>();
 
+        private int             taskNo;
+        private string[]        taskTexts;
+
         private const int       borderY = 80;
 
         private bool            isMouse = false;
@@ -43,6 +46,10 @@ namespace SurfaceKeyboard
             AddWindowAvailabilityHandlers();
 
             isStart = false;
+            taskNo = 0;
+
+            loadTaksText();
+            updateTaskText();
         }
 
         /// <summary>
@@ -114,13 +121,16 @@ namespace SurfaceKeyboard
         private void loadTaksText()
         {
             // Load task text from file
-
+            string fPath = Directory.GetCurrentDirectory() + "\\";
+            string fName = "TaskText.txt";
+            taskTexts = System.IO.File.ReadAllLines(fPath + fName);
         }
 
         private void updateTaskText()
         {
             // Select next text for the textblock
-
+            int textSize = taskTexts.Length;
+            TaskTextBlk.Text = taskTexts[taskNo % textSize];
         }
 
         private void Canvas_TouchDown(object sender, TouchEventArgs e)
@@ -146,7 +156,7 @@ namespace SurfaceKeyboard
 
 
                 // Show the information
-                StatusText.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
+                StatusTextBlk.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
 
                 // Save the information
                 handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
@@ -158,7 +168,7 @@ namespace SurfaceKeyboard
             // Save the touchdown seq to file
             string fPath = Directory.GetCurrentDirectory() + '\\';
             string fName = String.Format("{0:MM-dd_hh_mm_ss}", DateTime.Now) + ".csv";
-            StatusText.Text = fPath + fName;
+            StatusTextBlk.Text = fPath + fName;
 
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
             {
@@ -195,7 +205,7 @@ namespace SurfaceKeyboard
                 Point touchPos = e.GetPosition(this);
 
                 // Show the information
-                StatusText.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
+                StatusTextBlk.Text = String.Format("({0}) X:{1}, Y:{2}, Time:{3}", handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
 
                 // Save the information
                 handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp));
@@ -209,7 +219,7 @@ namespace SurfaceKeyboard
                 // Save the touchdown seq to file
                 string fPath = Directory.GetCurrentDirectory() + '\\';
                 string fName = String.Format("{0:MM-dd_hh_mm_ss}", DateTime.Now) + ".csv";
-                StatusText.Text = fPath + fName;
+                StatusTextBlk.Text = fPath + fName;
 
                 using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
                 {
@@ -228,12 +238,17 @@ namespace SurfaceKeyboard
 
         private void NextBtn_TouchDown(object sender, TouchEventArgs e)
         {
-
+            taskNo++;
+            updateTaskText();
         }
 
         private void NextBtn_Click(object sender, RoutedEventArgs e)
         {
-
+            if (isMouse)
+            {
+                taskNo++;
+                updateTaskText();
+            }
         }
     }
 }

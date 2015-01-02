@@ -7,22 +7,26 @@ namespace SurfaceKeyboard
 {
     class HandPoint
     {
-        private double HP_X;
-        private double HP_Y;
-        private double HP_Time;
-        private string HP_ID;
+        private double _x;
+        private double _y;
+        private double _time;
+        private string _id;
 
         public HandPoint(double x, double y, double time, string id)
         {
-            HP_X = x;
-            HP_Y = y;
-            HP_Time = time;
-            HP_ID = id;
+            _x = x;
+            _y = y;
+            _time = time;
+            _id = id;
         }
 
         public override string ToString()
         {
-            return String.Format("{0}, {1}, {2}, {3}", HP_X, HP_Y, HP_Time, HP_ID);
+            return String.Format("{0}, {1}, {2}, {3}", _x, _y, _time, _id);
         }
+
+        public double getX() { return _x; }
+        public double getY() { return _y; }
+        public double getTime() { return _time; }
     }
 }

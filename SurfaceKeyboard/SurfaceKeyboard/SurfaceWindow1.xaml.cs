@@ -26,26 +26,26 @@ namespace SurfaceKeyboard
     public partial class SurfaceWindow1 : SurfaceWindow
     {
         // The start time of the app
-        private bool            isStart;
-        private DateTime        startTime;
+        private bool                isStart;
+        private DateTime            startTime;
 
         // Number of the hand points and the list to store them
         private int                 hpNo;
         private List<HandPoint>     handPoints = new List<HandPoint>();
 
-        // Number of the task texts, its size, and the array
+        // Number of the task texts, its size, and its content
         private int                 taskNo;
         private int                 taskSize;
         private string[]            taskTexts;
 
         // Constants for the gesture
-        // A gesture will be triggered if it occured within 500 ms.
+        // A gesture will be triggered if it occured within the time limit
         private const double        MOVE_TIME_LIMIT = 500;
-        // Threshold for backspace and enter
+        // Length threshold (pixels) for backspace and enter
         private const double        BACK_THRE = 50;
         private const double        ENTER_THRE = 50;
 
-        // Variables about the gesture
+        // Variables for the gesture
         // The queue of the movements
         private Queue<HandPoint>    movement = new Queue<HandPoint>();
 
@@ -67,7 +67,7 @@ namespace SurfaceKeyboard
             hpNo = 0;
             movement.Clear();
 
-            loadTaksText();
+            loadTaskTexts();
             updateTaskText();
         }
 
@@ -137,7 +137,7 @@ namespace SurfaceKeyboard
             //TODO: disable audio, animations here
         }
 
-        private void loadTaksText()
+        private void loadTaskTexts()
         {
             // Load task text from file
             string fPath = Directory.GetCurrentDirectory() + "\\";
@@ -150,6 +150,7 @@ namespace SurfaceKeyboard
         {
             // Select next text for the textblock
             string currText = taskTexts[taskNo % taskSize];
+            // Show asterisk feedback for the user
             Regex rgx = new Regex(@"[^\s]");
             string typeText = rgx.Replace(currText, "*");
             if (hpNo <= typeText.Length)
@@ -167,7 +168,7 @@ namespace SurfaceKeyboard
             return false;
         }
 
-        private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
+        private void saveTouchPoints(double x, double y)
         {
             // Get touchdown time
             double timeStamp = 0;
@@ -182,17 +183,33 @@ namespace SurfaceKeyboard
                 timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
             }
 
+            // Show the information
+            StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
+                taskNo + 1, taskSize, handPoints.Count, x, y, timeStamp);
+
+            // Save the information
+            handPoints.Add(new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo));
+            hpNo++;
+            updateTaskText();
+        }
+
+        private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
+        {
             // Get touchdown position
             Point touchPos = e.TouchDevice.GetPosition(this);
 
-            // Show the information
-            StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}", 
-                taskNo + 1, taskSize, handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
+            saveTouchPoints(touchPos.X, touchPos.Y);
+        }
 
-            // Save the information
-            handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp, taskNo + "-" + hpNo));
-            hpNo++;
-            updateTaskText();
+        private void InputCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (isMouse)
+            {
+                // Get touchdown position
+                Point touchPos = e.GetPosition(this);
+
+                saveTouchPoints(touchPos.X, touchPos.Y);
+            }
         }
 
         private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
@@ -214,37 +231,6 @@ namespace SurfaceKeyboard
             // Clear the timer and storage
             isStart = false;
             handPoints.Clear();
-        }
-
-        private void InputCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (isMouse)
-            {
-                // Get touchdown time
-                double timeStamp = 0;
-                if (!isStart)
-                {
-                    isStart = true;
-                    startTime = DateTime.Now;
-                    timeStamp = 0;
-                }
-                else
-                {
-                    timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-                }
-
-                // Get touchdown position
-                Point touchPos = e.GetPosition(this);
-
-                // Show the information
-                StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
-                    taskNo + 1, taskSize, handPoints.Count, touchPos.X, touchPos.Y, timeStamp);
-
-                // Save the information
-                handPoints.Add(new HandPoint(touchPos.X, touchPos.Y, timeStamp, taskNo + "-" + hpNo));
-                hpNo++;
-                updateTaskText();
-            }
         }
 
         private void SaveBtn_Click(object sender, RoutedEventArgs e)

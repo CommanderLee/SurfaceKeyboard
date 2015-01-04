@@ -49,7 +49,7 @@ namespace SurfaceKeyboard
         // Variables for the gesture
         // The queue of the movements
         private Queue<HandPoint>    movement = new Queue<HandPoint>();
-        enum HandStatus { Away, Type, Rest, Backspace };
+        enum HandStatus { Away, Backspace, Enter, Type, Rest };
         HandStatus                  handStatus;
 
         // Mark true if using mouse instead of fingers
@@ -179,7 +179,16 @@ namespace SurfaceKeyboard
 
         private bool checkEnterGesture()
         {
-            return false;
+            Debug.WriteLine(String.Format("{0}:[0]:{1}, [last]:{2}, status:{3}",
+                movement.Count, movement.First(), movement.Last(), handStatus));
+            HandPoint hpFirst = movement.First(), hpLast = movement.Last();
+            bool isEnter = false;
+
+            if (hpLast.getX() - hpFirst.getX() > ENTER_THRE)
+            {
+                isEnter = true;
+            }
+            return isEnter;
         }
 
         /**
@@ -210,14 +219,20 @@ namespace SurfaceKeyboard
             handStatus = HandStatus.Type;
         }
 
-        private void showTouchPoints()
+        private void showTouchInfo()
         {
-            HandPoint hpLast = handPoints.Last();
-            // Show the information
-            StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
-                taskNo, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime());
-            hpNo++;
-            updateTaskText();
+            if (hpNo > 0)
+            {
+                HandPoint hpLast = handPoints.Last();
+                // Show the information
+                StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
+                    taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime());
+            }
+            else
+            {
+                StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
+                    taskNo + 1, taskSize, "N/A", "N/A", "N/A", "N/A");
+            }
         }
 
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
@@ -273,6 +288,7 @@ namespace SurfaceKeyboard
         {
             taskNo++;
             hpNo = 0;
+            showTouchInfo();
             updateTaskText();
             movement.Clear();
         }
@@ -316,9 +332,11 @@ namespace SurfaceKeyboard
                 if (handStatus != HandStatus.Backspace)
                 {
                     handStatus = HandStatus.Backspace;
-                    hpNo--;
-                    if (hpNo < 0)
-                        hpNo = 0;
+                    if (hpNo > 0)
+                    {
+                        hpNo--;
+                        handPoints.RemoveAt(handPoints.Count - 1);
+                    }
                     updateTaskText();
                     movement.Clear();
                     Debug.WriteLine("do Backspace");
@@ -326,10 +344,14 @@ namespace SurfaceKeyboard
             }
             else if (checkEnterGesture())
             {
-                // TODO: Output 'Enter' if applicable
-                // Show the next task
-                gotoNextText();
-                movement.Clear();
+                if (handStatus != HandStatus.Enter)
+                {
+                    handStatus = HandStatus.Enter;
+                    // TODO: Output 'Enter' if applicable
+                    // Show the next task
+                    gotoNextText();
+                    movement.Clear();
+                }
             }
         }
 
@@ -360,10 +382,15 @@ namespace SurfaceKeyboard
                 case HandStatus.Backspace:
                     handStatus = HandStatus.Away;
                     break;
+                case HandStatus.Enter:
+                    handStatus = HandStatus.Away;
+                    break;
                 case HandStatus.Rest:
                     break;
                 case HandStatus.Type:
-                    showTouchPoints();
+                    hpNo++;
+                    showTouchInfo();
+                    updateTaskText();
                     handStatus = HandStatus.Away;
                     break;
             }

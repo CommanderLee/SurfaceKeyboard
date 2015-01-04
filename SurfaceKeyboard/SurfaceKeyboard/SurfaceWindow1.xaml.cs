@@ -347,6 +347,11 @@ namespace SurfaceKeyboard
                 if (handStatus != HandStatus.Enter)
                 {
                     handStatus = HandStatus.Enter;
+                    if (hpNo > 0)
+                    {
+                        hpNo--;
+                        handPoints.RemoveAt(handPoints.Count - 1);
+                    }
                     // TODO: Output 'Enter' if applicable
                     // Show the next task
                     gotoNextText();

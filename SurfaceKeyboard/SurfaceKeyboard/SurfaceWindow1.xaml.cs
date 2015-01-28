@@ -239,8 +239,10 @@ namespace SurfaceKeyboard
         {
             // Get touchdown position
             Point touchPos = e.TouchDevice.GetPosition(this);
-
-            saveTouchPoints(touchPos.X, touchPos.Y);
+            // if (e.TouchDevice.GetIsFingerRecognized())
+            // {
+                saveTouchPoints(touchPos.X, touchPos.Y);
+            // }
         }
 
         private void InputCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

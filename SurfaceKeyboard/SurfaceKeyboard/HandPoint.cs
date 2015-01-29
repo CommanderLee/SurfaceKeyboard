@@ -7,6 +7,10 @@ namespace SurfaceKeyboard
 {
     enum HPType { Touch, Move };
 
+    /**
+     * Elemental class for this project.
+     * Represent each single data point.
+     */
     class HandPoint
     {
         /**

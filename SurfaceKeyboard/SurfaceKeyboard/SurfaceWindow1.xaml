@@ -5,7 +5,7 @@
     Title="SurfaceKeyboard"
     >
     <DockPanel LastChildFill="True"
-               Width="1500"
+               Width="1600"
                Height="800">
         <Border Height="120"
                 Background="DarkGreen"
@@ -23,7 +23,7 @@
                 <TextBlock Name="TaskTextBlk" 
                    Canvas.Left="230"
                    Canvas.Top="0"
-                   Width="1020"
+                   Width="1120"
                    Height="120"
                    FontFamily="Courier New"
                    FontSize="38" />
@@ -31,7 +31,7 @@
                 <Button Name="NextBtn"
                 Width="120"
                 Height="115"
-                Canvas.Left="1250"
+                Canvas.Left="1350"
                 Canvas.Top="0"
                 FontSize="40"
                 BorderThickness="2"
@@ -41,7 +41,7 @@
                 <Button Name="SaveBtn" 
                 Width="120" 
                 Height="115" 
-                Canvas.Left="1375" 
+                Canvas.Left="1475" 
                 Canvas.Top="0"
                 FontSize="40"
                 BorderThickness="2"

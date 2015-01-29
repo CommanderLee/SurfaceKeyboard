@@ -6,6 +6,11 @@ using System.Text;
 namespace SurfaceKeyboard
 {
     enum HandStatus { Away, Backspace, Enter, Type, Rest };
+
+    /**
+     * A queue of consecutive data points.
+     * Some methods to recognize different gestures.
+     */
     class GesturePoints
     {
         /**
@@ -60,10 +65,11 @@ namespace SurfaceKeyboard
 
         /**
          * Check backspace gesture based on the distance and time
+         * TODO: Maybe an arc or a oblique line, instead of a horizontal line from right to left.
          */
         public bool checkBackspaceGesture()
         {
-            // return false;
+            return false;
             if (_queue.Count == 0)
             {
                 Console.WriteLine("[Error] checkBackspaceGesture(): The queue is empty.");
@@ -82,9 +88,13 @@ namespace SurfaceKeyboard
             }
         }
 
+        /**
+         * Check enter gesture based on the distance and time
+         * TODO: Maybe an arc or a oblique line, instead of a horizontal line from left to right.
+         */
         public bool checkEnterGesture()
         {
-            // return false;
+            return false;
             if (_queue.Count == 0)
             {
                 Console.WriteLine("[Error] checkEnterGesture(): The queue is empty.");
@@ -103,6 +113,10 @@ namespace SurfaceKeyboard
             }
         }
 
+        /**
+         * Check typing based on the movement within a single touch.
+         * TODO: Using distance or variance. 
+         */
         public bool checkTyping()
         {
             if (_queue.Count == 0)

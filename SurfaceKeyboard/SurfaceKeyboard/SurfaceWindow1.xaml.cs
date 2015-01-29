@@ -43,15 +43,8 @@ namespace SurfaceKeyboard
         // Id -> GesturePoints Queue
         Hashtable                   movement = new Hashtable();
 
-        // Note: Move to the GesturePoints Class
-        // Variables for the gesture
-        // The queue of the movements
-        // private Queue<HandPoint>    movement = new Queue<HandPoint>();
-        // enum HandStatus { Away, Backspace, Enter, Type, Rest };
-        // HandStatus                  handStatus;
-
         // Mark true if using mouse instead of fingers
-        private bool                isMouse = true;
+        private bool                isMouse = false;
 
         /// <summary>
         /// Default constructor.
@@ -66,8 +59,6 @@ namespace SurfaceKeyboard
             isStart = false;
             taskNo = 0;
             hpNo = 0;
-            // handStatus = HandStatus.Away;
-            // movement.Clear();
 
             loadTaskTexts();
             updateTaskText();
@@ -198,9 +189,6 @@ namespace SurfaceKeyboard
             {
                 Debug.WriteLine("[Error] saveTouchPoints(): This Touchpoint ID alrealy exists: " + id);
             }
-
-            // Set the status ( assumption )
-            // handStatus = HandStatus.Type;
         }
 
         private void showTouchInfo()
@@ -292,11 +280,11 @@ namespace SurfaceKeyboard
         }
 
         /**
-        * Gesture Handler - Zhen. Dec.30th, 2014.
-        * 1. Push the new point into the queue.
-        * 2. Check if the finger movement is larger than the threshold within the time limit
-        * 2.1 If satisfied, clear the queue and call the function
-        * 2.2 If not, go to the next gesture
+        * Gesture Handler - Zhen. 
+        * Update: Jan. 29th 2014.
+        * 1. Get the queue with the id.
+        * 2. Call the function of GesturePoints Class
+        * 3. Complete gestures based on the return value
         * */
         private void handleGesture(double x, double y, int id)
         {

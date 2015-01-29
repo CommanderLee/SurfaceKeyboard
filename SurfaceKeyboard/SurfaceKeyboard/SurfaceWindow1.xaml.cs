@@ -199,7 +199,7 @@ namespace SurfaceKeyboard
          * 3. When the user lift his finger, call 'showTouchPoints' function: Give feedback, 
          * or: If it is a swipe ( gesture ). Decide this in the '**up' function.
          */
-        private void saveTouchPoints(double x, double y)
+        private void saveTouchPoints(double x, double y, int id)
         {
             // Get touchdown time
             double timeStamp = 0;
@@ -215,7 +215,7 @@ namespace SurfaceKeyboard
             }
 
             // Save the information
-            handPoints.Add(new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo));
+            handPoints.Add(new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id, HPType.Touch));
 
             // Set the status ( assumption )
             handStatus = HandStatus.Type;
@@ -227,8 +227,8 @@ namespace SurfaceKeyboard
             {
                 HandPoint hpLast = handPoints.Last();
                 // Show the information
-                StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
-                    taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime());
+                StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}",
+                    taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
             }
             else
             {
@@ -243,7 +243,7 @@ namespace SurfaceKeyboard
             if (e.TouchDevice.GetIsFingerRecognized())
             {
                 Point touchPos = e.TouchDevice.GetPosition(this);
-                saveTouchPoints(touchPos.X, touchPos.Y);
+                saveTouchPoints(touchPos.X, touchPos.Y, e.TouchDevice.Id);
             }
         }
 
@@ -254,7 +254,7 @@ namespace SurfaceKeyboard
                 // Get touchdown position
                 Point touchPos = e.GetPosition(this);
 
-                saveTouchPoints(touchPos.X, touchPos.Y);
+                saveTouchPoints(touchPos.X, touchPos.Y, -1);
             }
         }
 
@@ -267,7 +267,7 @@ namespace SurfaceKeyboard
 
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
             {
-                file.WriteLine("X, Y, Time, TaskNo-PointNo");
+                file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
                 foreach (HandPoint point in handPoints)
                 {
                     file.WriteLine(point.ToString());
@@ -310,15 +310,14 @@ namespace SurfaceKeyboard
             }
         }
 
-        private void handleGesture(double x, double y)
+        private void handleGesture(double x, double y, int id)
         {
             /**
-             * Gesture Handler
+             * Gesture Handler - Zhen. Dec.30th, 2014.
              * 1. Push the new point into the queue.
              * 2. Check if the finger movement is larger than the threshold within the time limit
              * 2.1 If satisfied, clear the queue and call the function
              * 2.2 If not, go to the next gesture
-             * - Zhen. Dec.30th, 2014.
              * */
             // Push to the movement queue and check time
             double timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
@@ -326,7 +325,11 @@ namespace SurfaceKeyboard
             {
                 movement.Dequeue();
             }
-            movement.Enqueue(new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo));
+            // Temporarily add this point to the handpoint
+            HandPoint movePoint = new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id, HPType.Move);
+            handPoints.Add(movePoint);
+            movement.Enqueue(movePoint);
+            //movement.Enqueue(new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id));
 
             // Check Distance
             if (checkBackspaceGesture())
@@ -343,7 +346,7 @@ namespace SurfaceKeyboard
                     }
                     updateTaskText();
                     movement.Clear();
-                    Debug.WriteLine("do Backspace");
+                    // Debug.WriteLine("do Backspace");
                 }
             }
             else if (checkEnterGesture())
@@ -369,7 +372,7 @@ namespace SurfaceKeyboard
             if (e.TouchDevice.GetIsFingerRecognized())
             {
                 Point touchPos = e.TouchDevice.GetPosition(this);
-                handleGesture(touchPos.X, touchPos.Y);
+                handleGesture(touchPos.X, touchPos.Y, e.TouchDevice.Id);
             }
         }
 
@@ -380,7 +383,7 @@ namespace SurfaceKeyboard
                 if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
                     Point touchPos = e.GetPosition(this);
-                    handleGesture(touchPos.X, touchPos.Y);
+                    handleGesture(touchPos.X, touchPos.Y, -1);
                 }
             }
         }

@@ -8,7 +8,7 @@
                Width="1500"
                Height="800">
         <Border Height="120"
-                Background="LightBlue"
+                Background="DarkGreen"
                 BorderBrush="WhiteSmoke"
                 BorderThickness="2"
                 DockPanel.Dock="Top">
@@ -53,7 +53,7 @@
         <Border BorderBrush="WhiteSmoke"
                 BorderThickness="2">
             <Canvas Name="InputCanvas"
-                    Background="AliceBlue"
+                    Background="SeaGreen"
                     TouchDown="InputCanvas_TouchDown"
                     TouchMove="InputCanvas_TouchMove"
                     TouchUp="InputCanvas_TouchUp"

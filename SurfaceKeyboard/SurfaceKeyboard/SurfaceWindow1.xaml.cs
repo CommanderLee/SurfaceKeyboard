@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Diagnostics;
+using System.Collections;
 using Microsoft.Surface;
 using Microsoft.Surface.Presentation;
 using Microsoft.Surface.Presentation.Controls;
@@ -39,18 +40,15 @@ namespace SurfaceKeyboard
         private int                 taskSize;
         private string[]            taskTexts;
 
-        // Constants for the gesture
-        // A gesture will be triggered if it occured within the time limit
-        private const double        MOVE_TIME_LIMIT = 100;
-        // Length threshold (pixels) for backspace and enter
-        private const double        BACK_THRE = 100;
-        private const double        ENTER_THRE = 100;
+        // Id -> GesturePoints Queue
+        Hashtable                   movement = new Hashtable();
 
+        // Note: Move to the GesturePoints Class
         // Variables for the gesture
         // The queue of the movements
-        private Queue<HandPoint>    movement = new Queue<HandPoint>();
-        enum HandStatus { Away, Backspace, Enter, Type, Rest };
-        HandStatus                  handStatus;
+        // private Queue<HandPoint>    movement = new Queue<HandPoint>();
+        // enum HandStatus { Away, Backspace, Enter, Type, Rest };
+        // HandStatus                  handStatus;
 
         // Mark true if using mouse instead of fingers
         private bool                isMouse = false;
@@ -68,8 +66,8 @@ namespace SurfaceKeyboard
             isStart = false;
             taskNo = 0;
             hpNo = 0;
-            handStatus = HandStatus.Away;
-            movement.Clear();
+            // handStatus = HandStatus.Away;
+            // movement.Clear();
 
             loadTaskTexts();
             updateTaskText();
@@ -162,42 +160,42 @@ namespace SurfaceKeyboard
             TaskTextBlk.Text = currText + "\n" + typeText;
         }
 
-        private bool checkBackspaceGesture()
-        {
-            Debug.WriteLine(String.Format("{0}:[0]:{1}, [last]:{2}, status:{3}", 
-                movement.Count, movement.First(), movement.Last(), handStatus));
-            HandPoint hpFirst = movement.First(), hpLast = movement.Last();
-            bool isBackspace = false;
+        //private bool checkBackspaceGesture()
+        //{
+        //    Debug.WriteLine(String.Format("{0}:[0]:{1}, [last]:{2}, status:{3}",
+        //        movement.Count, movement.First(), movement.Last(), handStatus));
+        //    HandPoint hpFirst = movement.First(), hpLast = movement.Last();
+        //    bool isBackspace = false;
 
-            if (hpFirst.getX() - hpLast.getX() > BACK_THRE)
-            {
-                isBackspace = true;
-                // Debug.WriteLine("is Backspace");
-            }
-            return false;
-            // return isBackspace;
-        }
+        //    if (hpFirst.getX() - hpLast.getX() > BACK_THRE)
+        //    {
+        //        isBackspace = true;
+        //        // Debug.WriteLine("is Backspace");
+        //    }
+        //    return isBackspace;
+        //}
 
-        private bool checkEnterGesture()
-        {
-            Debug.WriteLine(String.Format("{0}:[0]:{1}, [last]:{2}, status:{3}",
-                movement.Count, movement.First(), movement.Last(), handStatus));
-            HandPoint hpFirst = movement.First(), hpLast = movement.Last();
-            bool isEnter = false;
+        //private bool checkEnterGesture()
+        //{
+        //    Debug.WriteLine(String.Format("{0}:[0]:{1}, [last]:{2}, status:{3}",
+        //        movement.Count, movement.First(), movement.Last(), handStatus));
+        //    HandPoint hpFirst = movement.First(), hpLast = movement.Last();
+        //    bool isEnter = false;
 
-            if (hpLast.getX() - hpFirst.getX() > ENTER_THRE)
-            {
-                isEnter = true;
-            }
-            return false;
-            // return isEnter;
-        }
+        //    if (hpLast.getX() - hpFirst.getX() > ENTER_THRE)
+        //    {
+        //        isEnter = true;
+        //    }
+        //    return isEnter;
+        //}
 
         /**
+         * Update - Jan. 29th, 2014. Zhen.
          * 1. The user touch the screen ( type a key )
          * 2. Call 'saveTouchPoints' function: save the point in the 'handPoints' List
-         * 3. When the user lift his finger, call 'showTouchPoints' function: Give feedback, 
-         * or: If it is a swipe ( gesture ). Decide this in the '**up' function.
+         * 3. Create hash table key for this point id.
+         * 4. When the user lift his finger, call 'showTouchPoints' function: Give feedback, 
+         * or: If it is a swipe ( gesture ).
          */
         private void saveTouchPoints(double x, double y, int id)
         {
@@ -215,10 +213,23 @@ namespace SurfaceKeyboard
             }
 
             // Save the information
-            handPoints.Add(new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id, HPType.Touch));
+            HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id, HPType.Touch);
+            handPoints.Add(touchPoint);
+
+            // Create elements in the hashtable
+            if (!movement.ContainsKey(id))
+            {
+                GesturePoints myPoints = new GesturePoints(HandStatus.Type);
+                myPoints.Add(touchPoint);
+                movement.Add(id, myPoints);
+            }
+            else
+            {
+                Debug.WriteLine("[Error] saveTouchPoints(): This Touchpoint ID alrealy exists: " + id);
+            }
 
             // Set the status ( assumption )
-            handStatus = HandStatus.Type;
+            // handStatus = HandStatus.Type;
         }
 
         private void showTouchInfo()
@@ -294,7 +305,6 @@ namespace SurfaceKeyboard
             hpNo = 0;
             showTouchInfo();
             updateTaskText();
-            movement.Clear();
         }
 
         private void NextBtn_TouchDown(object sender, TouchEventArgs e)
@@ -310,60 +320,58 @@ namespace SurfaceKeyboard
             }
         }
 
+        /**
+        * Gesture Handler - Zhen. Dec.30th, 2014.
+        * 1. Push the new point into the queue.
+        * 2. Check if the finger movement is larger than the threshold within the time limit
+        * 2.1 If satisfied, clear the queue and call the function
+        * 2.2 If not, go to the next gesture
+        * */
         private void handleGesture(double x, double y, int id)
         {
-            /**
-             * Gesture Handler - Zhen. Dec.30th, 2014.
-             * 1. Push the new point into the queue.
-             * 2. Check if the finger movement is larger than the threshold within the time limit
-             * 2.1 If satisfied, clear the queue and call the function
-             * 2.2 If not, go to the next gesture
-             * */
             // Push to the movement queue and check time
             double timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-            while (movement.Count > 0 && timeStamp - movement.Peek().getTime() > MOVE_TIME_LIMIT)
-            {
-                movement.Dequeue();
-            }
-            // Temporarily add this point to the handpoint
             HandPoint movePoint = new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id, HPType.Move);
-            handPoints.Add(movePoint);
-            movement.Enqueue(movePoint);
-            //movement.Enqueue(new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id));
-
-            // Check Distance
-            if (checkBackspaceGesture())
+            if (movement.ContainsKey(id))
             {
-                // Delete ONE character
-                // TODO: Delete one word?
-                if (handStatus != HandStatus.Backspace)
+                GesturePoints myPoints = (GesturePoints)movement[id];
+                myPoints.Add(movePoint);
+                handPoints.Add(movePoint);
+
+                // Check Distance
+                if (myPoints.checkBackspaceGesture())
                 {
-                    handStatus = HandStatus.Backspace;
-                    if (hpNo > 0)
+                    // Delete ONE character
+                    // TODO: Delete one word?
+                    if (myPoints.getStatus() != HandStatus.Backspace)
                     {
-                        hpNo--;
-                        handPoints.RemoveAt(handPoints.Count - 1);
+                        myPoints.setStatus(HandStatus.Backspace);
+                        if (hpNo > 0)
+                        {
+                            hpNo--;
+                        }
+                        updateTaskText();
+                        // Debug.WriteLine("do Backspace");
                     }
-                    updateTaskText();
-                    movement.Clear();
-                    // Debug.WriteLine("do Backspace");
+                }
+                else if (myPoints.checkEnterGesture())
+                {
+                    if (myPoints.getStatus() != HandStatus.Enter)
+                    {
+                        myPoints.setStatus(HandStatus.Enter);
+                        if (hpNo > 0)
+                        {
+                            hpNo--;
+                        }
+                        // TODO: Output 'Enter' if applicable
+                        // Show the next task
+                        gotoNextText();
+                    }
                 }
             }
-            else if (checkEnterGesture())
+            else
             {
-                if (handStatus != HandStatus.Enter)
-                {
-                    handStatus = HandStatus.Enter;
-                    if (hpNo > 0)
-                    {
-                        hpNo--;
-                        handPoints.RemoveAt(handPoints.Count - 1);
-                    }
-                    // TODO: Output 'Enter' if applicable
-                    // Show the next task
-                    gotoNextText();
-                    movement.Clear();
-                }
+                Debug.WriteLine("[Error] handleGesture(): id not exist." + id);
             }
         }
 
@@ -388,37 +396,46 @@ namespace SurfaceKeyboard
             }
         }
 
-        private void releaseGesture()
+        private void releaseGesture(int id)
         {
-            switch (handStatus)
+            if (movement.ContainsKey(id))
             {
-                case HandStatus.Away:
-                    break;
-                case HandStatus.Backspace:
-                    handStatus = HandStatus.Away;
-                    break;
-                case HandStatus.Enter:
-                    handStatus = HandStatus.Away;
-                    break;
-                case HandStatus.Rest:
-                    break;
-                case HandStatus.Type:
-                    hpNo++;
-                    showTouchInfo();
-                    updateTaskText();
-                    handStatus = HandStatus.Away;
-                    break;
+                GesturePoints myPoints = (GesturePoints)movement[id];
+                switch (myPoints.getStatus())
+                {
+                    case HandStatus.Away:
+                        break;
+                    case HandStatus.Backspace:
+                        break;
+                    case HandStatus.Enter:
+                        break;
+                    case HandStatus.Rest:
+                        break;
+                    case HandStatus.Type:
+                        if (myPoints.checkTyping())
+                        {
+                            hpNo++;
+                            showTouchInfo();
+                            updateTaskText();
+                        }
+                        break;
+                }
+                movement.Remove(id);
+            }
+            else
+            {
+                Debug.WriteLine("[Error] releaseGesture(): id not exist." + id);
             }
         }
 
         private void InputCanvas_TouchUp(object sender, TouchEventArgs e)
         {
-            releaseGesture();
+            releaseGesture(e.TouchDevice.Id);
         }
 
         private void InputCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            releaseGesture();
+            releaseGesture(-1);
         }
 
     }

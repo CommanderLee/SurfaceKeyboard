@@ -53,7 +53,7 @@ namespace SurfaceKeyboard
         HandStatus                  handStatus;
 
         // Mark true if using mouse instead of fingers
-        private bool                isMouse = true;
+        private bool                isMouse = false;
 
         /// <summary>
         /// Default constructor.
@@ -174,7 +174,8 @@ namespace SurfaceKeyboard
                 isBackspace = true;
                 // Debug.WriteLine("is Backspace");
             }
-            return isBackspace;
+            return false;
+            // return isBackspace;
         }
 
         private bool checkEnterGesture()
@@ -188,7 +189,8 @@ namespace SurfaceKeyboard
             {
                 isEnter = true;
             }
-            return isEnter;
+            return false;
+            // return isEnter;
         }
 
         /**
@@ -238,11 +240,11 @@ namespace SurfaceKeyboard
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
         {
             // Get touchdown position
-            Point touchPos = e.TouchDevice.GetPosition(this);
-            // if (e.TouchDevice.GetIsFingerRecognized())
-            // {
+            if (e.TouchDevice.GetIsFingerRecognized())
+            {
+                Point touchPos = e.TouchDevice.GetPosition(this);
                 saveTouchPoints(touchPos.X, touchPos.Y);
-            // }
+            }
         }
 
         private void InputCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -364,8 +366,11 @@ namespace SurfaceKeyboard
 
         private void InputCanvas_TouchMove(object sender, TouchEventArgs e)
         {
-            Point touchPos = e.TouchDevice.GetPosition(this);
-            handleGesture(touchPos.X, touchPos.Y);
+            if (e.TouchDevice.GetIsFingerRecognized())
+            {
+                Point touchPos = e.TouchDevice.GetPosition(this);
+                handleGesture(touchPos.X, touchPos.Y);
+            }
         }
 
         private void InputCanvas_MouseMove(object sender, MouseEventArgs e)

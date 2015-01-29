@@ -7,7 +7,7 @@
     <DockPanel LastChildFill="True"
                Width="1500"
                Height="800">
-        <Border Height="80"
+        <Border Height="120"
                 Background="LightBlue"
                 BorderBrush="WhiteSmoke"
                 BorderThickness="2"
@@ -16,22 +16,22 @@
                 <TextBlock Name="StatusTextBlk"
                    Canvas.Left="0"
                    Canvas.Top="0"
-                   Width="300" 
-                   Height="80"
+                   Width="230" 
+                   Height="120"
                    FontSize="15">Touch anywhere to start</TextBlock>
 
                 <TextBlock Name="TaskTextBlk" 
-                   Canvas.Left="320"
+                   Canvas.Left="230"
                    Canvas.Top="0"
-                   Width="850"
-                   Height="80"
+                   Width="1020"
+                   Height="120"
                    FontFamily="Courier New"
-                   FontSize="30" />
+                   FontSize="38" />
 
                 <Button Name="NextBtn"
-                Width="150"
-                Height="75"
-                Canvas.Left="1190"
+                Width="120"
+                Height="115"
+                Canvas.Left="1250"
                 Canvas.Top="0"
                 FontSize="40"
                 BorderThickness="2"
@@ -39,9 +39,9 @@
                 Click="NextBtn_Click">Next</Button>
 
                 <Button Name="SaveBtn" 
-                Width="150" 
-                Height="75" 
-                Canvas.Left="1345" 
+                Width="120" 
+                Height="115" 
+                Canvas.Left="1375" 
                 Canvas.Top="0"
                 FontSize="40"
                 BorderThickness="2"

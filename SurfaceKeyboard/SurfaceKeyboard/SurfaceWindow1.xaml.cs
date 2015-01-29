@@ -51,7 +51,7 @@ namespace SurfaceKeyboard
         // HandStatus                  handStatus;
 
         // Mark true if using mouse instead of fingers
-        private bool                isMouse = false;
+        private bool                isMouse = true;
 
         /// <summary>
         /// Default constructor.
@@ -159,35 +159,6 @@ namespace SurfaceKeyboard
                 typeText = typeText.Substring(0, hpNo) + "_";
             TaskTextBlk.Text = currText + "\n" + typeText;
         }
-
-        //private bool checkBackspaceGesture()
-        //{
-        //    Debug.WriteLine(String.Format("{0}:[0]:{1}, [last]:{2}, status:{3}",
-        //        movement.Count, movement.First(), movement.Last(), handStatus));
-        //    HandPoint hpFirst = movement.First(), hpLast = movement.Last();
-        //    bool isBackspace = false;
-
-        //    if (hpFirst.getX() - hpLast.getX() > BACK_THRE)
-        //    {
-        //        isBackspace = true;
-        //        // Debug.WriteLine("is Backspace");
-        //    }
-        //    return isBackspace;
-        //}
-
-        //private bool checkEnterGesture()
-        //{
-        //    Debug.WriteLine(String.Format("{0}:[0]:{1}, [last]:{2}, status:{3}",
-        //        movement.Count, movement.First(), movement.Last(), handStatus));
-        //    HandPoint hpFirst = movement.First(), hpLast = movement.Last();
-        //    bool isEnter = false;
-
-        //    if (hpLast.getX() - hpFirst.getX() > ENTER_THRE)
-        //    {
-        //        isEnter = true;
-        //    }
-        //    return isEnter;
-        //}
 
         /**
          * Update - Jan. 29th, 2014. Zhen.

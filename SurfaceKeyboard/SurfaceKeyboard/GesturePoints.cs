@@ -63,6 +63,7 @@ namespace SurfaceKeyboard
          */
         public bool checkBackspaceGesture()
         {
+            // return false;
             if (_queue.Count == 0)
             {
                 Console.WriteLine("[Error] checkBackspaceGesture(): The queue is empty.");
@@ -83,6 +84,7 @@ namespace SurfaceKeyboard
 
         public bool checkEnterGesture()
         {
+            // return false;
             if (_queue.Count == 0)
             {
                 Console.WriteLine("[Error] checkEnterGesture(): The queue is empty.");

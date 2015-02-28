@@ -1,5 +1,10 @@
 import csv
 
+# Read word list
+textFile = open('TaskText.txt', 'r')
+texts = [text.strip() for text in textFile]
+# print texts
+
 # Read data
 reader = csv.reader(open("01-29_16_11_49_Typing7.csv"))
 # for _x, _y, _time, _id, _type in reader:
@@ -16,3 +21,4 @@ _type = [line[4] for line in lines[1:]]
 # print _time
 # print _id
 # print _type
+

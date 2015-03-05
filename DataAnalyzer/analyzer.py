@@ -31,14 +31,13 @@ if dataFile:
     'bo', 'co', 'go', 'ko', 'mo', 'ro', 'yo', 
     'b*', 'c*', 'g*', 'k*', 'm*', 'r*', 'y*',
     'b<', 'c<', 'g<', 'k<', 'm<', 'r<']
+    colorLen = len(colors)
 
-    figure()
-
-    textSt = 0
-    textEd = 20
+    textNo = int(dataId[0].split('-')[0])
+    textLen = len(texts)
     dataNo = 0
     dataLen = len(data)
-    for textNo in range(textSt, textEd):
+    while textNo < textLen:
         # Parse every text
         currText = texts[textNo]
         print "%d: %s" % (textNo, currText)
@@ -62,9 +61,13 @@ if dataFile:
                 listY.append(dataY[dataNo])
             dataNo += 1
             
-        print "%d letters, %d touch points." % (len(currText), len(listX))
+        if len(currText) != len(listX):    
+            print "Warning: %d letters, %d touch points." % (len(currText), len(listX))
 
+        figure(0)
+        # Plot different letters with different colors
         # TODO: Remove the wrong point
+        subplot(2, 1, 1)
         minLen = min(len(currText), len(listX))
         for letterNo in range(0, minLen):
             if currText[letterNo] == ' ':
@@ -72,10 +75,34 @@ if dataFile:
             else:
                 plot(listX[letterNo], listY[letterNo], colors[ord(currText[letterNo].lower()) - ord('a') + 1])
 
+        # Fix the data
+        subplot(2, 1, 2)
+
+        # Plot different test set with different colors
+        figure(1)
+        plot(listX, listY, colors[textNo % colorLen])
+
+        # Break when finish processing the data set
+        if dataNo >= dataLen:
+            break
+
+        textNo += 1
+
 
     # plot(dataX, dataY, 'b.')
 
 
     # Inverse the axis to fit the Surface Window
+    figure(0)
+    subplot(2, 1, 1)
+    title('Different Letters')
     gca().invert_yaxis()
+    
+    subplot(2, 1, 2)
+    
+
+    figure(1)
+    title('Different Text No.')
+    gca().invert_yaxis()
+
     show()

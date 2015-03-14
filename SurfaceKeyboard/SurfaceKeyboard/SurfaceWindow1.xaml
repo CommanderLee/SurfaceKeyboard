@@ -7,7 +7,7 @@
     <DockPanel LastChildFill="True"
                Width="1600"
                Height="800">
-        <Border Height="120"
+        <Border Height="180"
                 Background="DarkGreen"
                 BorderBrush="WhiteSmoke"
                 BorderThickness="2"
@@ -24,7 +24,7 @@
                    Canvas.Left="230"
                    Canvas.Top="0"
                    Width="1120"
-                   Height="120"
+                   Height="180"
                    FontFamily="Courier New"
                    FontSize="38" />
 
@@ -32,7 +32,7 @@
                 Width="120"
                 Height="115"
                 Canvas.Left="1350"
-                Canvas.Top="0"
+                Canvas.Top="60"
                 FontSize="40"
                 BorderThickness="2"
                 TouchDown="NextBtn_TouchDown"
@@ -42,11 +42,24 @@
                 Width="120" 
                 Height="115" 
                 Canvas.Left="1475" 
-                Canvas.Top="0"
+                Canvas.Top="60"
                 FontSize="40"
                 BorderThickness="2"
                 TouchDown="SaveBtn_TouchDown"
                 Click="SaveBtn_Click">Save</Button>
+                
+                <Button Name="ClearBtn" 
+                        Canvas.Left="5" Canvas.Top="120" 
+                        Content="Clear" 
+                        Height="55"  Width="110" 
+                        FontSize="30" BorderThickness="2" 
+                        TouchDown="ClearBtn_TouchDown" Click="ClearBtn_Click" />
+
+                <Button Name="KeyboardBtn" 
+                        Canvas.Left="115" Canvas.Top="120" 
+                        Content="Keyboard" 
+                        Height="55"  Width="110" 
+                        FontSize="20" BorderThickness="2"/>
             </Canvas>    
         </Border>
         

@@ -31,9 +31,13 @@ namespace SurfaceKeyboard
         private bool                isStart;
         private DateTime            startTime;
 
-        // Number of the hand points and the list to store them
+        // Number of the hand points and the list to store them.
         private int                 hpNo;
         private List<HandPoint>     handPoints = new List<HandPoint>();
+
+        // Valid points: the touch point of each char.
+        private List<HandPoint>     currValidPoints = new List<HandPoint>();
+        private List<HandPoint>     validPoints = new List<HandPoint>();
 
         // Number of the task texts, its size, and its content
         private int                 taskNo;
@@ -59,6 +63,7 @@ namespace SurfaceKeyboard
             isStart = false;
             taskNo = 0;
             hpNo = 0;
+            currValidPoints.Clear();
 
             loadTaskTexts();
             updateTaskText();
@@ -181,8 +186,8 @@ namespace SurfaceKeyboard
             // Create elements in the hashtable
             if (!movement.ContainsKey(id))
             {
-                GesturePoints myPoints = new GesturePoints(HandStatus.Type);
-                myPoints.Add(touchPoint);
+                GesturePoints myPoints = new GesturePoints(touchPoint, HandStatus.Type);
+                // myPoints.Add(touchPoint);
                 movement.Add(id, myPoints);
             }
             else
@@ -233,6 +238,7 @@ namespace SurfaceKeyboard
             // Save the touchdown seq to file
             string fPath = Directory.GetCurrentDirectory() + '\\';
             string fName = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + ".csv";
+            string fNameTyping = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + "_typing.csv";
             StatusTextBlk.Text = fPath + fName;
 
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
@@ -244,9 +250,24 @@ namespace SurfaceKeyboard
                 }
             }
 
+            if (currValidPoints.Count > 0)
+            {
+                validPoints.AddRange(currValidPoints);
+            }
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameTyping, true))
+            {
+                file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
+                foreach (HandPoint point in validPoints)
+                {
+                    file.WriteLine(point.ToString());
+                }
+            }
+
             // Clear the timer and storage
             isStart = false;
             handPoints.Clear();
+            validPoints.Clear();
+            currValidPoints.Clear();
         }
 
         private void SaveBtn_Click(object sender, RoutedEventArgs e)
@@ -264,6 +285,8 @@ namespace SurfaceKeyboard
             hpNo = 0;
             showTouchInfo();
             updateTaskText();
+
+            validPoints.AddRange(currValidPoints);
         }
 
         private void NextBtn_TouchDown(object sender, TouchEventArgs e)
@@ -318,10 +341,6 @@ namespace SurfaceKeyboard
                     if (myPoints.getStatus() != HandStatus.Enter)
                     {
                         myPoints.setStatus(HandStatus.Enter);
-                        if (hpNo > 0)
-                        {
-                            hpNo--;
-                        }
                         // TODO: Output 'Enter' if applicable
                         // Show the next task
                         gotoNextText();
@@ -373,6 +392,8 @@ namespace SurfaceKeyboard
                     case HandStatus.Type:
                         if (myPoints.checkTyping())
                         {
+                            currValidPoints.Add(myPoints.getStartPoint());
+
                             hpNo++;
                             showTouchInfo();
                             updateTaskText();
@@ -395,6 +416,23 @@ namespace SurfaceKeyboard
         private void InputCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             releaseGesture(-1);
+        }
+
+        private void ClearBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            // Clear the touch points of this sentence
+            currValidPoints.Clear();
+            hpNo = 0;
+            showTouchInfo();
+            updateTaskText();
+        }
+
+        private void ClearBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (isMouse)
+            {
+                ClearBtn_TouchDown(null, null);
+            }
         }
 
     }

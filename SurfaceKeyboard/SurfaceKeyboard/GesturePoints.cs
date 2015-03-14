@@ -16,35 +16,42 @@ namespace SurfaceKeyboard
         /**
         * Constants for the gesture
         * - A gesture will be triggered if it occured within the move time limit
-        * - Recognized as a touch is released within the touch time limit
+        * - Touch time limit: touch time min < touch time <  touch time max
         * - xxxTHRE: Length threshold (pixels) for backspace and enter
         */
         private const double MOVE_TIME_LIMIT = 100;
-        private const double TOUCH_TIME_LIMIT = 500;
+        private const double TOUCH_TIME_MAX = 500;
+        private const double TOUCH_TIME_MIN = 5;
         private const double BACK_THRE = 100;
         private const double ENTER_THRE = 100;
 
         private Queue<HandPoint> _queue;
         private HandStatus       _status;
         private double           _startTime = -1;
+        private HandPoint        _startPoint;
 
         public GesturePoints()
         {
             _queue = new Queue<HandPoint>();
         }
 
-        public GesturePoints(HandStatus status)
+        public GesturePoints(HandPoint startPoint, HandStatus status)
         {
             _queue = new Queue<HandPoint>();
+            _queue.Enqueue(startPoint);
+
+            _startTime = startPoint.getTime();
+            _startPoint = startPoint;
+
             _status = status;
         }
 
         public void Add(HandPoint handPoint)
         {
-            if (_startTime < 0)
-            {
-                _startTime = handPoint.getTime();
-            }
+            //if (_startTime < 0)
+            //{
+            //    _startTime = handPoint.getTime();
+            //}
 
             while (_queue.Count > 0 && handPoint.getTime() - _queue.Peek().getTime() > MOVE_TIME_LIMIT)
             {
@@ -61,6 +68,11 @@ namespace SurfaceKeyboard
         public HandStatus getStatus()
         {
             return _status;
+        }
+
+        public HandPoint getStartPoint()
+        {
+            return _startPoint;
         }
 
         /**
@@ -127,7 +139,8 @@ namespace SurfaceKeyboard
             else
             {
                 bool isTyping = false;
-                if (_queue.Last().getTime() - _startTime < TOUCH_TIME_LIMIT)
+                double touchTime = _queue.Last().getTime() - _startTime;
+                if (touchTime < TOUCH_TIME_MAX && touchTime > TOUCH_TIME_MIN)
                 {
                     isTyping = true;
                 }

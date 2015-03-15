@@ -47,6 +47,10 @@ namespace SurfaceKeyboard
         // Id -> GesturePoints Queue
         Hashtable                   movement = new Hashtable();
 
+        // Show the soft keyboard on the screen (default: close)
+        private bool                showKeyboard = false;
+        ImageBrush                  keyboardOpen, keyboardClose;
+
         // Mark true if using mouse instead of fingers
         private bool                isMouse = false;
 
@@ -64,6 +68,20 @@ namespace SurfaceKeyboard
             taskNo = 0;
             hpNo = 0;
             currValidPoints.Clear();
+            showKeyboard = false;
+
+            // Keyboard Control Button Image
+            keyboardOpen = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_open.png")));
+            keyboardClose = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_close.png")));
+            KeyboardBtn.Background = keyboardClose;
+
+            // Keyboard Image
+            BitmapImage bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1x.png");
+            bitmap.EndInit();
+            imgKeyboard.Source = bitmap;
+            imgKeyboard.Visibility = Visibility.Hidden;
 
             loadTaskTexts();
             updateTaskText();
@@ -432,6 +450,29 @@ namespace SurfaceKeyboard
             if (isMouse)
             {
                 ClearBtn_TouchDown(null, null);
+            }
+        }
+
+        private void KeyboardBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            showKeyboard = !showKeyboard;
+            if (showKeyboard)
+            {
+                KeyboardBtn.Background = keyboardOpen;
+                imgKeyboard.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                KeyboardBtn.Background = keyboardClose;
+                imgKeyboard.Visibility = Visibility.Hidden;
+            }
+        }
+
+        private void KeyboardBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (isMouse)
+            {
+                KeyboardBtn_TouchDown(null, null);
             }
         }
 

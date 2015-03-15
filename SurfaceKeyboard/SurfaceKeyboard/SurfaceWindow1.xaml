@@ -57,9 +57,9 @@
 
                 <Button Name="KeyboardBtn" 
                         Canvas.Left="115" Canvas.Top="120" 
-                        Content="Keyboard" 
                         Height="55"  Width="110" 
-                        FontSize="20" BorderThickness="2"/>
+                        FontSize="20" BorderThickness="2" 
+                        TouchDown="KeyboardBtn_TouchDown" Click="KeyboardBtn_Click" />
             </Canvas>    
         </Border>
         
@@ -73,6 +73,10 @@
                     MouseLeftButtonDown="InputCanvas_MouseLeftButtonDown"
                     MouseMove="InputCanvas_MouseMove"
                     MouseLeftButtonUp="InputCanvas_MouseLeftButtonUp">
+                
+                <Image Canvas.Left="400" Canvas.Top="225" 
+                       Height="258" Width="736"
+                       Name="imgKeyboard" Stretch="Fill" />
             </Canvas>
         </Border>
                 

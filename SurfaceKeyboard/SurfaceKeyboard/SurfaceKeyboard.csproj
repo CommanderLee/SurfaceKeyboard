@@ -100,6 +100,12 @@
     <Content Include="Resources\icon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Resources\keyboard_open.png" />
+    <Resource Include="Resources\keyboard_close.png" />
+    <Resource Include="Resources\keyboard_1x.png" />
+    <Resource Include="Resources\keyboard_1_25x.png" />
+    <Resource Include="Resources\keyboard_1_5x.png" />
+    <Resource Include="Resources\keyboard_blank.png" />
     <Content Include="SurfaceKeyboard.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

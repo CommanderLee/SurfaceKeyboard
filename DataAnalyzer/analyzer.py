@@ -1,3 +1,5 @@
+# Analyze the data generated from the Surface App.
+# Zhen Li, Tsinghua University.
 import csv
 import matplotlib.pyplot as plt
 from pylab import *
@@ -42,6 +44,8 @@ if openFiles:
 
     # Parse each file
     for dataFile in openFiles:
+        print dataFile.name + ':'
+
         # X, Y, Time, TaskNo-PointNo-FingerId, PointType
         # Hint: '-' will be removed by the function numpy.genfromtxt 
         # (ref: http://docs.scipy.org/doc/numpy/user/basics.io.genfromtxt.html)
@@ -50,6 +54,7 @@ if openFiles:
         # Load data column
         dataX = data['X']
         dataY = data['Y']
+        dataTime = data['Time']
         dataId = [_id.strip() for _id in data['TaskNoPointNoFingerId']]
         dataType = [_type.strip() for _type in data['PointType']]
 
@@ -57,6 +62,8 @@ if openFiles:
         textLen = len(texts)
         dataNo = 0
         dataLen = len(data)
+
+        touchTime = []
 
         while textNo < textLen:
             # Parse every text (sentence)
@@ -70,6 +77,9 @@ if openFiles:
             # Use this info to fix the bias
             spaceXList = []
             spaceYList = []
+
+            # Calculate the touching time for every point
+            touchStart = -1
 
             # Get all 'Touch' point and ignore 'Move' point
             while dataNo < dataLen:
@@ -85,6 +95,12 @@ if openFiles:
                 if dataType[dataNo] == 'Touch':
                     listX.append(dataX[dataNo])
                     listY.append(dataY[dataNo])
+
+                    if touchStart >= 0:
+                        touchTime.append(dataTime[dataNo-1] - touchStart)
+                        if dataTime[dataNo-1] - touchStart < 20:
+                            print 'Exception: ' + dataId[dataNo-1]
+                    touchStart = dataTime[dataNo]
                 dataNo += 1
                 
             if len(currText) != len(listX):    
@@ -150,6 +166,11 @@ if openFiles:
 
             textNo += 1
 
+        figure(3)
+        plot(touchTime, label = dataFile.name)
+        print touchTime
+        print 'Touchtime: mean:%f, std:%f, median:%f, max:%f, min:%f' % (np.mean(touchTime), 
+            np.std(touchTime), np.median(touchTime), np.max(touchTime), np.min(touchTime))
 
     # plot(dataX, dataY, 'b.')
 
@@ -199,5 +220,8 @@ if openFiles:
     figure(2)
     title('Different Text No.')
     gca().invert_yaxis()
+
+    figure(3)
+    legend()
 
     show()

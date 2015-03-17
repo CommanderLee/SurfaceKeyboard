@@ -305,6 +305,7 @@ namespace SurfaceKeyboard
             updateTaskText();
 
             validPoints.AddRange(currValidPoints);
+            currValidPoints.Clear();
         }
 
         private void NextBtn_TouchDown(object sender, TouchEventArgs e)

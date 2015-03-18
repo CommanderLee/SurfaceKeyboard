@@ -6,6 +6,8 @@ from pylab import *
 import Tkinter, tkFileDialog
 import numpy as np 
 
+from constants import *
+
 def encode(string):
     "Encode the word using handCode rules."
     code = ''
@@ -19,14 +21,6 @@ def encode(string):
 textFile = open('TaskText.txt', 'r')
 texts = [text.strip().lower() for text in textFile]
 # print texts
-
-# Pre-processing: Encode the words. 0:left, 1:right.
-# a b c d e f g
-# h i j k l m n
-# o p q r s t u v w x y z
-handCode = ['0', '0', '0', '0', '0', '0', '0', 
-'1', '1', '1', '1', '1', '1', '1',
-'1', '1', '0', '0', '0', '0', '1', '0', '0', '0', '1', '0']
 
 wordDic = {}
 wordCnt = {}
@@ -88,8 +82,10 @@ if openFiles:
 
         # TODO: Get a probability function for judging Left / Right
         midX = (np.max(dataX) + np.min(dataX)) / 2
+        # midY = (np.max(dataY) + np.min(dataY)) / 2
         rangeX = np.max(dataX) - np.min(dataX)
-        print midX, rangeX
+        rangeY = np.max(dataY) - np.min(dataY)
+        print midX, rangeX, rangeY
 
         correctNum = 0
         wrongNum = 0
@@ -128,21 +124,34 @@ if openFiles:
             for word in currText.split(' '):
                 wordLen = len(word)
                 userCode = ''
+
+                # Get user's vecL, vecR (vector within left/right hand)
+                pntIdL, pntIdR = [], []
+                vecL, vecR = [], []
+
                 for i in range(listNo, listNo + wordLen):
                     if listX[i] < midX:
                         userCode += '0'
+                        if len(pntIdL) > 0:
+                            vecL.append((listX[i] - listX[pntIdL[-1]], listY[i] - listY[pntIdL[-1]]))
+                        pntIdL.append(i)
                     else:
                         userCode += '1'
+                        if len(pntIdR) > 0:
+                            vecR.append((listX[i] - listX[pntIdR[-1]], listY[i] - listY[pntIdR[-1]]))
+                        pntIdR.append(i)
+                print vecL, vecR
 
                 if {userCode}.issubset(wordDic.keys()):
                     selWords = wordDic[userCode]
-                    # Get user's vecL, vecR (vector within left/right hand)
+                    wordProb = {}
+                    # Test each candidates
+                    for candWord in selWords:
+                        # Get vector of possible word.
+                        pass
 
-
-                    # Get vector of possible word.
-
-
-                    # Compare each of the possible word.
+                        # Compare each of the possible word.
+                        # Try: if vecList=[], (only one point), calculate the probability of that point
 
 
                     # TODO: if correct

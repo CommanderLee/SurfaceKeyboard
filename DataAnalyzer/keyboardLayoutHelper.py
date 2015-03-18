@@ -2,9 +2,7 @@
 # Zhen Li, Tsinghua University.
 import matplotlib.pyplot as plt
 from pylab import *
-
-letterPosX = [42.0, 245.0, 155.0, 132.0, 110.0, 177.0, 222.0, 267.0, 335.0, 312.0, 357.0, 402.0, 335.0, 290.0, 380.0, 425.0, 20.0, 155.0, 87.0, 200.0, 290.0, 200.0, 65.0, 110.0, 245.0, 65.0]
-letterPosY = [71.5, 119.5, 119.5, 71.5, 22.0, 71.5, 71.5, 71.5, 22.0, 71.5, 71.5, 71.5, 119.5, 119.5, 22.0, 22.0, 22.0, 22.0, 71.5, 22.0, 22.0, 119.5, 22.0, 119.5, 22.0, 119.5]
+from constants import *
 
 def calcKeyboardLayout():
     "Calculate Keyboard Layout( Size and Coordinate )"
@@ -61,25 +59,21 @@ def calcKeyboardLayout():
 def calcWordVec(word):
     "Calculate word vector & points within each hand"
     # Point and Vector list within Left/Right hand
-    pntL, pntR = [], []
+    pntIdL, pntIdR = [], []
     vecL, vecR = [], []
 
-    # TODO
-    '''
-    for i in range(listNo, listNo + wordLen):
-        if listX[i] < midX:
-            userCode += '0'
+    for char in word:
+        charNo = ord(char) - ord('a')
+        if handCode[charNo] == '0':
             if len(pntIdL) > 0:
-                vecL.append((listX[i] - listX[pntIdL[-1]], listY[i] - listY[pntIdL[-1]]))
-            pntIdL.append(i)
+                vecL.append((letterPosX[charNo] - letterPosX[pntIdL[-1]], letterPosY[charNo] - letterPosY[pntIdL[-1]]))
+            pntIdL.append(charNo)
         else:
-            userCode += '1'
             if len(pntIdR) > 0:
-                vecR.append((listX[i] - listX[pntIdR[-1]], listY[i] - listY[pntIdR[-1]]))
-            pntIdR.append(i)
-    print vecL, vecR
-    '''
-    return [pntL, pntR, vecL, vecR]
+                vecR.append((letterPosX[charNo] - letterPosX[pntIdR[-1]], letterPosY[charNo] - letterPosY[pntIdR[-1]]))
+            pntIdR.append(charNo)
+
+    return [pntIdL, pntIdR, vecL, vecR]
 
 if __name__ == '__main__':
     [posX, posY] = calcKeyboardLayout()
@@ -89,8 +83,8 @@ if __name__ == '__main__':
     gca().invert_yaxis()
     show()
 
-    [pntL, pntR, vecL, vecR] = calcWordVec('please')
-    print [pntL, pntR, vecL, vecR]
+    [pntIdL, pntIdR, vecL, vecR] = calcWordVec('please')
+    print [pntIdL, pntIdR, vecL, vecR]
 
 
 

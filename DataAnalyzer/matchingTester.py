@@ -5,8 +5,10 @@ import matplotlib.pyplot as plt
 from pylab import *
 import Tkinter, tkFileDialog
 import numpy as np 
+import math
 
 from constants import *
+from keyboardLayoutHelper import *
 
 def encode(string):
     "Encode the word using handCode rules."
@@ -15,32 +17,44 @@ def encode(string):
         code += handCode[ord(char) - ord('a')]
     return code
 
+def loadCorpus():
+    "Load words as corpus"
+    # MacKenzie
+    textFile = open('TaskText.txt', 'r')
+    sentences = [text.strip().lower().split(' ') for text in textFile]
+    words = []
+    for sentence in sentences:
+        words += sentence
+    # print words
+    print '%d words.' % (len(words))
+    return words
+
 # Main
 
-# Read word list
-textFile = open('TaskText.txt', 'r')
-texts = [text.strip().lower() for text in textFile]
-# print texts
-
+# Parse the corpus
+allWords = loadCorpus()
 wordDic = {}
 wordCnt = {}
-for sentence in texts:
-    for word in sentence.split(' '):
-        # print word + ' : ' + encode(word)
-        code = encode(word)
-        if {code}.issubset(wordDic.keys()):
-            wordDic[code].add(word)
-        else:
-            wordDic[code] = set()
-            wordDic[code].add(word)
-            
-        if {word}.issubset(wordCnt.keys()):
-            wordCnt[word] += 1
-        else:
-            wordCnt[word] = 1
+for word in allWords:
+    # print word + ' : ' + encode(word)
+    code = encode(word)
+    if {code}.issubset(wordDic.keys()):
+        wordDic[code].add(word)
+    else:
+        wordDic[code] = set()
+        wordDic[code].add(word)
+        
+    if {word}.issubset(wordCnt.keys()):
+        wordCnt[word] += 1
+    else:
+        wordCnt[word] = 1
 
 print wordDic
 print wordCnt
+
+# Load testing sentences
+textFile = open('TaskText.txt', 'r')
+texts = [text.strip().lower() for text in textFile]
 
 # Number of words sharing the same code
 sameCodeCnt = [len(wordSet) for wordSet in wordDic.values()]
@@ -81,10 +95,12 @@ if openFiles:
         dataLen = len(data)
 
         # TODO: Get a probability function for judging Left / Right
+        startX = np.min(dataX)
+        startY = np.min(dataY)
         midX = (np.max(dataX) + np.min(dataX)) / 2
         # midY = (np.max(dataY) + np.min(dataY)) / 2
-        rangeX = np.max(dataX) - np.min(dataX)
-        rangeY = np.max(dataY) - np.min(dataY)
+        rangeX = np.max(dataX) - startX
+        rangeY = np.max(dataY) - startY
         print midX, rangeX, rangeY
 
         correctNum = 0
@@ -126,40 +142,71 @@ if openFiles:
                 userCode = ''
 
                 # Get user's vecL, vecR (vector within left/right hand)
-                pntIdL, pntIdR = [], []
-                vecL, vecR = [], []
+                myPntIdL, myPntIdR = [], []
+                myVecL, myVecR = [], []
 
                 for i in range(listNo, listNo + wordLen):
                     if listX[i] < midX:
                         userCode += '0'
-                        if len(pntIdL) > 0:
-                            vecL.append((listX[i] - listX[pntIdL[-1]], listY[i] - listY[pntIdL[-1]]))
-                        pntIdL.append(i)
+                        if len(myPntIdL) > 0:
+                            myVecL.append((listX[i] - listX[myPntIdL[-1]], listY[i] - listY[myPntIdL[-1]]))
+                        myPntIdL.append(i)
                     else:
                         userCode += '1'
-                        if len(pntIdR) > 0:
-                            vecR.append((listX[i] - listX[pntIdR[-1]], listY[i] - listY[pntIdR[-1]]))
-                        pntIdR.append(i)
-                print vecL, vecR
+                        if len(myPntIdR) > 0:
+                            myVecR.append((listX[i] - listX[myPntIdR[-1]], listY[i] - listY[myPntIdR[-1]]))
+                        myPntIdR.append(i)
+                myPntL = [(listX[i], listY[i]) for i in myPntIdL]
+                myPntR = [(listX[i], listY[i]) for i in myPntIdR]
+                # print myVecL, myVecR
 
                 if {userCode}.issubset(wordDic.keys()):
                     selWords = wordDic[userCode]
-                    wordProb = {}
+                    wordProb = []
                     # Test each candidates
                     for candWord in selWords:
                         # Get vector of possible word.
-                        pass
+                        [pntL, pntR, vecL, vecR] = calcWordVec(candWord)
+                        distance = 0
+                        if len(myVecL) > 0:
+                            sub = np.array(myVecL) - np.array(vecL)
+                            subLen = [math.sqrt(si.dot(si)) for si in sub]
+                            distance += np.sum(subLen)
+                        elif len(myPntL) > 0:
+                            sub = []
+                            if len(myPntR) > 0:
+                                sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
+                            else: 
+                                sub = np.array(myPntL[0]) - np.array(pntL[0])
+                            distance += math.sqrt(sub.dot(sub))
+
+                        if len(myVecR) > 0:
+                            sub = np.array(myVecR) - np.array(vecR)
+                            subLen = [math.sqrt(si.dot(si)) for si in sub]
+                            distance += np.sum(subLen)
+                        elif len(myPntR) > 0:
+                            sub = []
+                            if len(myPntL) > 0:
+                                sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
+                            else: 
+                                sub = np.array(myPntR[0]) - np.array(pntR[0])
+                            distance += math.sqrt(sub.dot(sub))
 
                         # Compare each of the possible word.
                         # Try: if vecList=[], (only one point), calculate the probability of that point
+                        wordProb.append((candWord, distance))
 
+                    wordProbArray = np.array(wordProb, dtype = [('word', 'S20'), ('dist', int)])
+                    wordProbArray.sort(order = 'dist')
+                    # print wordProbArray
 
                     # TODO: if correct
-                    # if xxx == word:
-                    if {word}.issubset(selWords):
+                    if wordProbArray[0][0] == word:
                         correctNum += 1
                     else:
                         wrongNum += 1
+                        print 'Wrong: ' + word
+                        print wordProbArray
                 else:
                     emptyNum += 1
                 # Jump: word length + ' '

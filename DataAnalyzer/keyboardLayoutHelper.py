@@ -58,7 +58,7 @@ def calcKeyboardLayout():
 
 def calcWordVec(word):
     "Calculate word vector & points within each hand"
-    # Point and Vector list within Left/Right hand
+    # Return one point as well. (also in vec list, but it is not a vector)
     pntIdL, pntIdR = [], []
     vecL, vecR = [], []
 
@@ -73,7 +73,9 @@ def calcWordVec(word):
                 vecR.append((letterPosX[charNo] - letterPosX[pntIdR[-1]], letterPosY[charNo] - letterPosY[pntIdR[-1]]))
             pntIdR.append(charNo)
 
-    return [pntIdL, pntIdR, vecL, vecR]
+    pntL = [(letterPosX[i], letterPosY[i]) for i in pntIdL]
+    pntR = [(letterPosX[i], letterPosY[i]) for i in pntIdR]
+    return [pntL, pntR, vecL, vecR]
 
 if __name__ == '__main__':
     [posX, posY] = calcKeyboardLayout()
@@ -83,7 +85,7 @@ if __name__ == '__main__':
     gca().invert_yaxis()
     show()
 
-    [pntIdL, pntIdR, vecL, vecR] = calcWordVec('please')
+    [pntIdL, pntIdR, vecL, vecR] = calcWordVec('dog')
     print [pntIdL, pntIdR, vecL, vecR]
 
 

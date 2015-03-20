@@ -6,25 +6,38 @@ from pylab import *
 import Tkinter, tkFileDialog
 import numpy as np 
 import math
+import string
 
 from constants import *
 from keyboardLayoutHelper import *
 
-def encode(string):
+def encode(word):
     "Encode the word using handCode rules."
     code = ''
-    for char in string:
+    for char in word:
         code += handCode[ord(char) - ord('a')]
     return code
 
 def loadCorpus():
     "Load words as corpus"
-    # MacKenzie
-    textFile = open('TaskText.txt', 'r')
-    sentences = [text.strip().lower().split(' ') for text in textFile]
     words = []
-    for sentence in sentences:
-        words += sentence
+
+    if False:
+        # MacKenzie
+        textFile = open('TaskText.txt', 'r')
+        sentences = [text.strip().lower().split(' ') for text in textFile]
+        for sentence in sentences:
+            words += sentence
+    else:
+        # en_US_wordlist from Yi, Xin.
+        textFile = open('en_US_wordlist.combined', 'r')
+        rawData = [text.strip().split(',') for text in textFile]
+        for data in rawData[1:10000]:
+            word = ''
+            for char in data[0].split('=')[1].lower():
+                if {char}.issubset(string.letters):
+                    word += char
+            words.append(word)
     # print words
     print '%d words.' % (len(words))
     return words
@@ -68,8 +81,8 @@ for word in allWords:
     else:
         wordCnt[word] = 1
 
-print wordDic
-print wordCnt
+# print wordDic
+# print wordCnt
 
 # Load testing sentences
 textFile = open('TaskText.txt', 'r')
@@ -229,10 +242,12 @@ if openFiles:
                             correctNum += 1
                         elif {word}.issubset([arr[0] for arr in wordProbArray][:3]):
                             almostCorrNum += 1
+                            print 'Almost Correct: ' + word
+                            print '    %r' % (wordProbArray.tolist()[:3])
                         else:
                             wordErrNum += 1
                             print 'Word Error: ' + word
-                            print wordProbArray
+                            print '    %r' % (wordProbArray.tolist())
                     else:
                         # Code error
                         codeErrNum += 1

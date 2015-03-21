@@ -440,6 +440,7 @@ namespace SurfaceKeyboard
         private void ClearBtn_TouchDown(object sender, TouchEventArgs e)
         {
             // Clear the touch points of this sentence
+            // TODO: Try to clear a word instead.
             currValidPoints.Clear();
             hpNo = 0;
             showTouchInfo();

@@ -440,7 +440,6 @@ namespace SurfaceKeyboard
         private void ClearBtn_TouchDown(object sender, TouchEventArgs e)
         {
             // Clear the touch points of this sentence
-            // TODO: Try to clear a word instead.
             currValidPoints.Clear();
             hpNo = 0;
             showTouchInfo();
@@ -475,6 +474,20 @@ namespace SurfaceKeyboard
             if (isMouse)
             {
                 KeyboardBtn_TouchDown(null, null);
+            }
+        }
+
+        private void DeleteBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            // Delete one word.
+
+        }
+
+        private void DeleteBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (isMouse)
+            {
+                DeleteBtn_TouchDown(null, null);
             }
         }
 

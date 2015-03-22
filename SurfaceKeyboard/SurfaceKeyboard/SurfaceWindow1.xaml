@@ -30,7 +30,7 @@
 
                 <Button Name="NextBtn"
                 Width="120"
-                Height="115"
+                Height="110"
                 Canvas.Left="1350"
                 Canvas.Top="60"
                 FontSize="40"
@@ -40,26 +40,33 @@
 
                 <Button Name="SaveBtn" 
                 Width="120" 
-                Height="115" 
+                Height="110" 
                 Canvas.Left="1475" 
                 Canvas.Top="60"
                 FontSize="40"
                 BorderThickness="2"
                 TouchDown="SaveBtn_TouchDown"
                 Click="SaveBtn_Click">Save</Button>
+
+                <Button Name="KeyboardBtn" 
+                        Canvas.Left="1350" Canvas.Top="5" 
+                        Height="50"  Width="245" 
+                        FontSize="20" BorderThickness="2" 
+                        TouchDown="KeyboardBtn_TouchDown" Click="KeyboardBtn_Click" />
                 
                 <Button Name="ClearBtn" 
                         Canvas.Left="5" Canvas.Top="120" 
                         Content="Clear" 
-                        Height="55"  Width="110" 
+                        Height="50"  Width="110" 
                         FontSize="30" BorderThickness="2" 
                         TouchDown="ClearBtn_TouchDown" Click="ClearBtn_Click" />
 
-                <Button Name="KeyboardBtn" 
-                        Canvas.Left="115" Canvas.Top="120" 
-                        Height="55"  Width="110" 
-                        FontSize="20" BorderThickness="2" 
-                        TouchDown="KeyboardBtn_TouchDown" Click="KeyboardBtn_Click" />
+                <Button Name="DeleteBtn" 
+                        Canvas.Left="120" Canvas.Top="120" 
+                        Content="Delete"
+                        Height="50"  Width="110" 
+                        FontSize="30" BorderThickness="2" 
+                        TouchDown="DeleteBtn_TouchDown" Click="DeleteBtn_Click" />
             </Canvas>    
         </Border>
         

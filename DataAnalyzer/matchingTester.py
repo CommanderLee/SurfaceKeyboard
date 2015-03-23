@@ -22,17 +22,17 @@ def loadCorpus():
     "Load words as corpus"
     words = []
 
-    if False:
+    if True:
         # MacKenzie
         textFile = open('TaskText.txt', 'r')
         sentences = [text.strip().lower().split(' ') for text in textFile]
         for sentence in sentences:
             words += sentence
-    else:
+    if True:
         # en_US_wordlist from Yi, Xin.
         textFile = open('en_US_wordlist.combined', 'r')
         rawData = [text.strip().split(',') for text in textFile]
-        for data in rawData[1:10000]:
+        for data in rawData[1:20000]:
             word = ''
             for char in data[0].split('=')[1].lower():
                 if {char}.issubset(string.letters):
@@ -106,6 +106,7 @@ options['defaultextension'] = '.csv'
 
 openFiles = tkFileDialog.askopenfiles('r')
 if openFiles:
+    results = []
     for dataFile in openFiles:
         print dataFile.name + ':'
 
@@ -138,7 +139,12 @@ if openFiles:
         correctNum = 0
         almostCorrNum = 0
         wordErrNum = 0
-        codeErrNum = 0 
+        codeErrNum = 0
+
+        # Analyze the reason of error
+        errorWordPos = []
+        wordPattern  = {}
+        errorPattern = {}
 
         while textNo < textLen:
             # Parse every text (sentence)
@@ -173,8 +179,13 @@ if openFiles:
             for word in currText.split(' '):
                 wordLen = len(word)
                 userCodes = calcUserCodes(listX[listNo:listNo+wordLen], midX, rangeX)
+                code = encode(word)
+                if {code}.issubset(wordPattern):
+                    wordPattern[code] += 1
+                else:
+                    wordPattern[code] = 1
 
-                if {encode(word)}.issubset(userCodes):
+                if {code}.issubset(userCodes):
                     wordProb = []
                     # Try each userCode
                     for userCode in userCodes:
@@ -246,12 +257,22 @@ if openFiles:
                             print '    %r' % (wordProbArray.tolist()[:3])
                         else:
                             wordErrNum += 1
+                            for i in range(3, len(wordProbArray)):
+                                if word == wordProbArray[i][0]:
+                                    errorWordPos.append(i)
+                                    break
+
+                            if {code}.issubset(errorPattern.keys()):
+                                errorPattern[code] += 1
+                            else:
+                                errorPattern[code] = 1
+
                             print 'Word Error: ' + word
                             print '    %r' % (wordProbArray.tolist())
                     else:
                         # Code error
                         codeErrNum += 1
-                        print 'Code Error. word:%s, correct:%s, user:' % (word, encode(word))
+                        print 'Code Error. word:%s, correct:%s, user:' % (word, code)
                         print userCodes
                 # Jump: word length + SPACE
                 listNo += wordLen + 1
@@ -262,6 +283,20 @@ if openFiles:
 
             textNo += 1
 
-        print 'Correct:%d, Almost Correct:%d, Word Error:%d, Code Error:%d' % (correctNum, almostCorrNum, wordErrNum, codeErrNum)
+        result = 'Correct:%d, Almost Correct:%d, Word Error:%d, Code Error:%d \n' % (correctNum, almostCorrNum, wordErrNum, codeErrNum)
+        
         percFact = 100 / float(correctNum + almostCorrNum + wordErrNum + codeErrNum)
-        print '(%%) Correct:%f%%, Almost Correct:%f%%, Word Error:%f%%, Code Error:%f%%' % (correctNum * percFact, almostCorrNum * percFact, wordErrNum * percFact, codeErrNum * percFact)
+        result += '(Percentile) Correct:%f%%, Almost Correct:%f%%, Word Error:%f%%, Code Error:%f%% \n' % (correctNum * percFact, almostCorrNum * percFact, wordErrNum * percFact, codeErrNum * percFact)
+        
+        result += 'Error Word Position: Min:%d, Max:%d, Mean:%f, Median:%f, Std:%f \n' % (min(errorWordPos), max(errorWordPos), np.mean(errorWordPos), np.median(errorWordPos), np.std(errorWordPos))
+
+        errorPatternList = [(code, -float(errorPattern[code]) / wordPattern[code], wordPattern[code]) for code in errorPattern.keys()]
+        errorPatternArray = np.array(errorPatternList, dtype = [('code', 'S20'), ('errRate', float), ('totalNum', int)])
+        errorPatternArray.sort(order = 'errRate')
+        result += 'Error Word Pattern: %r \n' % (errorPatternArray.tolist())
+        print result
+        results.append(result)
+
+    print '------Accuracy Rate------'
+    for result in results:
+        print result

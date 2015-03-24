@@ -18,6 +18,14 @@ def encode(word):
         code += handCode[ord(char) - ord('a')]
     return code
 
+def countLeftNum(code):
+    "Count the number of left points"
+    leftNum = 0
+    for char in code:
+        if char == '0':
+            leftNum += 1
+    return leftNum
+
 def loadCorpus():
     "Load words as corpus"
     words = []
@@ -32,7 +40,7 @@ def loadCorpus():
         # en_US_wordlist from Yi, Xin.
         textFile = open('en_US_wordlist.combined', 'r')
         rawData = [text.strip().split(',') for text in textFile]
-        for data in rawData[1:20000]:
+        for data in rawData[1:2000]:
             word = ''
             for char in data[0].split('=')[1].lower():
                 if {char}.issubset(string.letters):
@@ -108,7 +116,7 @@ openFiles = tkFileDialog.askopenfiles('r')
 if openFiles:
     results = []
     for dataFile in openFiles:
-        print dataFile.name + ':'
+        print '...' + dataFile.name[-30:-4] + ':'
 
         # X, Y, Time, TaskNo-PointNo-FingerId, PointType
         # Hint: '-' will be removed by the function numpy.genfromtxt 
@@ -143,6 +151,7 @@ if openFiles:
 
         # Analyze the reason of error
         errorWordPos = []
+        # code -> number
         wordPattern  = {}
         errorPattern = {}
 
@@ -220,8 +229,10 @@ if openFiles:
                                     distance += np.sum(subLen)
                                     # print '    %s  (1)  %f' % (candWord, np.sum(subLen))
                                 elif len(myPntL) > 0:
+                                    # Only one point on the Left
                                     sub = []
                                     if len(myPntR) > 0:
+                                        # More than one point on the Right
                                         sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
                                     else: 
                                         sub = np.array(myPntL[0]) - np.array(pntL[0])
@@ -233,8 +244,10 @@ if openFiles:
                                     distance += np.sum(subLen)
                                     # print '    %s  (3)  %f' % (candWord, np.sum(subLen))
                                 elif len(myPntR) > 0:
+                                    # Only one point on the Right
                                     sub = []
                                     if len(myPntL) > 0:
+                                        # More than one point on the Left
                                         sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
                                     else: 
                                         sub = np.array(myPntR[0]) - np.array(pntR[0])
@@ -249,26 +262,32 @@ if openFiles:
                         wordProbArray.sort(order = 'dist')
                         # print wordProbArray
 
+                        # Correct
                         if wordProbArray[0][0] == word:
                             correctNum += 1
-                        elif {word}.issubset([arr[0] for arr in wordProbArray][:3]):
-                            almostCorrNum += 1
-                            print 'Almost Correct: ' + word
-                            print '    %r' % (wordProbArray.tolist()[:3])
                         else:
-                            wordErrNum += 1
-                            for i in range(3, len(wordProbArray)):
+                            # Find the word position
+                            for i in range(1, len(wordProbArray)):
                                 if word == wordProbArray[i][0]:
-                                    errorWordPos.append(i)
+                                    # Almost correct
+                                    if i <= 2:
+                                        almostCorrNum += 1
+
+                                        print 'Almost Correct: ' + word
+                                        print '    %r' % (wordProbArray.tolist()[:3])
+                                    # Error
+                                    else:
+                                        wordErrNum += 1
+                                        errorWordPos.append(i)
+
+                                        if {code}.issubset(errorPattern.keys()):
+                                            errorPattern[code] += 1
+                                        else:
+                                            errorPattern[code] = 1
+
+                                        print 'Word Error: ' + word
+                                        print '    %r' % (wordProbArray.tolist())  
                                     break
-
-                            if {code}.issubset(errorPattern.keys()):
-                                errorPattern[code] += 1
-                            else:
-                                errorPattern[code] = 1
-
-                            print 'Word Error: ' + word
-                            print '    %r' % (wordProbArray.tolist())
                     else:
                         # Code error
                         codeErrNum += 1
@@ -297,6 +316,21 @@ if openFiles:
         print result
         results.append(result)
 
+        # Save to file
+        writeFile = open('%s_result.csv' % (dataFile.name), 'w')
+        writeFile.write('code,leftNum,rightNum,codeLen,errRate,wordNum,wordTotalNum\n')
+        for errorData in errorPatternArray.tolist():
+            code = errorData[0]
+            errRate = -errorData[1]
+            wordNum = errorData[2]
+            leftNum = countLeftNum(code)
+            rightNum = len(code) - leftNum
+            writeFile.write('%s,%d,%d,%d,%f,%d,%d\n' % (code, leftNum, rightNum, len(code), errRate, wordNum, len(wordDic[code])))
+
     print '------Accuracy Rate------'
     for result in results:
         print result
+
+    # Save to file
+    writeFile = open('matchingResult.csv', 'w')
+    writeFile.write('code,leftNum,rightNum,codeLen,errRate,wordNum,wordTotalNum\n')

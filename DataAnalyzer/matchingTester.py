@@ -26,6 +26,20 @@ def countLeftNum(code):
             leftNum += 1
     return leftNum
 
+def saveResults(fileName, outputList, errorPattern, wordPattern, wordDic):
+    "Save the error pattern to .csv file"
+    writeFile = open(fileName, 'w')
+    writeFile.write('code,leftNum,rightNum,codeLen,errRate,errNum,wordNum,wordTotalNum\n')
+    for errorData in outputList:
+        code = errorData[0]
+        errRate = -errorData[1]
+        errNum = errorPattern[code]
+        wordNum = wordPattern[code]
+        leftNum = countLeftNum(code)
+        rightNum = len(code) - leftNum
+        writeFile.write('#%s,%d,%d,%d,%f,%d,%d,%d\n' % (code, leftNum, rightNum, len(code), errRate, errNum, wordNum, len(wordDic[code])))
+
+
 def loadCorpus():
     "Load words as corpus"
     words = []
@@ -40,7 +54,7 @@ def loadCorpus():
         # en_US_wordlist from Yi, Xin.
         textFile = open('en_US_wordlist.combined', 'r')
         rawData = [text.strip().split(',') for text in textFile]
-        for data in rawData[1:2000]:
+        for data in rawData[1:20000]:
             word = ''
             for char in data[0].split('=')[1].lower():
                 if {char}.issubset(string.letters):
@@ -115,6 +129,9 @@ options['defaultextension'] = '.csv'
 openFiles = tkFileDialog.askopenfiles('r')
 if openFiles:
     results = []
+    # code -> number
+    totalWordPattern = {}
+    totalErrorPattern = {}
     for dataFile in openFiles:
         print '...' + dataFile.name[-30:-4] + ':'
 
@@ -309,28 +326,36 @@ if openFiles:
         
         result += 'Error Word Position: Min:%d, Max:%d, Mean:%f, Median:%f, Std:%f \n' % (min(errorWordPos), max(errorWordPos), np.mean(errorWordPos), np.median(errorWordPos), np.std(errorWordPos))
 
-        errorPatternList = [(code, -float(errorPattern[code]) / wordPattern[code], wordPattern[code]) for code in errorPattern.keys()]
-        errorPatternArray = np.array(errorPatternList, dtype = [('code', 'S20'), ('errRate', float), ('totalNum', int)])
+        errorPatternList = [(code, -float(errorPattern[code]) / wordPattern[code]) for code in errorPattern.keys()]
+        errorPatternArray = np.array(errorPatternList, dtype = [('code', 'S20'), ('errRate', float)])
         errorPatternArray.sort(order = 'errRate')
         result += 'Error Word Pattern: %r \n' % (errorPatternArray.tolist())
         print result
         results.append(result)
 
         # Save to file
-        writeFile = open('%s_result.csv' % (dataFile.name), 'w')
-        writeFile.write('code,leftNum,rightNum,codeLen,errRate,wordNum,wordTotalNum\n')
-        for errorData in errorPatternArray.tolist():
-            code = errorData[0]
-            errRate = -errorData[1]
-            wordNum = errorData[2]
-            leftNum = countLeftNum(code)
-            rightNum = len(code) - leftNum
-            writeFile.write('%s,%d,%d,%d,%f,%d,%d\n' % (code, leftNum, rightNum, len(code), errRate, wordNum, len(wordDic[code])))
+        saveResults('%s_result.csv' % (dataFile.name), errorPatternArray.tolist(), errorPattern, wordPattern, wordDic)
+        
+        # Add to total dict
+        for (c, n) in wordPattern.items():
+            if {c}.issubset(totalWordPattern.keys()):
+                totalWordPattern[c] += n
+            else:
+                totalWordPattern[c] = n
+        for (c, n) in errorPattern.items():
+            if {c}.issubset(totalErrorPattern.keys()):
+                totalErrorPattern[c] += n
+            else:
+                totalErrorPattern[c] = n
 
     print '------Accuracy Rate------'
     for result in results:
         print result
 
-    # Save to file
-    writeFile = open('matchingResult.csv', 'w')
-    writeFile.write('code,leftNum,rightNum,codeLen,errRate,wordNum,wordTotalNum\n')
+    totalErrorPatternList = [(code, -float(totalErrorPattern[code]) / totalWordPattern[code]) for code in totalErrorPattern.keys()]
+    totalErrorPatternArray = np.array(totalErrorPatternList, dtype = [('code', 'S20'), ('errRate', float)])
+    totalErrorPatternArray.sort(order = 'errRate')
+
+    saveResults('matchingResult.csv', totalErrorPatternArray.tolist(), totalErrorPattern, totalWordPattern, wordDic)
+    
+

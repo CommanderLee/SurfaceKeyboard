@@ -479,8 +479,23 @@ namespace SurfaceKeyboard
 
         private void DeleteBtn_TouchDown(object sender, TouchEventArgs e)
         {
-            // Delete one word.
+            // Delete one word. Now hpNo points to the position of next input char.
+            string currText = taskTexts[taskNo % taskSize];
+            int removeStart = hpNo - 1;
+            // Delete at least one character
+            if (removeStart >= 0)
+            {
+                for (; removeStart > 0; --removeStart)
+                {
+                    if (currText[removeStart - 1] == ' ')
+                        break;
+                }
+                currValidPoints.RemoveRange(removeStart, hpNo - removeStart);
+                hpNo = removeStart;
+            }
 
+            showTouchInfo();
+            updateTaskText();
         }
 
         private void DeleteBtn_Click(object sender, RoutedEventArgs e)

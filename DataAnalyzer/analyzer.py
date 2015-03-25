@@ -98,8 +98,8 @@ if openFiles:
 
                     if touchStart >= 0:
                         touchTime.append(dataTime[dataNo-1] - touchStart)
-                        if dataTime[dataNo-1] - touchStart < 20:
-                            print 'Exception: ' + dataId[dataNo-1]
+                        # if dataTime[dataNo-1] - touchStart < 20:
+                        #     print 'Exception: ' + dataId[dataNo-1]
                     touchStart = dataTime[dataNo]
                 dataNo += 1
                 

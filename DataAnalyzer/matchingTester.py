@@ -71,7 +71,9 @@ def calcUserCodes(pntListX, midX, rangeX):
         suffixCodes = ['']
     else:
         suffixCodes = calcUserCodes(pntListX[1:], midX, rangeX)
-    if abs(pntListX[0] - midX) / rangeX < 0.05:
+    # Using a experimental constant. TODO: Using a probability model
+    relativePos = (pntListX[0] - midX) / rangeX
+    if abs(relativePos) < 0.05:
         for suffix in suffixCodes:
             codes.append('0' + suffix)
             codes.append('1' + suffix)
@@ -155,10 +157,13 @@ if openFiles:
         # TODO: Get a probability function for judging Left / Right
         startX = np.min(dataX)
         startY = np.min(dataY)
-        midX = (np.max(dataX) + np.min(dataX)) / 2
-        # midY = (np.max(dataY) + np.min(dataY)) / 2
+
         rangeX = np.max(dataX) - startX
         rangeY = np.max(dataY) - startY
+
+        midX = (np.max(dataX) + np.min(dataX)) / 2 + rangeX * 0.1
+        # midY = (np.max(dataY) + np.min(dataY)) / 2
+
         print midX, rangeX, rangeY
 
         correctNum = 0
@@ -211,6 +216,7 @@ if openFiles:
                 else:
                     wordPattern[code] = 1
 
+                # Don't need to try if the real code is not in the possible set
                 if {code}.issubset(userCodes):
                     wordProb = []
                     # Try each userCode
@@ -274,42 +280,45 @@ if openFiles:
                                 # Try: if vecList=[], (only one point), calculate the probability of that point
                                 wordProb.append((candWord, distance))
 
-                    if len(wordProb) > 0:    
-                        wordProbArray = np.array(wordProb, dtype = [('word', 'S20'), ('dist', int)])
-                        wordProbArray.sort(order = 'dist')
-                        # print wordProbArray
+                    # At least one possible answer.
+                    assert len(wordProb) > 0
 
-                        # Correct
-                        if wordProbArray[0][0] == word:
-                            correctNum += 1
-                        else:
-                            # Find the word position
-                            for i in range(1, len(wordProbArray)):
-                                if word == wordProbArray[i][0]:
-                                    # Almost correct
-                                    if i <= 2:
-                                        almostCorrNum += 1
+                    wordProbArray = np.array(wordProb, dtype = [('word', 'S20'), ('dist', int)])
+                    wordProbArray.sort(order = 'dist')
+                    # print wordProbArray
 
-                                        print 'Almost Correct: ' + word
-                                        print '    %r' % (wordProbArray.tolist()[:3])
-                                    # Error
-                                    else:
-                                        wordErrNum += 1
-                                        errorWordPos.append(i)
-
-                                        if {code}.issubset(errorPattern.keys()):
-                                            errorPattern[code] += 1
-                                        else:
-                                            errorPattern[code] = 1
-
-                                        print 'Word Error: ' + word
-                                        print '    %r' % (wordProbArray.tolist())  
-                                    break
+                    # Correct
+                    if wordProbArray[0][0] == word:
+                        correctNum += 1
                     else:
-                        # Code error
-                        codeErrNum += 1
-                        print 'Code Error. word:%s, correct:%s, user:' % (word, code)
-                        print userCodes
+                        # Find the word position
+                        for i in range(1, len(wordProbArray)):
+                            if word == wordProbArray[i][0]:
+                                # Almost correct
+                                if i <= 2:
+                                    almostCorrNum += 1
+
+                                    print 'Almost Correct: ' + word
+                                    print '    %r' % (wordProbArray.tolist()[:3])
+                                # Error
+                                else:
+                                    wordErrNum += 1
+                                    errorWordPos.append(i)
+
+                                    if {code}.issubset(errorPattern.keys()):
+                                        errorPattern[code] += 1
+                                    else:
+                                        errorPattern[code] = 1
+
+                                    print 'Word Error: ' + word
+                                    print '    %r' % (wordProbArray.tolist())  
+                                break
+                else:
+                    # Code error
+                    codeErrNum += 1
+                    print 'Code Error. word:%s, correct:%s, user:' % (word, code)
+                    print userCodes
+
                 # Jump: word length + SPACE
                 listNo += wordLen + 1
 
@@ -321,7 +330,8 @@ if openFiles:
 
         result = 'Correct:%d, Almost Correct:%d, Word Error:%d, Code Error:%d \n' % (correctNum, almostCorrNum, wordErrNum, codeErrNum)
         
-        percFact = 100 / float(correctNum + almostCorrNum + wordErrNum + codeErrNum)
+        wordSum = (correctNum + almostCorrNum + wordErrNum + codeErrNum)
+        percFact = 100 / float(wordSum)
         result += '(Percentile) Correct:%f%%, Almost Correct:%f%%, Word Error:%f%%, Code Error:%f%% \n' % (correctNum * percFact, almostCorrNum * percFact, wordErrNum * percFact, codeErrNum * percFact)
         
         result += 'Error Word Position: Min:%d, Max:%d, Mean:%f, Median:%f, Std:%f \n' % (min(errorWordPos), max(errorWordPos), np.mean(errorWordPos), np.median(errorWordPos), np.std(errorWordPos))
@@ -336,7 +346,7 @@ if openFiles:
         # Save to file
         saveResults('%s_result.csv' % (dataFile.name), errorPatternArray.tolist(), errorPattern, wordPattern, wordDic)
         
-        # Add to total dict
+        # Add to total dict. (code, number)
         for (c, n) in wordPattern.items():
             if {c}.issubset(totalWordPattern.keys()):
                 totalWordPattern[c] += n
@@ -356,6 +366,6 @@ if openFiles:
     totalErrorPatternArray = np.array(totalErrorPatternList, dtype = [('code', 'S20'), ('errRate', float)])
     totalErrorPatternArray.sort(order = 'errRate')
 
-    saveResults('matchingResult.csv', totalErrorPatternArray.tolist(), totalErrorPattern, totalWordPattern, wordDic)
+    saveResults('matchingResult4.csv', totalErrorPatternArray.tolist(), totalErrorPattern, totalWordPattern, wordDic)
     
 

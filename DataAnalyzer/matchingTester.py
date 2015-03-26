@@ -259,8 +259,9 @@ if openFiles:
                                         sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
                                     else: 
                                         sub = np.array(myPntL[0]) - np.array(pntL[0])
-                                    distance += math.sqrt(sub.dot(sub))
-                                    # print '    %s  (2)  %f' % (candWord, math.sqrt(sub.dot(sub)))
+                                    # If word is long enough, then no need to add this left point distance. That is, len -> inf, Dist -> 0.
+                                    distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 5.0)
+                                
                                 if len(myVecR) > 0:
                                     sub = np.array(myVecR) - np.array(vecR)
                                     subLen = [math.sqrt(si.dot(si)) for si in sub]
@@ -274,8 +275,9 @@ if openFiles:
                                         sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
                                     else: 
                                         sub = np.array(myPntR[0]) - np.array(pntR[0])
-                                    distance += math.sqrt(sub.dot(sub))
-                                    # print '    %s  (4)  %f' % (candWord, math.sqrt(sub.dot(sub)))
+                                    # If word is long enough, then no need to add this right point distance. That is, len -> inf, Dist -> 0.
+                                    distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 5.0)
+                                
                                 # Compare each of the possible word.
                                 # Try: if vecList=[], (only one point), calculate the probability of that point
                                 wordProb.append((candWord, distance))
@@ -366,6 +368,6 @@ if openFiles:
     totalErrorPatternArray = np.array(totalErrorPatternList, dtype = [('code', 'S20'), ('errRate', float)])
     totalErrorPatternArray.sort(order = 'errRate')
 
-    saveResults('matchingResult4.csv', totalErrorPatternArray.tolist(), totalErrorPattern, totalWordPattern, wordDic)
+    saveResults('matchingResult5.csv', totalErrorPatternArray.tolist(), totalErrorPattern, totalWordPattern, wordDic)
     
 

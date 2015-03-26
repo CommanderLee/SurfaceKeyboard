@@ -164,7 +164,7 @@ if openFiles:
         midX = (np.max(dataX) + np.min(dataX)) / 2 + rangeX * 0.1
         # midY = (np.max(dataY) + np.min(dataY)) / 2
 
-        print midX, rangeX, rangeY
+        print 'start:(%f, %f), mid:(%f, xx), range:%f x %f' % (startX, startY, midX, rangeX, rangeY)
 
         correctNum = 0
         almostCorrNum = 0
@@ -253,14 +253,22 @@ if openFiles:
                                     # print '    %s  (1)  %f' % (candWord, np.sum(subLen))
                                 elif len(myPntL) > 0:
                                     # Only one point on the Left
-                                    sub = []
+                                    # sub = []
                                     if len(myPntR) > 0:
                                         # More than one point on the Right
                                         sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
-                                    else: 
-                                        sub = np.array(myPntL[0]) - np.array(pntL[0])
-                                    # If word is long enough, then no need to add this left point distance. That is, len -> inf, Dist -> 0.
-                                    distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 5.0)
+                                        # If word is long enough, then no need to add this left point distance. That is, len -> inf, Dist -> 0.
+                                        distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 5.0)
+                                    # else: 
+                                    # TODO: Use a better model, instead of a intuitive one.
+                                    relativeMyPnt = np.array(myPntL[0]) - np.array((startX, startY))
+                                    relativePnt = np.array((pntL[0][0]/445*rangeX, pntL[0][1]/188*rangeY))
+                                    sub = relativeMyPnt - relativePnt
+                                    # if candWord == word:
+                                    #     print 'Correct', math.sqrt(sub.dot(sub)), myPntL[0], relativeMyPnt, pntL[0], relativePnt
+                                    # else:
+                                    #     print 'Wrong', math.sqrt(sub.dot(sub)), myPntL[0], relativeMyPnt, pntL[0], relativePnt
+                                    distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 10.0)
                                 
                                 if len(myVecR) > 0:
                                     sub = np.array(myVecR) - np.array(vecR)
@@ -269,14 +277,17 @@ if openFiles:
                                     # print '    %s  (3)  %f' % (candWord, np.sum(subLen))
                                 elif len(myPntR) > 0:
                                     # Only one point on the Right
-                                    sub = []
+                                    # sub = []
                                     if len(myPntL) > 0:
                                         # More than one point on the Left
                                         sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
-                                    else: 
-                                        sub = np.array(myPntR[0]) - np.array(pntR[0])
-                                    # If word is long enough, then no need to add this right point distance. That is, len -> inf, Dist -> 0.
-                                    distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 5.0)
+                                        # If word is long enough, then no need to add this right point distance. That is, len -> inf, Dist -> 0.
+                                        distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 5.0)
+                                    # else: 
+                                    relativeMyPnt = np.array(myPntR[0]) - np.array((startX, startY))
+                                    relativePnt = np.array((pntR[0][0]/445*rangeX, pntR[0][1]/188*rangeY))
+                                    sub = relativeMyPnt - relativePnt
+                                    distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 10.0)
                                 
                                 # Compare each of the possible word.
                                 # Try: if vecList=[], (only one point), calculate the probability of that point
@@ -336,7 +347,8 @@ if openFiles:
         percFact = 100 / float(wordSum)
         result += '(Percentile) Correct:%f%%, Almost Correct:%f%%, Word Error:%f%%, Code Error:%f%% \n' % (correctNum * percFact, almostCorrNum * percFact, wordErrNum * percFact, codeErrNum * percFact)
         
-        result += 'Error Word Position: Min:%d, Max:%d, Mean:%f, Median:%f, Std:%f \n' % (min(errorWordPos), max(errorWordPos), np.mean(errorWordPos), np.median(errorWordPos), np.std(errorWordPos))
+        if len(errorWordPos) > 0:
+            result += 'Error Word Position: Min:%d, Max:%d, Mean:%f, Median:%f, Std:%f \n' % (min(errorWordPos), max(errorWordPos), np.mean(errorWordPos), np.median(errorWordPos), np.std(errorWordPos))
 
         errorPatternList = [(code, -float(errorPattern[code]) / wordPattern[code]) for code in errorPattern.keys()]
         errorPatternArray = np.array(errorPatternList, dtype = [('code', 'S20'), ('errRate', float)])

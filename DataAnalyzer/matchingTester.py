@@ -26,7 +26,7 @@ def countLeftNum(code):
             leftNum += 1
     return leftNum
 
-def saveResults(fileName, errorPattern, wordPattern, wordDic):
+def saveErrorPatternResults(fileName, errorPattern, wordPattern, wordDic):
     "Save the error pattern to .csv file"
     writeFile = open(fileName, 'w')
     writeFile.write('code,leftNum,rightNum,codeLen,errRate,errNum,wordNum,wordTotalNum\n')
@@ -42,6 +42,16 @@ def saveResults(fileName, errorPattern, wordPattern, wordDic):
 
         writeFile.write('#%s,%d,%d,%d,%f,%d,%d,%d\n' % (code, leftNum, rightNum, codeLen, errRate, errNum, wordNum, len(wordDic[code])))
 
+def saveWordPositionResults(fileName, wordPos):
+    "Save the actual word position in the candidates list"
+    writeFile = open(fileName, 'w')
+    writeFile.write('word,code,leftNum,rightNum,codeLen,wordPos,candidateLen,wordTotalNum\n')
+    for (word, pos, canLen) in wordPos:
+        code = encode(word)
+        codeLen = len(code)
+        leftNum = countLeftNum(code)
+        rightNum = codeLen - leftNum
+        writeFile.write('%s,#%s,%d,%d,%d,%d,%d,%d\n' % (word, code, leftNum, rightNum, codeLen, pos, canLen, len(wordDic[code])))
 
 def loadCorpus():
     "Load words as corpus"
@@ -135,9 +145,10 @@ openFiles = tkFileDialog.askopenfiles('r')
 if openFiles:
     results = []
     # code -> number. total word number and error number.
-    # So the correct number = total word number - error number
+    # So the correct(and almost) number = total word number - error number
     totalWordPattern = {}
     totalErrorPattern = {}
+    totalWordPos = []
     for dataFile in openFiles:
         print '...' + dataFile.name[-30:-4] + ':'
 
@@ -307,10 +318,12 @@ if openFiles:
                     # Correct
                     if wordProbArray[0][0] == word:
                         correctNum += 1
+                        totalWordPos.append((word, 1, len(wordProbArray)))
                     else:
                         # Find the word position
                         for i in range(1, len(wordProbArray)):
                             if word == wordProbArray[i][0]:
+                                totalWordPos.append((word, i, len(wordProbArray)))
                                 # Almost correct
                                 if i <= 2:
                                     almostCorrNum += 1
@@ -333,6 +346,7 @@ if openFiles:
                 else:
                     # Code error
                     codeErrNum += 1
+                    totalWordPos.append((word, -1, -1))
 
                     if {code}.issubset(errorPattern.keys()):
                         errorPattern[code] += 1
@@ -366,7 +380,7 @@ if openFiles:
         results.append(result)
 
         # Save to file
-        saveResults('%s_result.csv' % (dataFile.name), errorPattern, wordPattern, wordDic)
+        saveErrorPatternResults('%s_result.csv' % (dataFile.name), errorPattern, wordPattern, wordDic)
         
         # Add to total dict. (code, number)
         for (c, n) in wordPattern.items():
@@ -384,5 +398,6 @@ if openFiles:
     for result in results:
         print result
 
-    saveResults('matchingResult6.csv', totalErrorPattern, totalWordPattern, wordDic)
+    saveErrorPatternResults('matchingResult6.csv', totalErrorPattern, totalWordPattern, wordDic)
     
+    saveWordPositionResults('wordPosResult6.csv', totalWordPos)

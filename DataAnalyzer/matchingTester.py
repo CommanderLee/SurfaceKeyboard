@@ -26,18 +26,21 @@ def countLeftNum(code):
             leftNum += 1
     return leftNum
 
-def saveResults(fileName, outputList, errorPattern, wordPattern, wordDic):
+def saveResults(fileName, errorPattern, wordPattern, wordDic):
     "Save the error pattern to .csv file"
     writeFile = open(fileName, 'w')
     writeFile.write('code,leftNum,rightNum,codeLen,errRate,errNum,wordNum,wordTotalNum\n')
-    for errorData in outputList:
-        code = errorData[0]
-        errRate = -errorData[1]
-        errNum = errorPattern[code]
-        wordNum = wordPattern[code]
+    for (code, wordNum) in wordPattern.items():
+        codeLen = len(code)
         leftNum = countLeftNum(code)
-        rightNum = len(code) - leftNum
-        writeFile.write('#%s,%d,%d,%d,%f,%d,%d,%d\n' % (code, leftNum, rightNum, len(code), errRate, errNum, wordNum, len(wordDic[code])))
+        rightNum = codeLen - leftNum
+        
+        errNum = 0
+        if {code}.issubset(errorPattern):
+            errNum = errorPattern[code]
+        errRate = float(errNum) / wordNum
+
+        writeFile.write('#%s,%d,%d,%d,%f,%d,%d,%d\n' % (code, leftNum, rightNum, codeLen, errRate, errNum, wordNum, len(wordDic[code])))
 
 
 def loadCorpus():
@@ -131,7 +134,8 @@ options['defaultextension'] = '.csv'
 openFiles = tkFileDialog.askopenfiles('r')
 if openFiles:
     results = []
-    # code -> number
+    # code -> number. total word number and error number.
+    # So the correct number = total word number - error number
     totalWordPattern = {}
     totalErrorPattern = {}
     for dataFile in openFiles:
@@ -329,6 +333,12 @@ if openFiles:
                 else:
                     # Code error
                     codeErrNum += 1
+
+                    if {code}.issubset(errorPattern.keys()):
+                        errorPattern[code] += 1
+                    else:
+                        errorPattern[code] = 1
+
                     print 'Code Error. word:%s, correct:%s, user:' % (word, code)
                     print userCodes
 
@@ -351,14 +361,12 @@ if openFiles:
             result += 'Error Word Position: Min:%d, Max:%d, Mean:%f, Median:%f, Std:%f \n' % (min(errorWordPos), max(errorWordPos), np.mean(errorWordPos), np.median(errorWordPos), np.std(errorWordPos))
 
         errorPatternList = [(code, -float(errorPattern[code]) / wordPattern[code]) for code in errorPattern.keys()]
-        errorPatternArray = np.array(errorPatternList, dtype = [('code', 'S20'), ('errRate', float)])
-        errorPatternArray.sort(order = 'errRate')
-        result += 'Error Word Pattern: %r \n' % (errorPatternArray.tolist())
+        result += 'Error Word Pattern: %r \n' % (errorPatternList)
         print result
         results.append(result)
 
         # Save to file
-        saveResults('%s_result.csv' % (dataFile.name), errorPatternArray.tolist(), errorPattern, wordPattern, wordDic)
+        saveResults('%s_result.csv' % (dataFile.name), errorPattern, wordPattern, wordDic)
         
         # Add to total dict. (code, number)
         for (c, n) in wordPattern.items():
@@ -376,10 +384,5 @@ if openFiles:
     for result in results:
         print result
 
-    totalErrorPatternList = [(code, -float(totalErrorPattern[code]) / totalWordPattern[code]) for code in totalErrorPattern.keys()]
-    totalErrorPatternArray = np.array(totalErrorPatternList, dtype = [('code', 'S20'), ('errRate', float)])
-    totalErrorPatternArray.sort(order = 'errRate')
-
-    saveResults('matchingResult5.csv', totalErrorPatternArray.tolist(), totalErrorPattern, totalWordPattern, wordDic)
+    saveResults('matchingResult6.csv', totalErrorPattern, totalWordPattern, wordDic)
     
-

@@ -77,6 +77,34 @@ def calcWordVec(word):
     pntR = [(letterPosX[i], letterPosY[i]) for i in pntIdR]
     return [pntL, pntR, vecL, vecR]
 
+def encode(word):
+    "Encode the word using handCode rules."
+    code = ''
+    for char in word:
+        code += handCode[ord(char) - ord('a')]
+    return code
+
+def calcUserCodes(pntListX, midX, rangeX):
+    "Calculate the user codes using recursion"
+    codes = []
+    if len(pntListX) == 1:
+        suffixCodes = ['']
+    else:
+        suffixCodes = calcUserCodes(pntListX[1:], midX, rangeX)
+    # Using a experimental constant. TODO: Using a probability model
+    relativePos = (pntListX[0] - midX) / rangeX
+    if abs(relativePos) < 0.05:
+        for suffix in suffixCodes:
+            codes.append('0' + suffix)
+            codes.append('1' + suffix)
+    elif pntListX[0] < midX:
+        for suffix in suffixCodes:
+            codes.append('0' + suffix)
+    else:
+        for suffix in suffixCodes:
+            codes.append('1' + suffix)
+    return codes
+    
 if __name__ == '__main__':
     [posX, posY] = calcKeyboardLayout()
     print posX

@@ -6,97 +6,10 @@ from pylab import *
 import Tkinter, tkFileDialog
 import numpy as np 
 import math
-import string
 
 from constants import *
 from keyboardLayoutHelper import *
-
-def encode(word):
-    "Encode the word using handCode rules."
-    code = ''
-    for char in word:
-        code += handCode[ord(char) - ord('a')]
-    return code
-
-def countLeftNum(code):
-    "Count the number of left points"
-    leftNum = 0
-    for char in code:
-        if char == '0':
-            leftNum += 1
-    return leftNum
-
-def saveErrorPatternResults(fileName, errorPattern, wordPattern, wordDic):
-    "Save the error pattern to .csv file"
-    writeFile = open(fileName, 'w')
-    writeFile.write('code,leftNum,rightNum,codeLen,errRate,errNum,wordNum,wordTotalNum\n')
-    for (code, wordNum) in wordPattern.items():
-        codeLen = len(code)
-        leftNum = countLeftNum(code)
-        rightNum = codeLen - leftNum
-        
-        errNum = 0
-        if {code}.issubset(errorPattern):
-            errNum = errorPattern[code]
-        errRate = float(errNum) / wordNum
-
-        writeFile.write('#%s,%d,%d,%d,%f,%d,%d,%d\n' % (code, leftNum, rightNum, codeLen, errRate, errNum, wordNum, len(wordDic[code])))
-
-def saveWordPositionResults(fileName, wordPos):
-    "Save the actual word position in the candidates list"
-    writeFile = open(fileName, 'w')
-    writeFile.write('word,code,leftNum,rightNum,codeLen,wordPos,candidateLen,wordTotalNum\n')
-    for (word, pos, canLen) in wordPos:
-        code = encode(word)
-        codeLen = len(code)
-        leftNum = countLeftNum(code)
-        rightNum = codeLen - leftNum
-        writeFile.write('%s,#%s,%d,%d,%d,%d,%d,%d\n' % (word, code, leftNum, rightNum, codeLen, pos, canLen, len(wordDic[code])))
-
-def loadCorpus():
-    "Load words as corpus"
-    words = []
-
-    if True:
-        # MacKenzie
-        textFile = open('TaskText.txt', 'r')
-        sentences = [text.strip().lower().split(' ') for text in textFile]
-        for sentence in sentences:
-            words += sentence
-    if True:
-        # en_US_wordlist from Yi, Xin.
-        textFile = open('en_US_wordlist.combined', 'r')
-        rawData = [text.strip().split(',') for text in textFile]
-        for data in rawData[1:20000]:
-            word = ''
-            for char in data[0].split('=')[1].lower():
-                if {char}.issubset(string.letters):
-                    word += char
-            words.append(word)
-    # print words
-    print '%d words.' % (len(words))
-    return words
-
-def calcUserCodes(pntListX, midX, rangeX):
-    "Calculate the user codes using recursion"
-    codes = []
-    if len(pntListX) == 1:
-        suffixCodes = ['']
-    else:
-        suffixCodes = calcUserCodes(pntListX[1:], midX, rangeX)
-    # Using a experimental constant. TODO: Using a probability model
-    relativePos = (pntListX[0] - midX) / rangeX
-    if abs(relativePos) < 0.05:
-        for suffix in suffixCodes:
-            codes.append('0' + suffix)
-            codes.append('1' + suffix)
-    elif pntListX[0] < midX:
-        for suffix in suffixCodes:
-            codes.append('0' + suffix)
-    else:
-        for suffix in suffixCodes:
-            codes.append('1' + suffix)
-    return codes
+from filesHelper import *
 
 # Main
 
@@ -148,7 +61,13 @@ if openFiles:
     # So the correct(and almost) number = total word number - error number
     totalWordPattern = {}
     totalErrorPattern = {}
+
+    # (word, pos, canLen)
     totalWordPos = []
+    
+    # pointPos[i] = (character, absoluteX/Y, relativeX/Y, left-up-X/Y, standardX/Y)
+    totalPointPos = []
+    
     for dataFile in openFiles:
         print '...' + dataFile.name[-30:-4] + ':'
 
@@ -224,7 +143,19 @@ if openFiles:
             listNo = 0
             for word in currText.split(' '):
                 wordLen = len(word)
+                
+                # Save single points
+                for i in range(0, wordLen):
+                    char = word[i]
+                    charNo = ord(char) - ord('a')
+                    absX = listX[i + listNo]
+                    absY = listY[i + listNo]
+                    totalPointPos.append((char, absX, absY, absX-startX, absY-startY, startX, startY, letterPosX[charNo], letterPosY[charNo]))
+                
+                # Calculate user codes
                 userCodes = calcUserCodes(listX[listNo:listNo+wordLen], midX, rangeX)
+                
+                # Save the correct code
                 code = encode(word)
                 if {code}.issubset(wordPattern):
                     wordPattern[code] += 1
@@ -398,6 +329,10 @@ if openFiles:
     for result in results:
         print result
 
-    saveErrorPatternResults('matchingResult6.csv', totalErrorPattern, totalWordPattern, wordDic)
+    fileNo = 6
+
+    saveErrorPatternResults('matchingResult%d.csv' % (fileNo), totalErrorPattern, totalWordPattern, wordDic)
     
-    saveWordPositionResults('wordPosResult6.csv', totalWordPos)
+    saveWordPositionResults('wordPosResult%d.csv' % (fileNo), totalWordPos, wordDic)
+
+    saveSinglePointResults('pointPosResult%d.csv' % (fileNo), totalPointPos)

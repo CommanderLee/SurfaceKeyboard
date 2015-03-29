@@ -67,6 +67,9 @@ if openFiles:
     
     # pointPos[i] = (character, absoluteX/Y, relativeX/Y, left-up-X/Y, standardX/Y)
     totalPointPos = []
+
+    # (characterPair, pattern, vectorX, vectorY)
+    totalPointPair = []
     
     for dataFile in openFiles:
         print '...' + dataFile.name[-30:-4] + ':'
@@ -144,14 +147,44 @@ if openFiles:
             for word in currText.split(' '):
                 wordLen = len(word)
                 
-                # Save single points
                 for i in range(0, wordLen):
+                    # Save single points
                     char = word[i]
                     charNo = ord(char) - ord('a')
                     absX = listX[i + listNo]
                     absY = listY[i + listNo]
                     totalPointPos.append((char, absX, absY, absX-startX, absY-startY, startX, startY, letterPosX[charNo], letterPosY[charNo]))
-                
+                    
+                    # Save point pairs
+                    if i > 0:
+                        # point pair <word[i-1], word[i]>
+                        charPair = word[i-1:i+1]
+                        pattern = handCode[ord(word[i-1]) - ord('a')] + handCode[ord(word[i]) - ord('a')]
+                        vecX = listX[i + listNo] - listX[i - 1 + listNo]
+                        vecY = listY[i + listNo] - listY[i - 1 + listNo]
+                        totalPointPair.append((charPair, pattern, vecX, vecY))
+                    elif listNo > 0:
+                        # point pair <space, word[0]>
+                        charPair = '-' + word[i]
+                        pattern = '2' + handCode[ord(word[i]) - ord('a')]
+                        vecX = listX[i + listNo] - listX[i - 1 + listNo]
+                        vecY = listY[i + listNo] - listY[i - 1 + listNo]
+                        totalPointPair.append((charPair, pattern, vecX, vecY))
+
+                    if i == wordLen - 1 and i + 1 + listNo < len(listX):
+                        # point pair <word[len-1], space>
+                        charPair = word[i] + '-'
+                        pattern = handCode[ord(word[i]) - ord('a')] + '2'
+                        vecX = listX[i + 1 + listNo] - listX[i + listNo]
+                        vecY = listY[i + 1 + listNo] - listY[i + listNo]
+                        totalPointPair.append((charPair, pattern, vecX, vecY))
+
+                        # Save spacebar(replaced by '-') point information
+                        absX = listX[wordLen + listNo]
+                        absY = listY[wordLen + listNo]
+                        totalPointPos.append(('-', absX, absY, absX-startX, absY-startY, startX, startY, -1, -1))
+                    
+
                 # Calculate user codes
                 userCodes = calcUserCodes(listX[listNo:listNo+wordLen], midX, rangeX)
                 
@@ -336,3 +369,5 @@ if openFiles:
     saveWordPositionResults('wordPosResult%d.csv' % (fileNo), totalWordPos, wordDic)
 
     saveSinglePointResults('pointPosResult%d.csv' % (fileNo), totalPointPos)
+
+    savePointPairResults('pointPairResutl%d.csv' % (fileNo), totalPointPair)

@@ -72,3 +72,11 @@ def saveSinglePointResults(fileName, pointPos):
     # pointPos[i] = (character, absoluteX/Y, relativeX/Y, left-up-X/Y, standardX/Y)
     for pointInfo in pointPos:
         writeFile.write(str(pointInfo).strip('()') + '\n')
+
+def savePointPairResults(fileName, pointPair):
+    "Save the coordinates of the point pair vectors"
+    writeFile = open(fileName, 'w')
+    writeFile.write('charPair, pattern, vecX, vecY\n')
+    # (characterPair, pattern, vectorX, vectorY)
+    for pairInfo in pointPair:
+        writeFile.write(str(pairInfo).strip('()') + '\n')

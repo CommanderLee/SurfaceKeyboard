@@ -55,14 +55,14 @@
                         TouchDown="KeyboardBtn_TouchDown" Click="KeyboardBtn_Click" />
                 
                 <Button Name="ClearBtn" 
-                        Canvas.Left="5" Canvas.Top="120" 
+                        Canvas.Left="3" Canvas.Top="120" 
                         Content="Clear" 
                         Height="50"  Width="110" 
                         FontSize="30" BorderThickness="2" 
                         TouchDown="ClearBtn_TouchDown" Click="ClearBtn_Click" />
 
                 <Button Name="DeleteBtn" 
-                        Canvas.Left="120" Canvas.Top="120" 
+                        Canvas.Left="118" Canvas.Top="120" 
                         Content="Delete"
                         Height="50"  Width="110" 
                         FontSize="30" BorderThickness="2" 

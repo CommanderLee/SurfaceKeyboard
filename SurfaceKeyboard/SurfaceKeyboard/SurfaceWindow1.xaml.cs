@@ -251,11 +251,25 @@ namespace SurfaceKeyboard
             }
         }
 
+        private string getTestingTag()
+        {
+            // Return the tag string for testing status( with/without keyboard .etc)
+            string myTag = "";
+
+            // Keyboard
+            if (showKeyboard)
+                myTag += "_KbdOn";
+            else
+                myTag += "_KbdOff";
+
+            return myTag;
+        }
+
         private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
         {
             // Save the touchdown seq to file
             string fPath = Directory.GetCurrentDirectory() + '\\';
-            string fName = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + ".csv";
+            string fName = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + getTestingTag() + ".csv";
             string fNameTyping = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + "_typing.csv";
             StatusTextBlk.Text = fPath + fName;
 

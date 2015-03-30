@@ -52,11 +52,12 @@ namespace SurfaceKeyboard
         ImageBrush                  keyboardOpen, keyboardClose;
 
         // Calibrate before each test sentence
-        private bool                isCalibration = false;
+        enum CalibStatus { Off, Waiting, Calibrating, Done };
+        private CalibStatus         calibStatus = CalibStatus.Off;
         ImageBrush                  calibOn, calibOff;
 
         // Mark true if using mouse instead of fingers
-        private bool                isMouse = false;
+        private bool                isMouse = true;
 
         /// <summary>
         /// Default constructor.
@@ -184,7 +185,6 @@ namespace SurfaceKeyboard
         }
 
         /**
-         * Update - Jan. 29th, 2014. Zhen.
          * 1. The user touch the screen ( type a key )
          * 2. Call 'saveTouchPoints' function: save the point in the 'handPoints' List
          * 3. Create hash table key for this point id.
@@ -239,13 +239,52 @@ namespace SurfaceKeyboard
             }
         }
 
+        private void calibrateHands(double x, double y, int id)
+        {
+            // If begin calibrating
+            if (true) // TODO
+            {
+                calibStatus = CalibStatus.Calibrating;
+                isStart = true;
+                startTime = DateTime.Now;
+                // TODO: Initialize, start the timer .etc.
+            }
+
+            // Save the new point.
+            // TODO
+
+            // If calibration done
+            if (false) // TODO
+            {
+                calibStatus = CalibStatus.Done;
+
+                // Save to variables
+                // TODO
+                
+                // Save to handPoints (output file). Id: 'taskNo' - '-1' - '0~9'. 
+                // 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.
+                // TODO
+            }
+            
+
+        }
+
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
         {
             // Get touchdown position
             if (e.TouchDevice.GetIsFingerRecognized())
             {
                 Point touchPos = e.TouchDevice.GetPosition(this);
-                saveTouchPoints(touchPos.X, touchPos.Y, e.TouchDevice.Id);
+
+                // No calibration, or the user has done his calibration
+                if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
+                {
+                    saveTouchPoints(touchPos.X, touchPos.Y, e.TouchDevice.Id);
+                }
+                else // Calibration points
+                {
+                    calibrateHands(touchPos.X, touchPos.Y, e.TouchDevice.Id);
+                }
             }
         }
 
@@ -329,6 +368,12 @@ namespace SurfaceKeyboard
 
             validPoints.AddRange(currValidPoints);
             currValidPoints.Clear();
+
+            // Clear the status if the calibration mode is ON
+            if (calibStatus != CalibStatus.Off)
+            {
+                calibStatus = CalibStatus.Waiting;
+            }
         }
 
         private void NextBtn_TouchDown(object sender, TouchEventArgs e)
@@ -502,13 +547,14 @@ namespace SurfaceKeyboard
 
         private void CalibBtn_TouchDown(object sender, TouchEventArgs e)
         {
-            isCalibration = !isCalibration;
-            if (isCalibration)
+            if (calibStatus == CalibStatus.Off)
             {
+                calibStatus = CalibStatus.Waiting;
                 CalibBtn.Background = calibOn;
             }
             else
             {
+                calibStatus = CalibStatus.Off;
                 CalibBtn.Background = calibOff;
             }
         }

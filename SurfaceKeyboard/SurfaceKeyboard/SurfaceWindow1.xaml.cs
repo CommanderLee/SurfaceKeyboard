@@ -51,6 +51,10 @@ namespace SurfaceKeyboard
         private bool                showKeyboard = false;
         ImageBrush                  keyboardOpen, keyboardClose;
 
+        // Calibrate before each test sentence
+        private bool                isCalibration = false;
+        ImageBrush                  calibOn, calibOff;
+
         // Mark true if using mouse instead of fingers
         private bool                isMouse = false;
 
@@ -82,6 +86,11 @@ namespace SurfaceKeyboard
             bitmap.EndInit();
             imgKeyboard.Source = bitmap;
             imgKeyboard.Visibility = Visibility.Hidden;
+
+            // Calibration Control Button Image
+            calibOn = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_on.png")));
+            calibOff = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_off.png")));
+            CalibBtn.Background = calibOff;
 
             loadTaskTexts();
             updateTaskText();
@@ -488,6 +497,27 @@ namespace SurfaceKeyboard
             if (isMouse)
             {
                 KeyboardBtn_TouchDown(null, null);
+            }
+        }
+
+        private void CalibBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            isCalibration = !isCalibration;
+            if (isCalibration)
+            {
+                CalibBtn.Background = calibOn;
+            }
+            else
+            {
+                CalibBtn.Background = calibOff;
+            }
+        }
+
+        private void CalibBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (isMouse)
+            {
+                CalibBtn_TouchDown(null, null);
             }
         }
 

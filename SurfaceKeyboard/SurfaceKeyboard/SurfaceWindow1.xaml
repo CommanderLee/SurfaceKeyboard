@@ -50,9 +50,17 @@
 
                 <Button Name="KeyboardBtn" 
                         Canvas.Left="1350" Canvas.Top="5" 
-                        Height="50"  Width="245" 
+                        Content="Keyboard"
+                        Height="50"  Width="120" 
                         FontSize="20" BorderThickness="2" 
                         TouchDown="KeyboardBtn_TouchDown" Click="KeyboardBtn_Click" />
+
+                <Button Name="CalibBtn"
+                        Canvas.Left="1475" Canvas.Top="5" 
+                        Content="Calibration"
+                        Height="50"  Width="120"
+                        FontSize="20" BorderThickness="2" 
+                        TouchDown="CalibBtn_TouchDown" Click="CalibBtn_Click" />
                 
                 <Button Name="ClearBtn" 
                         Canvas.Left="3" Canvas.Top="120" 
@@ -67,6 +75,7 @@
                         Height="50"  Width="110" 
                         FontSize="30" BorderThickness="2" 
                         TouchDown="DeleteBtn_TouchDown" Click="DeleteBtn_Click" />
+                
             </Canvas>    
         </Border>
         

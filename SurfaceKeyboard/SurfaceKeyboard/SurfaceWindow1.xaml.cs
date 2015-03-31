@@ -53,11 +53,14 @@ namespace SurfaceKeyboard
 
         // Calibrate before each test sentence
         enum CalibStatus { Off, Waiting, Calibrating, Done };
+        private int                 CALIB_FINGER_NUM = 10;
         private CalibStatus         calibStatus = CalibStatus.Off;
         ImageBrush                  calibOn, calibOff;
+        DateTime                    calibStartTime;
+        private List<HandPoint>     calibPoints = new List<HandPoint>();
 
         // Mark true if using mouse instead of fingers
-        private bool                isMouse = true;
+        private bool                isMouse = false;
 
         /// <summary>
         /// Default constructor.
@@ -239,34 +242,38 @@ namespace SurfaceKeyboard
             }
         }
 
+        // Calibrate the hand position
         private void calibrateHands(double x, double y, int id)
         {
+            double timeStamp = 0;
             // If begin calibrating
-            if (true) // TODO
+            if (calibStatus == CalibStatus.Waiting)
             {
                 calibStatus = CalibStatus.Calibrating;
-                isStart = true;
-                startTime = DateTime.Now;
-                // TODO: Initialize, start the timer .etc.
+                calibStartTime = DateTime.Now;
+                timeStamp = 0;
+            }
+            else if (calibStatus == CalibStatus.Calibrating)
+            {
+                timeStamp = DateTime.Now.Subtract(calibStartTime).TotalMilliseconds;
             }
 
             // Save the new point.
-            // TODO
+            HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskNo + "-" + "-1" + "-" + id, HPType.Touch);
+            calibPoints.Add(touchPoint);
 
             // If calibration done
-            if (false) // TODO
+            if (calibPoints.Count == CALIB_FINGER_NUM)
             {
                 calibStatus = CalibStatus.Done;
 
                 // Save to variables
-                // TODO
+                // TODO: Save to some models
                 
-                // Save to handPoints (output file). Id: 'taskNo' - '-1' - '0~9'. 
-                // 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.
-                // TODO
+                // Save to currValidPoints (output file). Id: 'taskNo' - '-1' - '0~9'. 
+                // TODO: Distinguish them. 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.
+                currValidPoints.AddRange(calibPoints);
             }
-            
-
         }
 
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
@@ -296,6 +303,15 @@ namespace SurfaceKeyboard
                 Point touchPos = e.GetPosition(this);
 
                 saveTouchPoints(touchPos.X, touchPos.Y, -1);
+                // No calibration, or the user has done his calibration
+                if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
+                {
+                    saveTouchPoints(touchPos.X, touchPos.Y, -1);
+                }
+                else // Calibration points
+                {
+                    calibrateHands(touchPos.X, touchPos.Y, -1);
+                }
             }
         }
 
@@ -310,6 +326,11 @@ namespace SurfaceKeyboard
             else
                 myTag += "_KbdOff";
 
+            if (calibStatus == CalibStatus.Off)
+                myTag += "_CalibOff";
+            else
+                myTag += "_CalibOn";
+
             return myTag;
         }
 
@@ -318,7 +339,7 @@ namespace SurfaceKeyboard
             // Save the touchdown seq to file
             string fPath = Directory.GetCurrentDirectory() + '\\';
             string fName = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + getTestingTag() + ".csv";
-            string fNameTyping = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + "_typing.csv";
+            string fNameTyping = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + getTestingTag() + "_typing.csv";
             StatusTextBlk.Text = fPath + fName;
 
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
@@ -373,6 +394,7 @@ namespace SurfaceKeyboard
             if (calibStatus != CalibStatus.Off)
             {
                 calibStatus = CalibStatus.Waiting;
+                // TODO: Change the color or hint or something
             }
         }
 
@@ -444,8 +466,15 @@ namespace SurfaceKeyboard
         {
             if (e.TouchDevice.GetIsFingerRecognized())
             {
-                Point touchPos = e.TouchDevice.GetPosition(this);
-                handleGesture(touchPos.X, touchPos.Y, e.TouchDevice.Id);
+                Point touchPos = e.TouchDevice.GetPosition(this); 
+                if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
+                {
+                    handleGesture(touchPos.X, touchPos.Y, e.TouchDevice.Id);
+                }
+                //else
+                //{
+                //    calibrateHands(touchPos.X, touchPos.Y, e.TouchDevice.Id);
+                //}
             }
         }
 
@@ -456,7 +485,14 @@ namespace SurfaceKeyboard
                 if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
                     Point touchPos = e.GetPosition(this);
-                    handleGesture(touchPos.X, touchPos.Y, -1);
+                    if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
+                    {
+                        handleGesture(touchPos.X, touchPos.Y, -1);
+                    }
+                    //else
+                    //{
+                    //    calibrateHands(touchPos.X, touchPos.Y, -1);
+                    //}
                 }
             }
         }
@@ -508,10 +544,17 @@ namespace SurfaceKeyboard
         private void ClearBtn_TouchDown(object sender, TouchEventArgs e)
         {
             // Clear the touch points of this sentence
+            // Also delete the calibration points in the list
             currValidPoints.Clear();
             hpNo = 0;
             showTouchInfo();
             updateTaskText();
+
+            if (calibStatus != CalibStatus.Off)
+            {
+                calibStatus = CalibStatus.Waiting;
+                // TODO: Change the color or hint or something
+            }
         }
 
         private void ClearBtn_Click(object sender, RoutedEventArgs e)

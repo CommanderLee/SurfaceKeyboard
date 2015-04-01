@@ -97,7 +97,8 @@ namespace SurfaceKeyboard
             CalibBtn.Background = calibOff;
 
             loadTaskTexts();
-            updateTaskText();
+            updateStatusBlock();
+            updateTaskTextBlk();
         }
 
         /// <summary>
@@ -175,16 +176,26 @@ namespace SurfaceKeyboard
             taskSize = taskTexts.Length;
         }
 
-        private void updateTaskText()
+        private void updateTaskTextBlk()
         {
             // Select next text for the textblock
             string currText = taskTexts[taskNo % taskSize];
+
             // Show asterisk feedback for the user
             Regex rgx = new Regex(@"[^\s]");
             string typeText = rgx.Replace(currText, "*");
-            if (hpNo <= typeText.Length)
-                typeText = typeText.Substring(0, hpNo) + "_";
-            TaskTextBlk.Text = currText + "\n" + typeText;
+
+            if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
+            {
+                if (hpNo <= typeText.Length)
+                    typeText = typeText.Substring(0, hpNo) + "_";
+                TaskTextBlk.Text = currText + "\n" + typeText;
+            }
+            else
+            {
+                TaskTextBlk.Text = typeText;
+                //TaskTextBlk
+            }
         }
 
         /**
@@ -226,19 +237,26 @@ namespace SurfaceKeyboard
             }
         }
 
-        private void showTouchInfo()
+        private void updateStatusBlock()
         {
-            if (hpNo > 0)
+            if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
-                HandPoint hpLast = handPoints.Last();
-                // Show the information
-                StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}",
-                    taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
+                if (hpNo > 0)
+                {
+                    HandPoint hpLast = handPoints.Last();
+                    // Show the information
+                    StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}",
+                        taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
+                }
+                else
+                {
+                    StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
+                        taskNo + 1, taskSize, "N/A", "N/A", "N/A", "N/A");
+                }
             }
             else
             {
-                StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
-                    taskNo + 1, taskSize, "N/A", "N/A", "N/A", "N/A");
+                StatusTextBlk.Text = String.Format("Calibrating: {0}/{1} fingers detected.", calibPoints.Count, CALIB_FINGER_NUM);
             }
         }
 
@@ -273,7 +291,12 @@ namespace SurfaceKeyboard
                 // Save to currValidPoints (output file). Id: 'taskNo' - '-1' - '0~9'. 
                 // TODO: Distinguish them. 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.
                 currValidPoints.AddRange(calibPoints);
+
+                calibPoints.Clear();
             }
+
+            updateStatusBlock();
+            updateTaskTextBlk();
         }
 
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
@@ -384,8 +407,6 @@ namespace SurfaceKeyboard
         {
             taskNo++;
             hpNo = 0;
-            showTouchInfo();
-            updateTaskText();
 
             validPoints.AddRange(currValidPoints);
             currValidPoints.Clear();
@@ -396,6 +417,9 @@ namespace SurfaceKeyboard
                 calibStatus = CalibStatus.Waiting;
                 // TODO: Change the color or hint or something
             }
+
+            updateStatusBlock();
+            updateTaskTextBlk();
         }
 
         private void NextBtn_TouchDown(object sender, TouchEventArgs e)
@@ -441,7 +465,7 @@ namespace SurfaceKeyboard
                         {
                             hpNo--;
                         }
-                        updateTaskText();
+                        updateTaskTextBlk();
                         // Debug.WriteLine("do Backspace");
                     }
                 }
@@ -518,8 +542,8 @@ namespace SurfaceKeyboard
                             currValidPoints.Add(myPoints.getStartPoint());
 
                             hpNo++;
-                            showTouchInfo();
-                            updateTaskText();
+                            updateStatusBlock();
+                            updateTaskTextBlk();
                         }
                         break;
                 }
@@ -547,8 +571,8 @@ namespace SurfaceKeyboard
             // Also delete the calibration points in the list
             currValidPoints.Clear();
             hpNo = 0;
-            showTouchInfo();
-            updateTaskText();
+            updateStatusBlock();
+            updateTaskTextBlk();
 
             if (calibStatus != CalibStatus.Off)
             {
@@ -600,6 +624,8 @@ namespace SurfaceKeyboard
                 calibStatus = CalibStatus.Off;
                 CalibBtn.Background = calibOff;
             }
+            updateStatusBlock();
+            updateTaskTextBlk();
         }
 
         private void CalibBtn_Click(object sender, RoutedEventArgs e)
@@ -627,8 +653,8 @@ namespace SurfaceKeyboard
                 hpNo = removeStart;
             }
 
-            showTouchInfo();
-            updateTaskText();
+            updateStatusBlock();
+            updateTaskTextBlk();
         }
 
         private void DeleteBtn_Click(object sender, RoutedEventArgs e)

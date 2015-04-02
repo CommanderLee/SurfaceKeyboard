@@ -52,11 +52,13 @@ namespace SurfaceKeyboard
         ImageBrush                  keyboardOpen, keyboardClose;
 
         // Calibrate before each test sentence
-        enum CalibStatus { Off, Waiting, Calibrating, Done };
-        private int                 CALIB_FINGER_NUM = 10;
+        enum CalibStatus { Off, Preparing, Calibrating, Waiting, Done };
+        private const int           CALIB_FINGER_NUM = 10;
+        private const double        CALIB_MIN_TIME = 500;
+
         private CalibStatus         calibStatus = CalibStatus.Off;
         ImageBrush                  calibOn, calibOff;
-        DateTime                    calibStartTime;
+        DateTime                    calibStartTime, calibEndTime;
         private List<HandPoint>     calibPoints = new List<HandPoint>();
 
         // Mark true if using mouse instead of fingers
@@ -261,38 +263,60 @@ namespace SurfaceKeyboard
         }
 
         // Calibrate the hand position
-        private void calibrateHands(double x, double y, int id)
+        private void calibrateHands(double x, double y, int id, HPType pointType)
         {
-            double timeStamp = 0;
-            // If begin calibrating
-            if (calibStatus == CalibStatus.Waiting)
+            // New finger detected
+            if (pointType == HPType.Touch)
             {
-                calibStatus = CalibStatus.Calibrating;
-                calibStartTime = DateTime.Now;
-                timeStamp = 0;
+                switch (calibStatus)
+                {
+                    case CalibStatus.Preparing:
+                        calibStatus = CalibStatus.Calibrating;
+                        calibStartTime = DateTime.Now;
+                        calibPoints.Add(new HandPoint(x, y, 0,
+                            taskNo + "-" + "-1" + "-" + id, HPType.Calibrate));
+                        break;
+
+                    case CalibStatus.Calibrating:
+                        calibPoints.Add(new HandPoint(x, y, DateTime.Now.Subtract(calibStartTime).TotalMilliseconds,
+                            taskNo + "-" + "-1" + "-" + id, HPType.Calibrate));
+
+                        // If we get enough fingers
+                        if (calibPoints.Count == CALIB_FINGER_NUM)
+                        {
+                            calibStatus = CalibStatus.Waiting;
+                            calibEndTime = DateTime.Now;
+                        }
+                        break;
+
+                    default:
+                        Debug.Write("Error: Unexpected value of 'calibStatus'. Maybe too many fingers.");
+                        break;
+                }
             }
-            else if (calibStatus == CalibStatus.Calibrating)
+            else
             {
-                timeStamp = DateTime.Now.Subtract(calibStartTime).TotalMilliseconds;
-            }
+                switch (calibStatus)
+                {
+                    case CalibStatus.Waiting:
+                        if (DateTime.Now.Subtract(calibEndTime).TotalMilliseconds >= CALIB_MIN_TIME)
+                        {
+                            calibStatus = CalibStatus.Done;
+                            // Save to variables
+                            // TODO: Save to some models
 
-            // Save the new point.
-            HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskNo + "-" + "-1" + "-" + id, HPType.Touch);
-            calibPoints.Add(touchPoint);
+                            // Save to currValidPoints (output file). Id: 'taskNo' - '-1' - '0~9'. 
+                            // TODO: Distinguish them. 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.
+                            currValidPoints.AddRange(calibPoints);
 
-            // If calibration done
-            if (calibPoints.Count == CALIB_FINGER_NUM)
-            {
-                calibStatus = CalibStatus.Done;
+                            calibPoints.Clear();
+                        }
+                        break;
 
-                // Save to variables
-                // TODO: Save to some models
-                
-                // Save to currValidPoints (output file). Id: 'taskNo' - '-1' - '0~9'. 
-                // TODO: Distinguish them. 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.
-                currValidPoints.AddRange(calibPoints);
-
-                calibPoints.Clear();
+                    default:
+                        Debug.Write("Error: Unexpected value of 'calibStatus'");
+                        break;
+                }
             }
 
             updateStatusBlock();
@@ -313,7 +337,7 @@ namespace SurfaceKeyboard
                 }
                 else // Calibration points
                 {
-                    calibrateHands(touchPos.X, touchPos.Y, e.TouchDevice.Id);
+                    calibrateHands(touchPos.X, touchPos.Y, e.TouchDevice.Id, HPType.Touch);
                 }
             }
         }
@@ -333,7 +357,7 @@ namespace SurfaceKeyboard
                 }
                 else // Calibration points
                 {
-                    calibrateHands(touchPos.X, touchPos.Y, -1);
+                    calibrateHands(touchPos.X, touchPos.Y, -1, HPType.Touch);
                 }
             }
         }
@@ -414,7 +438,7 @@ namespace SurfaceKeyboard
             // Clear the status if the calibration mode is ON
             if (calibStatus != CalibStatus.Off)
             {
-                calibStatus = CalibStatus.Waiting;
+                calibStatus = CalibStatus.Preparing;
                 // TODO: Change the color or hint or something
             }
 
@@ -495,10 +519,10 @@ namespace SurfaceKeyboard
                 {
                     handleGesture(touchPos.X, touchPos.Y, e.TouchDevice.Id);
                 }
-                //else
-                //{
-                //    calibrateHands(touchPos.X, touchPos.Y, e.TouchDevice.Id);
-                //}
+                else
+                {
+                    calibrateHands(touchPos.X, touchPos.Y, e.TouchDevice.Id, HPType.Move);
+                }
             }
         }
 
@@ -513,45 +537,55 @@ namespace SurfaceKeyboard
                     {
                         handleGesture(touchPos.X, touchPos.Y, -1);
                     }
-                    //else
-                    //{
-                    //    calibrateHands(touchPos.X, touchPos.Y, -1);
-                    //}
+                    else
+                    {
+                        calibrateHands(touchPos.X, touchPos.Y, -1, HPType.Move);
+                    }
                 }
             }
         }
 
         private void releaseGesture(int id)
         {
-            if (movement.ContainsKey(id))
+            if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
-                GesturePoints myPoints = (GesturePoints)movement[id];
-                switch (myPoints.getStatus())
+                if (movement.ContainsKey(id))
                 {
-                    case HandStatus.Away:
-                        break;
-                    case HandStatus.Backspace:
-                        break;
-                    case HandStatus.Enter:
-                        break;
-                    case HandStatus.Rest:
-                        break;
-                    case HandStatus.Type:
-                        if (myPoints.checkTyping())
-                        {
-                            currValidPoints.Add(myPoints.getStartPoint());
+                    GesturePoints myPoints = (GesturePoints)movement[id];
+                    switch (myPoints.getStatus())
+                    {
+                        case HandStatus.Away:
+                            break;
+                        case HandStatus.Backspace:
+                            break;
+                        case HandStatus.Enter:
+                            break;
+                        case HandStatus.Rest:
+                            break;
+                        case HandStatus.Type:
+                            if (myPoints.checkTyping())
+                            {
+                                currValidPoints.Add(myPoints.getStartPoint());
 
-                            hpNo++;
-                            updateStatusBlock();
-                            updateTaskTextBlk();
-                        }
-                        break;
+                                hpNo++;
+                                updateStatusBlock();
+                                updateTaskTextBlk();
+                            }
+                            break;
+                    }
+                    movement.Remove(id);
                 }
-                movement.Remove(id);
+                else
+                {
+                    Debug.WriteLine("[Error] releaseGesture(): id not exist." + id);
+                }
             }
             else
             {
-                Debug.WriteLine("[Error] releaseGesture(): id not exist." + id);
+                // Reset calibration points
+                calibStatus = CalibStatus.Preparing;
+                calibPoints.Clear();
+                updateStatusBlock();
             }
         }
 
@@ -576,7 +610,7 @@ namespace SurfaceKeyboard
 
             if (calibStatus != CalibStatus.Off)
             {
-                calibStatus = CalibStatus.Waiting;
+                calibStatus = CalibStatus.Preparing;
                 // TODO: Change the color or hint or something
             }
         }
@@ -616,7 +650,7 @@ namespace SurfaceKeyboard
         {
             if (calibStatus == CalibStatus.Off)
             {
-                calibStatus = CalibStatus.Waiting;
+                calibStatus = CalibStatus.Preparing;
                 CalibBtn.Background = calibOn;
             }
             else

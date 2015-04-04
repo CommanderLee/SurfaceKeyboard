@@ -35,8 +35,7 @@ for word in allWords:
 # print wordCnt
 
 # Load testing sentences
-textFile = open('TaskText.txt', 'r')
-texts = [text.strip().lower() for text in textFile]
+texts = loadTestingSet()
 
 # Number of words sharing the same code
 sameCodeCnt = [len(wordSet) for wordSet in wordDic.values()]

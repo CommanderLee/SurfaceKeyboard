@@ -28,6 +28,12 @@ def loadCorpus():
     print '%d words.' % (len(words))
     return words
 
+def loadTestingSet():
+    "Load testing set"
+    textFile = open('TaskText.txt', 'r')
+    texts = [text.strip().lower() for text in textFile]
+    return texts
+
 def countLeftNum(code):
     "Count the number of left points"
     leftNum = 0

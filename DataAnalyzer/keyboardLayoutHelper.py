@@ -64,7 +64,7 @@ def calcWordVec(word):
 
     for char in word:
         charNo = ord(char) - ord('a')
-        if handCode[charNo] == '0':
+        if handCode[charNo + 1] == '0':
             if len(pntIdL) > 0:
                 vecL.append((letterPosX[charNo] - letterPosX[pntIdL[-1]], letterPosY[charNo] - letterPosY[pntIdL[-1]]))
             pntIdL.append(charNo)
@@ -81,7 +81,7 @@ def encode(word):
     "Encode the word using handCode rules."
     code = ''
     for char in word:
-        code += handCode[ord(char) - ord('a')]
+        code += handCode[ord(char) - ord('a') + 1]
     return code
 
 def calcUserCodes(pntListX, midX, rangeX):

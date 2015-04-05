@@ -38,11 +38,11 @@ def printMatrixInfo(fileNamePrefix, numMat, listMat):
     leftList = []
     rightList = []
     # List: a-z <-> 1-26
-    for i in range(26):
+    for i in range(1, 27):
         if handCode[i] == '0':
-            leftList.append(i + 1)
+            leftList.append(i)
         else:
-            rightList.append(i + 1)
+            rightList.append(i)
 
     leftMatFileName = fileNamePrefix + '_left.csv'
     writeLeftMat = open(leftMatFileName, 'w')
@@ -85,3 +85,15 @@ for textNo in range(testingSetSize):
 
 # Check number
 printMatrixInfo('testingSetNumMat', numMat, listMat)
+
+# Calculate the importance of each text 
+textImportance = [0.0 for i in range(testingSetSize)]
+for textNo in range(testingSetSize):
+    currText = texts[textNo]
+    textLen = len(currText)
+    for i in range(textLen - 1):
+        rowNo = getCharNo(currText[i])
+        colNo = getCharNo(currText[i + 1])
+        textImportance[textNo] += 1.0 / numMat[rowNo][colNo]
+
+print textImportance

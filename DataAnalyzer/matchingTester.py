@@ -158,14 +158,14 @@ if openFiles:
                     if i > 0:
                         # point pair <word[i-1], word[i]>
                         charPair = word[i-1:i+1]
-                        pattern = handCode[ord(word[i-1]) - ord('a')] + handCode[ord(word[i]) - ord('a')]
+                        pattern = handCode[ord(word[i-1]) - ord('a') + 1] + handCode[ord(word[i]) - ord('a') + 1]
                         vecX = listX[i + listNo] - listX[i - 1 + listNo]
                         vecY = listY[i + listNo] - listY[i - 1 + listNo]
                         totalPointPair.append((charPair, pattern, vecX, vecY))
                     elif listNo > 0:
                         # point pair <space, word[0]>
                         charPair = '-' + word[i]
-                        pattern = '2' + handCode[ord(word[i]) - ord('a')]
+                        pattern = '2' + handCode[ord(word[i]) - ord('a') + 1]
                         vecX = listX[i + listNo] - listX[i - 1 + listNo]
                         vecY = listY[i + listNo] - listY[i - 1 + listNo]
                         totalPointPair.append((charPair, pattern, vecX, vecY))
@@ -173,7 +173,7 @@ if openFiles:
                     if i == wordLen - 1 and i + 1 + listNo < len(listX):
                         # point pair <word[len-1], space>
                         charPair = word[i] + '-'
-                        pattern = handCode[ord(word[i]) - ord('a')] + '2'
+                        pattern = handCode[ord(word[i]) - ord('a') + 1] + '2'
                         vecX = listX[i + 1 + listNo] - listX[i + listNo]
                         vecY = listY[i + 1 + listNo] - listY[i + listNo]
                         totalPointPair.append((charPair, pattern, vecX, vecY))

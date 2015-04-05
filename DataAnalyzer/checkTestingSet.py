@@ -1,5 +1,6 @@
 # Check some important features of the testing set.
 # Zhen Li, Tsinghua University.
+import numpy as np
 
 from filesHelper import loadTestingSet
 from constants import handCode
@@ -34,7 +35,7 @@ def printMatrixInfo(fileNamePrefix, numMat, listMat):
             rowStr += ',' + str(numMat[row][col])
         writeTotalMat.write(rowStr + '\n')
 
-    # Print the hand-in matrix info
+    # Print the one-hand matrix info
     leftList = []
     rightList = []
     # List: a-z <-> 1-26
@@ -66,6 +67,32 @@ def printMatrixInfo(fileNamePrefix, numMat, listMat):
             rowStr += ',' + str(numMat[row][col])
         writeRightMat.write(rowStr + '\n')
 
+def saveSelectedText(fileName, textNum, textContent, textTotalValue, textOneHandValue):
+    "Save selected text based on their importance"
+    textStruct = zip(textContent, textTotalValue, textOneHandValue)
+    textStructArray = np.array(textStruct, dtype = [('text', 'S50'), ('totalValue', float), ('oneHandValue', float)])
+    textNum = min(textNum, len(textContent))
+
+    # Total Value Order
+    writeText = open(fileName + '_MaxTotalValue.txt', 'w')
+    textStructArray.sort(order = 'totalValue')
+    descendTextList = textStructArray[::-1]['text'].tolist()
+    
+    for text in descendTextList[:textNum]:
+        writeText.write(text + '\n')
+    print textStructArray[::-1][:textNum]
+
+    # One Hand Value Order
+    writeText = open(fileName + '_MaxOneHandValue.txt', 'w')
+    textStructArray.sort(order = 'oneHandValue')
+    descendTextList = textStructArray[::-1]['text'].tolist()
+
+    for text in descendTextList[:textNum]:
+        writeText.write(text + '\n')
+    print textStructArray[::-1][:textNum]
+
+# Main Procedure #
+
 texts = loadTestingSet()
 testingSetSize = len(texts)
 
@@ -87,13 +114,18 @@ for textNo in range(testingSetSize):
 printMatrixInfo('testingSetNumMat', numMat, listMat)
 
 # Calculate the importance of each text 
-textImportance = [0.0 for i in range(testingSetSize)]
+# Total matrix value and one-hand matrix value
+textTotalValue = [0.0 for i in range(testingSetSize)]
+textOneHandValue = [0.0 for i in range(testingSetSize)]
 for textNo in range(testingSetSize):
     currText = texts[textNo]
     textLen = len(currText)
     for i in range(textLen - 1):
         rowNo = getCharNo(currText[i])
         colNo = getCharNo(currText[i + 1])
-        textImportance[textNo] += 1.0 / numMat[rowNo][colNo]
 
-print textImportance
+        textTotalValue[textNo] += 1.0 / numMat[rowNo][colNo]
+        if handCode[rowNo] == handCode[colNo]:
+            textOneHandValue[textNo] += 1.0 / numMat[rowNo][colNo]
+
+saveSelectedText('TaskText', 30, texts, textTotalValue, textOneHandValue)

@@ -39,7 +39,7 @@ namespace SurfaceKeyboard
         private List<HandPoint>     currValidPoints = new List<HandPoint>();
         private List<HandPoint>     validPoints = new List<HandPoint>();
 
-        // Number of the task texts, its size, and its content
+        // Number(index) of the task texts, its size, and its content
         private int                 taskNo;
         private int                 taskSize;
         private string[]            taskTexts;
@@ -53,8 +53,8 @@ namespace SurfaceKeyboard
 
         // Calibrate before each test sentence
         enum CalibStatus { Off, Preparing, Calibrating, Waiting, Done };
-        private const int           CALIB_FINGER_NUM = 10;
-        private const double        CALIB_MIN_TIME = 500;
+        private const int           CALIB_FINGER_NUMBER = 10;
+        private const double        CALIB_WAITING_TIME = 500;
 
         private CalibStatus         calibStatus = CalibStatus.Off;
         ImageBrush                  calibOn, calibOff;
@@ -86,13 +86,15 @@ namespace SurfaceKeyboard
             KeyboardBtn.Background = keyboardClose;
 
             // Keyboard Image
-            BitmapImage bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1x.png");
-            bitmap.EndInit();
-            imgKeyboard.Source = bitmap;
-            imgKeyboard.Visibility = Visibility.Hidden;
+            BitmapImage kbdBitmap = new BitmapImage();
+            kbdBitmap.BeginInit();
+            kbdBitmap.UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1x.png");
+            kbdBitmap.EndInit();
 
+            // TODO: Move this Image after calibration
+            imgKeyboard.Source = kbdBitmap;
+            imgKeyboard.Visibility = Visibility.Hidden;
+            
             // Calibration Control Button Image
             calibOn = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_on.png")));
             calibOff = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_off.png")));
@@ -169,12 +171,16 @@ namespace SurfaceKeyboard
             //TODO: disable audio, animations here
         }
 
+        /* Update UI Information */
+
         private void loadTaskTexts()
         {
             // Load task text from file
             string fPath = Directory.GetCurrentDirectory() + "\\";
             string fName = "TaskText.txt";
             taskTexts = System.IO.File.ReadAllLines(fPath + fName);
+
+            // TODO: Shuffle if necessary
             taskSize = taskTexts.Length;
         }
 
@@ -195,9 +201,95 @@ namespace SurfaceKeyboard
             }
             else
             {
+                // Use asterisk while calibrating
                 TaskTextBlk.Text = typeText;
-                //TaskTextBlk
             }
+        }
+
+        private void updateStatusBlock()
+        {
+            if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
+            {
+                if (hpNo > 0)
+                {
+                    HandPoint hpLast = handPoints.Last();
+                    // Show the information
+                    StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}",
+                        taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
+                }
+                else
+                {
+                    StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
+                        taskNo + 1, taskSize, "N/A", "N/A", "N/A", "N/A");
+                }
+            }
+            else
+            {
+                StatusTextBlk.Text = String.Format("Calibrating: {0}/{1} fingers detected.", calibPoints.Count, CALIB_FINGER_NUMBER);
+            }
+        }
+
+        /* Process Touch Point Information */
+
+        // Calibrate the hand position
+        private void calibrateHands(double x, double y, int id, HPType pointType)
+        {
+            // New finger detected
+            if (pointType == HPType.Touch)
+            {
+                switch (calibStatus)
+                {
+                    case CalibStatus.Preparing:
+                        calibStatus = CalibStatus.Calibrating;
+                        calibStartTime = DateTime.Now;
+                        calibPoints.Add(new HandPoint(x, y, 0,
+                            taskNo + "-" + "-1" + "-" + id, HPType.Calibrate));
+                        break;
+
+                    case CalibStatus.Calibrating:
+                        calibPoints.Add(new HandPoint(x, y, DateTime.Now.Subtract(calibStartTime).TotalMilliseconds,
+                            taskNo + "-" + "-1" + "-" + id, HPType.Calibrate));
+
+                        // If we get enough fingers
+                        if (calibPoints.Count == CALIB_FINGER_NUMBER)
+                        {
+                            calibStatus = CalibStatus.Waiting;
+                            calibEndTime = DateTime.Now;
+                        }
+                        break;
+
+                    default:
+                        Debug.Write("Error: Unexpected value of 'calibStatus'. Maybe too many fingers.");
+                        break;
+                }
+            }
+            else
+            {
+                switch (calibStatus)
+                {
+                    case CalibStatus.Waiting:
+                        if (DateTime.Now.Subtract(calibEndTime).TotalMilliseconds >= CALIB_WAITING_TIME)
+                        {
+                            calibStatus = CalibStatus.Done;
+                            // Save to variables
+                            // TODO: Save to some models
+
+                            // Save to currValidPoints (output file). Id: 'taskNo' - '-1' - '0~9'. 
+                            // TODO: Distinguish them. 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.
+                            currValidPoints.AddRange(calibPoints);
+
+                            calibPoints.Clear();
+                        }
+                        break;
+
+                    default:
+                        Debug.Write("Error: Unexpected value of 'calibStatus'");
+                        break;
+                }
+            }
+
+            updateStatusBlock();
+            updateTaskTextBlk();
         }
 
         /**
@@ -239,95 +331,11 @@ namespace SurfaceKeyboard
             }
         }
 
-        private void updateStatusBlock()
-        {
-            if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
-            {
-                if (hpNo > 0)
-                {
-                    HandPoint hpLast = handPoints.Last();
-                    // Show the information
-                    StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}",
-                        taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
-                }
-                else
-                {
-                    StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
-                        taskNo + 1, taskSize, "N/A", "N/A", "N/A", "N/A");
-                }
-            }
-            else
-            {
-                StatusTextBlk.Text = String.Format("Calibrating: {0}/{1} fingers detected.", calibPoints.Count, CALIB_FINGER_NUM);
-            }
-        }
-
-        // Calibrate the hand position
-        private void calibrateHands(double x, double y, int id, HPType pointType)
-        {
-            // New finger detected
-            if (pointType == HPType.Touch)
-            {
-                switch (calibStatus)
-                {
-                    case CalibStatus.Preparing:
-                        calibStatus = CalibStatus.Calibrating;
-                        calibStartTime = DateTime.Now;
-                        calibPoints.Add(new HandPoint(x, y, 0,
-                            taskNo + "-" + "-1" + "-" + id, HPType.Calibrate));
-                        break;
-
-                    case CalibStatus.Calibrating:
-                        calibPoints.Add(new HandPoint(x, y, DateTime.Now.Subtract(calibStartTime).TotalMilliseconds,
-                            taskNo + "-" + "-1" + "-" + id, HPType.Calibrate));
-
-                        // If we get enough fingers
-                        if (calibPoints.Count == CALIB_FINGER_NUM)
-                        {
-                            calibStatus = CalibStatus.Waiting;
-                            calibEndTime = DateTime.Now;
-                        }
-                        break;
-
-                    default:
-                        Debug.Write("Error: Unexpected value of 'calibStatus'. Maybe too many fingers.");
-                        break;
-                }
-            }
-            else
-            {
-                switch (calibStatus)
-                {
-                    case CalibStatus.Waiting:
-                        if (DateTime.Now.Subtract(calibEndTime).TotalMilliseconds >= CALIB_MIN_TIME)
-                        {
-                            calibStatus = CalibStatus.Done;
-                            // Save to variables
-                            // TODO: Save to some models
-
-                            // Save to currValidPoints (output file). Id: 'taskNo' - '-1' - '0~9'. 
-                            // TODO: Distinguish them. 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.
-                            currValidPoints.AddRange(calibPoints);
-
-                            calibPoints.Clear();
-                        }
-                        break;
-
-                    default:
-                        Debug.Write("Error: Unexpected value of 'calibStatus'");
-                        break;
-                }
-            }
-
-            updateStatusBlock();
-            updateTaskTextBlk();
-        }
-
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
         {
-            // Get touchdown position
             if (e.TouchDevice.GetIsFingerRecognized())
             {
+                // Get touchdown position
                 Point touchPos = e.TouchDevice.GetPosition(this);
 
                 // No calibration, or the user has done his calibration
@@ -349,7 +357,6 @@ namespace SurfaceKeyboard
                 // Get touchdown position
                 Point touchPos = e.GetPosition(this);
 
-                saveTouchPoints(touchPos.X, touchPos.Y, -1);
                 // No calibration, or the user has done his calibration
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                 {
@@ -557,6 +564,7 @@ namespace SurfaceKeyboard
                         case HandStatus.Away:
                             break;
                         case HandStatus.Backspace:
+                            // TODO: Delete currValidPoints here. OR delete that above in the first function.
                             break;
                         case HandStatus.Enter:
                             break;
@@ -605,14 +613,14 @@ namespace SurfaceKeyboard
             // Also delete the calibration points in the list
             currValidPoints.Clear();
             hpNo = 0;
-            updateStatusBlock();
-            updateTaskTextBlk();
-
+            
             if (calibStatus != CalibStatus.Off)
             {
                 calibStatus = CalibStatus.Preparing;
-                // TODO: Change the color or hint or something
             }
+
+            updateStatusBlock();
+            updateTaskTextBlk();
         }
 
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
@@ -650,6 +658,7 @@ namespace SurfaceKeyboard
         {
             if (calibStatus == CalibStatus.Off)
             {
+                calibPoints.Clear();
                 calibStatus = CalibStatus.Preparing;
                 CalibBtn.Background = calibOn;
             }

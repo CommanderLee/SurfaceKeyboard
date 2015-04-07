@@ -27,41 +27,46 @@ namespace SurfaceKeyboard
     /// </summary>
     public partial class SurfaceWindow1 : SurfaceWindow
     {
-        // The start time of the app
+        /* The start time of the app */
         private bool                isStart;
         private DateTime            startTime;
 
-        // Number of the hand points and the list to store them.
+        /* Number of the hand points and the list to store them */
         private int                 hpNo;
         private List<HandPoint>     handPoints = new List<HandPoint>();
-        // hpNo: [0, ...) normal points. Others: -1, -2 ...
-        enum HpOthers               { Calibrate = -1, MidPoint = -2 };
+        /* hpNo: [0, ...) normal points. Others: -1, -2 ... */
+        enum HpOthers               { Calibrate = -1, CenterPoint = -2 };
 
-        // Valid points: the touch point of each char.
+        /* Valid points: the touch point of each char. */
         private List<HandPoint>     currValidPoints = new List<HandPoint>();
         private List<HandPoint>     validPoints = new List<HandPoint>();
 
-        // Number(index) of the task texts, its size, and its content
+        /* Number(index) of the task texts, its size, and its content */
         private int                 taskNo;
         private int                 taskSize;
         private string[]            taskTexts;
 
-        // Id -> GesturePoints Queue
+        /* Id -> GesturePoints Queue */
         Hashtable                   movement = new Hashtable();
 
-        // Show the soft keyboard on the screen (default: close)
+        /* Show the soft keyboard on the screen (default: close) */
         private bool                showKeyboard = false;
         ImageBrush                  keyboardOpen, keyboardClose;
 
-        // Calibrate before each test sentence
-        enum CalibStatus { Off, Preparing, Calibrating, Waiting, Done };
-        private const int           CALIB_FINGER_NUMBER = 10;
+        /* Calibrate before each test sentence */
+        enum CalibStatus            { Off, Preparing, Calibrating, Waiting, Done };
+        private CalibStatus         calibStatus = CalibStatus.Off;
+        private List<HandPoint>     calibPoints = new List<HandPoint>();
+
+        /* Calibration time threshold and timer */
+        DateTime                    calibStartTime, calibEndTime;
         private const double        CALIB_WAITING_TIME = 500;
 
-        private CalibStatus         calibStatus = CalibStatus.Off;
+        /* Calibration Button image*/
         ImageBrush                  calibOn, calibOff;
-        DateTime                    calibStartTime, calibEndTime;
-        private List<HandPoint>     calibPoints = new List<HandPoint>();
+
+        // Hand Model for calibration
+        HandModel                   userHand = new HandModel();
 
         // Mark true if using mouse instead of fingers
         private bool                isMouse = false;
@@ -228,7 +233,7 @@ namespace SurfaceKeyboard
             }
             else
             {
-                StatusTextBlk.Text = String.Format("Calibrating: {0}/{1} fingers detected.", calibPoints.Count, CALIB_FINGER_NUMBER);
+                StatusTextBlk.Text = String.Format("Calibrating: {0}/{1} fingers detected.", calibPoints.Count, HandModel.FINGER_NUMBER);
             }
         }
 
@@ -254,7 +259,7 @@ namespace SurfaceKeyboard
                             taskNo + "-" + HpOthers.Calibrate + "-" + id, HPType.Calibrate));
 
                         // If we get enough fingers
-                        if (calibPoints.Count == CALIB_FINGER_NUMBER)
+                        if (calibPoints.Count == HandModel.FINGER_NUMBER)
                         {
                             calibStatus = CalibStatus.Waiting;
                             calibEndTime = DateTime.Now;
@@ -275,7 +280,7 @@ namespace SurfaceKeyboard
                         {
                             calibStatus = CalibStatus.Done;
                             // Save to variables
-                            // TODO: Save to some models
+                            userHand.loadHandPoints(calibPoints);
 
                             // Save to currValidPoints (output file). Id: 'taskNo' - HpOthers.Calibrate(-1) - '0~9'. 
                             // TODO: Distinguish them. 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.

@@ -251,12 +251,12 @@ namespace SurfaceKeyboard
                         calibStatus = CalibStatus.Calibrating;
                         calibStartTime = DateTime.Now;
                         calibPoints.Add(new HandPoint(x, y, 0,
-                            taskNo + "-" + HpOthers.Calibrate + "-" + id, HPType.Calibrate));
+                            taskNo + "-" + (int)HpOthers.Calibrate + "-" + id, HPType.Calibrate));
                         break;
 
                     case CalibStatus.Calibrating:
                         calibPoints.Add(new HandPoint(x, y, DateTime.Now.Subtract(calibStartTime).TotalMilliseconds,
-                            taskNo + "-" + HpOthers.Calibrate + "-" + id, HPType.Calibrate));
+                            taskNo + "-" + (int)HpOthers.Calibrate + "-" + id, HPType.Calibrate));
 
                         // If we get enough fingers
                         if (calibPoints.Count == HandModel.FINGER_NUMBER)
@@ -280,7 +280,8 @@ namespace SurfaceKeyboard
                         {
                             calibStatus = CalibStatus.Done;
                             // Save to variables
-                            userHand.loadHandPoints(calibPoints);
+                            if (!userHand.loadHandPoints(calibPoints))
+                                Debug.Write("Error: load hand points failed.");
 
                             // Save to currValidPoints (output file). Id: 'taskNo' - HpOthers.Calibrate(-1) - '0~9'. 
                             // TODO: Distinguish them. 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.
@@ -602,10 +603,15 @@ namespace SurfaceKeyboard
             }
             else
             {
-                // Reset calibration points
-                calibStatus = CalibStatus.Preparing;
-                calibPoints.Clear();
-                updateStatusBlock();
+                /* If the user raise his finger, then reset. 
+                 * Note: If the user raise the mouse, don't do this. Just for testing. */
+                if (!isMouse)
+                {
+                    // Reset calibration points
+                    calibStatus = CalibStatus.Preparing;
+                    calibPoints.Clear();
+                    updateStatusBlock();
+                }
             }
         }
 
@@ -626,6 +632,7 @@ namespace SurfaceKeyboard
             // Clear the touch points of this sentence
             // Also delete the calibration points in the list
             currValidPoints.Clear();
+            calibPoints.Clear();
             hpNo = 0;
             
             if (calibStatus != CalibStatus.Off)

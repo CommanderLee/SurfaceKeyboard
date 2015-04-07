@@ -34,6 +34,8 @@ namespace SurfaceKeyboard
         // Number of the hand points and the list to store them.
         private int                 hpNo;
         private List<HandPoint>     handPoints = new List<HandPoint>();
+        // hpNo: [0, ...) normal points. Others: -1, -2 ...
+        enum HpOthers               { Calibrate = -1, MidPoint = -2 };
 
         // Valid points: the touch point of each char.
         private List<HandPoint>     currValidPoints = new List<HandPoint>();
@@ -92,6 +94,7 @@ namespace SurfaceKeyboard
             kbdBitmap.EndInit();
 
             // TODO: Move this Image after calibration
+            // Point kbdULCorner = new Point(10, 10);
             imgKeyboard.Source = kbdBitmap;
             imgKeyboard.Visibility = Visibility.Hidden;
             
@@ -243,12 +246,12 @@ namespace SurfaceKeyboard
                         calibStatus = CalibStatus.Calibrating;
                         calibStartTime = DateTime.Now;
                         calibPoints.Add(new HandPoint(x, y, 0,
-                            taskNo + "-" + "-1" + "-" + id, HPType.Calibrate));
+                            taskNo + "-" + HpOthers.Calibrate + "-" + id, HPType.Calibrate));
                         break;
 
                     case CalibStatus.Calibrating:
                         calibPoints.Add(new HandPoint(x, y, DateTime.Now.Subtract(calibStartTime).TotalMilliseconds,
-                            taskNo + "-" + "-1" + "-" + id, HPType.Calibrate));
+                            taskNo + "-" + HpOthers.Calibrate + "-" + id, HPType.Calibrate));
 
                         // If we get enough fingers
                         if (calibPoints.Count == CALIB_FINGER_NUMBER)
@@ -274,7 +277,7 @@ namespace SurfaceKeyboard
                             // Save to variables
                             // TODO: Save to some models
 
-                            // Save to currValidPoints (output file). Id: 'taskNo' - '-1' - '0~9'. 
+                            // Save to currValidPoints (output file). Id: 'taskNo' - HpOthers.Calibrate(-1) - '0~9'. 
                             // TODO: Distinguish them. 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.
                             currValidPoints.AddRange(calibPoints);
 
@@ -331,6 +334,8 @@ namespace SurfaceKeyboard
             }
         }
 
+        /* Touch the main area (Input Canvas) */
+
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
         {
             if (e.TouchDevice.GetIsFingerRecognized())
@@ -368,6 +373,8 @@ namespace SurfaceKeyboard
                 }
             }
         }
+
+        /* Listening to the buttons */
 
         private string getTestingTag()
         {
@@ -606,6 +613,8 @@ namespace SurfaceKeyboard
         {
             releaseGesture(-1);
         }
+
+        /* Listening to the buttons */
 
         private void ClearBtn_TouchDown(object sender, TouchEventArgs e)
         {

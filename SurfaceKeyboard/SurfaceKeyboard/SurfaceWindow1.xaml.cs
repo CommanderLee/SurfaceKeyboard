@@ -69,7 +69,7 @@ namespace SurfaceKeyboard
         HandModel                   userHand = new HandModel();
 
         /* Mark true if using mouse instead of fingers */
-        private bool                isMouse = true;
+        private bool                isMouse = false;
 
         /// <summary>
         /// Default constructor.
@@ -489,7 +489,6 @@ namespace SurfaceKeyboard
             if (calibStatus != CalibStatus.Off)
             {
                 calibStatus = CalibStatus.Preparing;
-                // TODO: Change the color or hint or something
             }
 
             updateStatusBlock();
@@ -538,6 +537,7 @@ namespace SurfaceKeyboard
                         if (hpNo > 0)
                         {
                             hpNo--;
+                            currValidPoints.RemoveAt(currValidPoints.Count - 1);
                         }
                         updateTaskTextBlk();
                         // Debug.WriteLine("do Backspace");
@@ -607,7 +607,6 @@ namespace SurfaceKeyboard
                         case HandStatus.Away:
                             break;
                         case HandStatus.Backspace:
-                            // TODO: Delete currValidPoints here. OR delete that above in the first function.
                             break;
                         case HandStatus.Enter:
                             break;

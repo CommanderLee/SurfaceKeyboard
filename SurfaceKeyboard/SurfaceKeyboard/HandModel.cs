@@ -5,6 +5,10 @@ using System.Text;
 
 namespace SurfaceKeyboard
 {
+    /* Left/Right + Little/Ring/Middle/Index/Thumb  */
+    enum FingerCode { LeftLittle = 0, LeftRing, LeftMiddle, LeftIndex, LeftThumb,
+    RightThumb, RightIndex, RightMiddle, RightRing, RightLittle };
+
     /**
      * Hand Model for typing calibration.
      * Use ten-finger touch points, calculate sorted list and center point.
@@ -13,7 +17,7 @@ namespace SurfaceKeyboard
     {
         public const int    FINGER_NUMBER = 10;
 
-        /* Ten fingers: Refer to the standard hand position.
+        /* Ten fingers: Refer to the standard hand position. Enum: Finger Code.
          * 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on.  */
         private HandPoint[] fingerPoints;
 
@@ -29,17 +33,6 @@ namespace SurfaceKeyboard
             rightCenterPt = new BasicPoint();
         }
 
-        /* Just for swapping the fingerPoints */
-        private void swap(int pos1, int pos2)
-        {
-            if (pos1 >= 0 && pos1 < fingerPoints.Length && pos2 >= 0 && pos2 < fingerPoints.Length && pos1 != pos2)
-            {
-                HandPoint temp = fingerPoints[pos1];
-                fingerPoints[pos1] = fingerPoints[pos2];
-                fingerPoints[pos2] = temp;
-            }
-        }
-
         /* Sort the finger points refer to standard typing gesture */
         private void sortFingerPoints(List<HandPoint> points)
         {
@@ -48,18 +41,18 @@ namespace SurfaceKeyboard
             //foreach (HandPoint point in fingerPoints)
             //    Console.WriteLine(point.ToString());
 
-            // Sort by X-Coordinate
+            /* Sort by X-Coordinate */
             Array.Sort(fingerPoints, delegate(HandPoint point1, HandPoint point2)
             {
                 return point1.getX().CompareTo(point2.getX());
             });
 
-            // Find thumb index (Max Y-Coordinate)
-            int leftThumb = 0, rightThumb = 5;
+            /* Find thumb index (Max Y-Coordinate) */
+            int leftThumb = (int)FingerCode.LeftThumb, rightThumb = (int)FingerCode.RightThumb;
             double leftThumbY = fingerPoints[leftThumb].getY();
             double rightThumbY = fingerPoints[rightThumb].getY();
 
-            for (int i = 1; i < 5; ++i)
+            for (int i = (int)FingerCode.LeftLittle; i <= (int)FingerCode.LeftThumb; ++i)
             {
                 if (fingerPoints[i].getY() > leftThumbY)
                 {
@@ -67,7 +60,7 @@ namespace SurfaceKeyboard
                     leftThumb = i;
                 }
             }
-            for (int i = 6; i < 10; ++i)
+            for (int i = (int)FingerCode.RightThumb; i <= (int)FingerCode.RightLittle; ++i)
             {
                 if (fingerPoints[i].getY() > rightThumbY)
                 {
@@ -76,13 +69,40 @@ namespace SurfaceKeyboard
                 }
             }
 
-            // Swap the thumb points to the supposed position
-            swap(leftThumb, 4);
-            swap(rightThumb, 5);
+            Console.WriteLine("After sorting");
+            foreach (HandPoint point in fingerPoints)
+                Console.WriteLine(point.ToString());
 
-            //Console.WriteLine("After sorting");
-            //foreach (HandPoint point in fingerPoints)
-            //    Console.WriteLine(point.ToString());
+            /* Move the thumb to its place */
+            HandPoint leftThumbPoint = fingerPoints[leftThumb], rightThumbPoint = fingerPoints[rightThumb];
+            
+            for (int i = leftThumb + 1; i <= (int)FingerCode.LeftThumb; ++i)
+            {
+                fingerPoints[i - 1] = fingerPoints[i];
+            }
+            fingerPoints[(int)FingerCode.LeftThumb] = leftThumbPoint;
+
+            for (int i = rightThumb - 1; i >= (int)FingerCode.RightThumb; --i)
+            {
+                fingerPoints[i + 1] = fingerPoints[i];
+            }
+            fingerPoints[(int)FingerCode.RightThumb] = rightThumbPoint;
+
+            Console.WriteLine("After Swapping");
+            foreach (HandPoint point in fingerPoints)
+                Console.WriteLine(point.ToString());
+
+            /* Change the finger id */
+            for (int i = (int)FingerCode.LeftLittle; i <= (int)FingerCode.RightLittle; ++i)
+            {
+                String currId = fingerPoints[i].getId();
+                currId = currId.Substring(0, currId.Length - 2) + i;
+                fingerPoints[i].setId(currId);
+            }
+
+            Console.WriteLine("After changing the finger id");
+            foreach (HandPoint point in fingerPoints)
+                Console.WriteLine(point.ToString());
         }
 
         /* Calculate center points of user's hands */
@@ -111,12 +131,18 @@ namespace SurfaceKeyboard
             {
                 sortFingerPoints(points);
 
-
+                calcCenterPoints();
 
                 return true;
             }
             else
                 return false;
+        }
+
+        /* Get finger points */
+        public HandPoint[] getFingerPoints()
+        {
+            return fingerPoints;
         }
     }
 }

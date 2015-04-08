@@ -38,8 +38,15 @@ namespace SurfaceKeyboard
         private string _id;
         private HPType _type;
 
+        public HandPoint()
+        {
+            _pt = new BasicPoint();
+        }
+
         public HandPoint(double x, double y, double time, string id, HPType type)
         {
+            _pt = new BasicPoint();
+
             _pt.x = x;
             _pt.y = y;
             _time = time;

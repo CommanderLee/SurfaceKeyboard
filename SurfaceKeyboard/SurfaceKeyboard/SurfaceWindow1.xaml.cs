@@ -69,7 +69,7 @@ namespace SurfaceKeyboard
         HandModel                   userHand = new HandModel();
 
         // Mark true if using mouse instead of fingers
-        private bool                isMouse = false;
+        private bool                isMouse = true;
 
         /// <summary>
         /// Default constructor.
@@ -283,9 +283,7 @@ namespace SurfaceKeyboard
                             if (!userHand.loadHandPoints(calibPoints))
                                 Debug.Write("Error: load hand points failed.");
 
-                            // Save to currValidPoints (output file). Id: 'taskNo' - HpOthers.Calibrate(-1) - '0~9'. 
-                            // TODO: Distinguish them. 0:left litte finger, 4:left thumb, 5:right thumb, 9:right little finger, and so on. Refer to the standard hand position.
-                            currValidPoints.AddRange(calibPoints);
+                            currValidPoints.AddRange(userHand.getFingerPoints().ToList<HandPoint>());
 
                             calibPoints.Clear();
                         }
@@ -454,6 +452,7 @@ namespace SurfaceKeyboard
 
             validPoints.AddRange(currValidPoints);
             currValidPoints.Clear();
+            calibPoints.Clear();
 
             // Clear the status if the calibration mode is ON
             if (calibStatus != CalibStatus.Off)

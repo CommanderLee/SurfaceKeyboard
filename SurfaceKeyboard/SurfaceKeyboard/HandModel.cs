@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows;
 
 namespace SurfaceKeyboard
 {
@@ -22,15 +23,15 @@ namespace SurfaceKeyboard
         private HandPoint[] fingerPoints;
 
         /* Center points of two hands, left hand, and right hand */
-        private BasicPoint  centerPt, leftCenterPt, rightCenterPt;
+        private Point  centerPt, leftCenterPt, rightCenterPt;
 
         public HandModel()
         {
             fingerPoints = new HandPoint[10];
 
-            centerPt = new BasicPoint();
-            leftCenterPt = new BasicPoint();
-            rightCenterPt = new BasicPoint();
+            centerPt = new Point();
+            leftCenterPt = new Point();
+            rightCenterPt = new Point();
         }
 
         /* Sort the finger points refer to standard typing gesture */
@@ -108,20 +109,24 @@ namespace SurfaceKeyboard
         /* Calculate center points of user's hands */
         private void calcCenterPoints()
         {
-            // About the magic number 0, 4, 6, 10: Refer to the hand position
             double leftXSum = 0, leftYSum = 0, rightXSum = 0, rightYSum = 0;
-            for (int i = 0; i < 4; ++i)
+            for (int i = (int)FingerCode.LeftLittle; i <= (int)FingerCode.LeftIndex; ++i)
             {
                 leftXSum += fingerPoints[i].getX();
                 leftYSum += fingerPoints[i].getY();
             }
-            for (int i = 6; i < 10; ++i)
+            for (int i = (int)FingerCode.RightIndex; i <= (int)FingerCode.RightLittle; ++i)
             {
                 rightXSum += fingerPoints[i].getX();
                 rightYSum += fingerPoints[i].getY();
             }
-            
-            // TODO: Get the position.
+
+            centerPt.X = (leftXSum + rightXSum) / 8;
+            centerPt.Y = (leftYSum + rightYSum) / 8;
+            leftCenterPt.X = leftXSum / 4;
+            leftCenterPt.Y = leftYSum / 4;
+            rightCenterPt.X = rightXSum / 4;
+            rightCenterPt.Y = rightYSum / 4;
         }
 
         /* Calculate center points and sort finger list */
@@ -144,5 +149,7 @@ namespace SurfaceKeyboard
         {
             return fingerPoints;
         }
+
+        public Point getCenterPt() { return centerPt; }
     }
 }

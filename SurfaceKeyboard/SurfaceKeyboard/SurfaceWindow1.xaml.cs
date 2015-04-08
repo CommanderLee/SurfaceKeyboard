@@ -65,10 +65,10 @@ namespace SurfaceKeyboard
         /* Calibration Button image*/
         ImageBrush                  calibOn, calibOff;
 
-        // Hand Model for calibration
+        /* Hand Model for calibration */
         HandModel                   userHand = new HandModel();
 
-        // Mark true if using mouse instead of fingers
+        /* Mark true if using mouse instead of fingers */
         private bool                isMouse = true;
 
         /// <summary>
@@ -97,9 +97,8 @@ namespace SurfaceKeyboard
             kbdBitmap.BeginInit();
             kbdBitmap.UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1x.png");
             kbdBitmap.EndInit();
-
+            
             // TODO: Move this Image after calibration
-            // Point kbdULCorner = new Point(10, 10);
             imgKeyboard.Source = kbdBitmap;
             imgKeyboard.Visibility = Visibility.Hidden;
             
@@ -237,6 +236,17 @@ namespace SurfaceKeyboard
             }
         }
 
+        /* Move the keyboard image to correct place */
+        private void updateKeyboardImage()
+        {
+            Point kbdCenter = userHand.getCenterPt();
+            if (showKeyboard)
+            {
+                // TODO: Move keyboard image to correct place
+                // Note: I don't know what method to use. Still working on this.
+            }
+        }
+
         /* Process Touch Point Information */
 
         // Calibrate the hand position
@@ -284,6 +294,9 @@ namespace SurfaceKeyboard
                                 Debug.Write("Error: load hand points failed.");
 
                             currValidPoints.AddRange(userHand.getFingerPoints().ToList<HandPoint>());
+
+                            // Show keyboard image at center position
+                            updateKeyboardImage();
 
                             calibPoints.Clear();
                         }

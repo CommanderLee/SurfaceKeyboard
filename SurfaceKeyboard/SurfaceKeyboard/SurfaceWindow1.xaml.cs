@@ -180,14 +180,32 @@ namespace SurfaceKeyboard
 
         /* Update UI Information */
 
+        /* There are various versions of code implementing Shuffle algorithm without bias. I don't want to focus on this topic. 
+         * My code is based on ShitalShah's answer from http://stackoverflow.com/a/22668974/4762924 */
+        private void swapTexts(int i, int j)
+        {
+            var temp = taskTexts[i];
+            taskTexts[i] = taskTexts[j];
+            taskTexts[j] = temp;
+        }
+
+        private void shuffleTexts(Random rnd)
+        {
+            for (int i = 0; i < taskTexts.Length; ++i)
+                swapTexts(i, rnd.Next(i, taskTexts.Length));
+        }
+
         private void loadTaskTexts()
         {
-            // Load task text from file
+            /* Load task text from file */
             string fPath = Directory.GetCurrentDirectory() + "\\";
             string fName = "TaskText.txt";
             taskTexts = System.IO.File.ReadAllLines(fPath + fName);
 
-            // TODO: Shuffle if necessary
+            /* Shuffle if necessary
+             * Comment out when testing (So that I will know the order) */
+            //shuffleTexts(new Random());
+
             taskSize = taskTexts.Length;
         }
 

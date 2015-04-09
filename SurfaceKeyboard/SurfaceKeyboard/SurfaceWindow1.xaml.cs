@@ -52,6 +52,7 @@ namespace SurfaceKeyboard
         /* Show the soft keyboard on the screen (default: close) */
         private bool                showKeyboard = false;
         ImageBrush                  keyboardOpen, keyboardClose;
+        double                      kbdWidth, kbdHeight;
 
         /* Calibrate before each test sentence */
         enum CalibStatus            { Off, Preparing, Calibrating, Waiting, Done };
@@ -62,14 +63,14 @@ namespace SurfaceKeyboard
         DateTime                    calibStartTime, calibEndTime;
         private const double        CALIB_WAITING_TIME = 500;
 
-        /* Calibration Button image*/
+        /* Calibration Button image */
         ImageBrush                  calibOn, calibOff;
 
         /* Hand Model for calibration */
         HandModel                   userHand = new HandModel();
 
         /* Mark true if using mouse instead of fingers */
-        private bool                isMouse = false;
+        private bool                isMouse = true;
 
         /// <summary>
         /// Default constructor.
@@ -97,8 +98,9 @@ namespace SurfaceKeyboard
             kbdBitmap.BeginInit();
             kbdBitmap.UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1x.png");
             kbdBitmap.EndInit();
-            
-            // TODO: Move this Image after calibration
+            kbdWidth = kbdBitmap.PixelWidth;
+            kbdHeight = kbdBitmap.PixelHeight;
+
             imgKeyboard.Source = kbdBitmap;
             imgKeyboard.Visibility = Visibility.Hidden;
             
@@ -261,7 +263,9 @@ namespace SurfaceKeyboard
             if (showKeyboard)
             {
                 // TODO: Move keyboard image to correct place
-                // Note: I don't know what method to use. Still working on this.
+                /* Get help from Clint (http://stackoverflow.com/a/29516946/4762924)*/
+                Canvas.SetLeft(imgKeyboard, kbdCenter.X - kbdWidth / 2);
+                Canvas.SetTop(imgKeyboard, kbdCenter.Y - kbdHeight / 2 - TaskTextBlk.ActualHeight);
             }
         }
 

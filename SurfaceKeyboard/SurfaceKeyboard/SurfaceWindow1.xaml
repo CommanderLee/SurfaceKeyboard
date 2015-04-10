@@ -7,7 +7,7 @@
     <DockPanel LastChildFill="True"
                Width="1600"
                Height="800">
-        <Border Height="180"
+        <Border Height="280"
                 Background="DarkGreen"
                 BorderBrush="WhiteSmoke"
                 BorderThickness="2"
@@ -29,20 +29,20 @@
                    FontSize="38" />
 
                 <Button Name="NextBtn"
-                Width="120"
-                Height="110"
-                Canvas.Left="1350"
-                Canvas.Top="60"
+                Width="1590"
+                Height="90"
+                Canvas.Left="3"
+                Canvas.Top="185"
                 FontSize="40"
                 BorderThickness="2"
                 TouchDown="NextBtn_TouchDown"
                 Click="NextBtn_Click">Next</Button>
 
                 <Button Name="SaveBtn" 
-                Width="120" 
-                Height="110" 
-                Canvas.Left="1475" 
-                Canvas.Top="60"
+                Width="220" 
+                Height="60" 
+                Canvas.Left="3" 
+                Canvas.Top="120"
                 FontSize="40"
                 BorderThickness="2"
                 TouchDown="SaveBtn_TouchDown"
@@ -51,28 +51,28 @@
                 <Button Name="KeyboardBtn" 
                         Canvas.Left="1350" Canvas.Top="5" 
                         Content="Keyboard"
-                        Height="50"  Width="120" 
+                        Height="60"  Width="120" 
                         FontSize="20" BorderThickness="2" 
                         TouchDown="KeyboardBtn_TouchDown" Click="KeyboardBtn_Click" />
 
                 <Button Name="CalibBtn"
                         Canvas.Left="1475" Canvas.Top="5" 
                         Content="Calibration"
-                        Height="50"  Width="120"
+                        Height="60"  Width="120"
                         FontSize="20" BorderThickness="2" 
                         TouchDown="CalibBtn_TouchDown" Click="CalibBtn_Click" />
                 
                 <Button Name="ClearBtn" 
-                        Canvas.Left="3" Canvas.Top="120" 
+                        Canvas.Left="1350" Canvas.Top="70" 
                         Content="Clear" 
-                        Height="50"  Width="110" 
+                        Height="110"  Width="120" 
                         FontSize="30" BorderThickness="2" 
                         TouchDown="ClearBtn_TouchDown" Click="ClearBtn_Click" />
 
                 <Button Name="DeleteBtn" 
-                        Canvas.Left="118" Canvas.Top="120" 
+                        Canvas.Left="1475" Canvas.Top="70" 
                         Content="Delete"
-                        Height="50"  Width="110" 
+                        Height="110"  Width="120" 
                         FontSize="30" BorderThickness="2" 
                         TouchDown="DeleteBtn_TouchDown" Click="DeleteBtn_Click" />
                 

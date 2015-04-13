@@ -1,0 +1,15 @@
+﻿<Window x:Class="SurfaceKeyboard.WindowUserId"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="WindowUserId" Height="300" Width="300">
+    <Grid>
+        <Label Content="User ID:" Height="50" Width="80" 
+               FontSize="15"
+               HorizontalAlignment="Left" Margin="40,79,0,0" Name="labelUserId" VerticalAlignment="Top" />
+
+        <TextBox Height="50" Width="100" HorizontalAlignment="Left" Margin="135,70,0,0" 
+                 Name="textBoxUserId" VerticalAlignment="Top"  />
+
+        <Button Content="OK" Height="30" Width="80" HorizontalAlignment="Left" Margin="80,182,0,0" Name="button1" VerticalAlignment="Top" Click="button1_Click" />
+    </Grid>
+</Window>

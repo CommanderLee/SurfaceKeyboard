@@ -112,6 +112,10 @@ namespace SurfaceKeyboard
             loadTaskTexts();
             updateStatusBlock();
             updateTaskTextBlk();
+
+            /* Open a window to input the User ID */
+            WindowUserId myWindowUserIf = new WindowUserId();
+            myWindowUserIf.Show();
         }
 
         /// <summary>

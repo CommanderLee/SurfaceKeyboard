@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.ComponentModel;
 
 namespace SurfaceKeyboard
 {
@@ -18,14 +19,33 @@ namespace SurfaceKeyboard
     /// </summary>
     public partial class WindowUserId : Window
     {
+        private String userId;
+
         public WindowUserId()
         {
             InitializeComponent();
+            userId = "";
         }
 
         private void button1_Click(object sender, RoutedEventArgs e)
         {
+            userId = textBoxUserId.Text;
+            this.Close();
+        }
 
+        /* The main window call this function to get the string */
+        public String getUserId()
+        {
+            return userId;
+        }
+
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            if (userId == "")
+            {
+                MessageBox.Show("Error: Empty User ID.");
+                e.Cancel = true;
+            }
         }
     }
 }

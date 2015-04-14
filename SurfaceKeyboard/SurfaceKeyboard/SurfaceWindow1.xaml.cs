@@ -27,6 +27,10 @@ namespace SurfaceKeyboard
     /// </summary>
     public partial class SurfaceWindow1 : SurfaceWindow
     {
+        /* The window to collect user id */
+        WindowUserId                userIdWindow;
+        String                      userId;
+
         /* The start time of the app */
         private bool                isStart;
         private DateTime            startTime;
@@ -114,8 +118,13 @@ namespace SurfaceKeyboard
             updateTaskTextBlk();
 
             /* Open a window to input the User ID */
-            WindowUserId myWindowUserIf = new WindowUserId();
-            myWindowUserIf.Show();
+            userIdWindow = new WindowUserId();
+            //userIdWindow.Owner = this;
+            userIdWindow.ShowActivated = true;
+            userIdWindow.ShowDialog();
+            userId = userIdWindow.getUserId();
+
+            this.Title = "Surface Keyboard - " + userId;
         }
 
         /// <summary>
@@ -424,12 +433,16 @@ namespace SurfaceKeyboard
             // Return the tag string for testing status( with/without keyboard .etc)
             string myTag = "";
 
+            // User ID
+            myTag += "_" + userId;
+
             // Keyboard
             if (showKeyboard)
                 myTag += "_KbdOn";
             else
                 myTag += "_KbdOff";
 
+            // If using calibration
             if (calibStatus == CalibStatus.Off)
                 myTag += "_CalibOff";
             else

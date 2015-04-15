@@ -76,6 +76,10 @@ namespace SurfaceKeyboard
         /* Mark true if using mouse instead of fingers */
         private bool                isMouse = true;
 
+        /* Physical keyboard test */
+        private bool                isPhysicalKbd;
+        private String              currTyping;
+
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -91,6 +95,8 @@ namespace SurfaceKeyboard
             hpNo = 0;
             currValidPoints.Clear();
             showKeyboard = false;
+            isPhysicalKbd = true;
+            currTyping = "";
 
             // Keyboard Control Button Image
             keyboardOpen = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_open.png")));
@@ -776,6 +782,20 @@ namespace SurfaceKeyboard
             if (isMouse)
             {
                 DeleteBtn_TouchDown(null, null);
+            }
+        }
+
+        private void SurfaceWindow_KeyDown(object sender, KeyEventArgs e)
+        {
+            String str = e.Key.ToString();
+            //Console.Write(str);
+            if (str == "Space")
+            {
+                currTyping += " ";
+            }
+            else if (str.Length == 1)
+            {
+                currTyping += str;
             }
         }
 

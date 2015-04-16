@@ -79,6 +79,7 @@ namespace SurfaceKeyboard
         /* Physical keyboard test */
         private bool                isPhysicalKbd;
         private String              currTyping;
+        private List<String>        phyStrings = new List<String>();
 
         /// <summary>
         /// Default constructor.
@@ -125,7 +126,6 @@ namespace SurfaceKeyboard
 
             /* Open a window to input the User ID */
             userIdWindow = new WindowUserId();
-            //userIdWindow.Owner = this;
             userIdWindow.ShowActivated = true;
             userIdWindow.ShowDialog();
             userId = userIdWindow.getUserId();
@@ -432,6 +432,33 @@ namespace SurfaceKeyboard
             }
         }
 
+        /* Typing with the physical keyboard */
+        private void SurfaceWindow_KeyDown(object sender, KeyEventArgs e)
+        {
+            String str = e.Key.ToString();
+            Console.Write(str);
+
+            /* A-Z */
+            if (str.Length == 1)
+            {
+                currTyping += str;
+                ++hpNo;
+            }
+            /* Space */
+            else if (str == "Space")
+            {
+                currTyping += "_";
+                ++hpNo;
+            }
+            /* Enter */
+            else if (str == "Return")
+            {
+                // TODO: Goto next one
+            }
+
+            updateTaskTextBlk();
+        }
+
         /* Listening to the buttons */
 
         private string getTestingTag()
@@ -442,17 +469,24 @@ namespace SurfaceKeyboard
             // User ID
             myTag += "_" + userId;
 
-            // Keyboard
-            if (showKeyboard)
-                myTag += "_KbdOn";
+            if (isPhysicalKbd)
+            {
+                myTag += "_PhyKbd";
+            }
             else
-                myTag += "_KbdOff";
+            {
+                // Keyboard
+                if (showKeyboard)
+                    myTag += "_KbdOn";
+                else
+                    myTag += "_KbdOff";
 
-            // If using calibration
-            if (calibStatus == CalibStatus.Off)
-                myTag += "_CalibOff";
-            else
-                myTag += "_CalibOn";
+                // If using calibration
+                if (calibStatus == CalibStatus.Off)
+                    myTag += "_CalibOff";
+                else
+                    myTag += "_CalibOn";
+            }
 
             return myTag;
         }
@@ -467,23 +501,39 @@ namespace SurfaceKeyboard
 
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
             {
-                file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
-                foreach (HandPoint point in handPoints)
+                if (isPhysicalKbd)
                 {
-                    file.WriteLine(point.ToString());
+                    if (currTyping.Length > 0)
+                        phyStrings.Add(currTyping);
+
+                    foreach (String str in phyStrings)
+                    {
+                        file.WriteLine(str);
+                    }
+                }
+                else
+                {
+                    file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
+                    foreach (HandPoint point in handPoints)
+                    {
+                        file.WriteLine(point.ToString());
+                    }
                 }
             }
 
-            if (currValidPoints.Count > 0)
+            if (!isPhysicalKbd)
             {
-                validPoints.AddRange(currValidPoints);
-            }
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameTyping, true))
-            {
-                file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
-                foreach (HandPoint point in validPoints)
+                if (currValidPoints.Count > 0)
                 {
-                    file.WriteLine(point.ToString());
+                    validPoints.AddRange(currValidPoints);
+                }
+                using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameTyping, true))
+                {
+                    file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
+                    foreach (HandPoint point in validPoints)
+                    {
+                        file.WriteLine(point.ToString());
+                    }
                 }
             }
 
@@ -492,11 +542,13 @@ namespace SurfaceKeyboard
             handPoints.Clear();
             validPoints.Clear();
             currValidPoints.Clear();
+            currTyping = "";
+            phyStrings.Clear();
         }
 
         private void SaveBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (isMouse)
+            if (isMouse || isPhysicalKbd)
             {
                 SaveBtn_TouchDown(null, null);
             }
@@ -508,14 +560,22 @@ namespace SurfaceKeyboard
             taskNo++;
             hpNo = 0;
 
-            validPoints.AddRange(currValidPoints);
-            currValidPoints.Clear();
-            calibPoints.Clear();
-
-            // Clear the status if the calibration mode is ON
-            if (calibStatus != CalibStatus.Off)
+            if (isPhysicalKbd)
             {
-                calibStatus = CalibStatus.Preparing;
+                phyStrings.Add(currTyping);
+                currTyping = "";
+            }
+            else
+            {
+                validPoints.AddRange(currValidPoints);
+                currValidPoints.Clear();
+                calibPoints.Clear();
+
+                // Clear the status if the calibration mode is ON
+                if (calibStatus != CalibStatus.Off)
+                {
+                    calibStatus = CalibStatus.Preparing;
+                }
             }
 
             updateStatusBlock();
@@ -529,9 +589,12 @@ namespace SurfaceKeyboard
 
         private void NextBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (isMouse)
+            if (isMouse || isPhysicalKbd)
             {
                 gotoNextText();
+                /* Try to set the focus back to input canvas: avoid unexpected click using Space */
+                // TODO: Bug
+                Console.Write("NextBtn KbdFocus:" + NextBtn.IsKeyboardFocused);
             }
         }
 
@@ -702,7 +765,7 @@ namespace SurfaceKeyboard
 
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (isMouse)
+            if (isMouse || isPhysicalKbd)
             {
                 ClearBtn_TouchDown(null, null);
             }
@@ -779,23 +842,9 @@ namespace SurfaceKeyboard
 
         private void DeleteBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (isMouse)
+            if (isMouse || isPhysicalKbd)
             {
                 DeleteBtn_TouchDown(null, null);
-            }
-        }
-
-        private void SurfaceWindow_KeyDown(object sender, KeyEventArgs e)
-        {
-            String str = e.Key.ToString();
-            //Console.Write(str);
-            if (str == "Space")
-            {
-                currTyping += " ";
-            }
-            else if (str.Length == 1)
-            {
-                currTyping += str;
             }
         }
 

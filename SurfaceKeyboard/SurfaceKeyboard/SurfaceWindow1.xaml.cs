@@ -453,7 +453,7 @@ namespace SurfaceKeyboard
             /* Enter */
             else if (str == "Return")
             {
-                // TODO: Goto next one
+                gotoNextText();
             }
 
             updateTaskTextBlk();
@@ -589,11 +589,11 @@ namespace SurfaceKeyboard
 
         private void NextBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (isMouse || isPhysicalKbd)
+            if (isMouse && !isPhysicalKbd)
             {
                 gotoNextText();
                 /* Try to set the focus back to input canvas: avoid unexpected click using Space */
-                // TODO: Bug
+                // TODO: Disable before I find a solution
                 Console.Write("NextBtn KbdFocus:" + NextBtn.IsKeyboardFocused);
             }
         }

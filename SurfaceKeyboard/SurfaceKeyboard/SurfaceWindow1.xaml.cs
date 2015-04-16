@@ -590,12 +590,14 @@ namespace SurfaceKeyboard
 
         private void NextBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (isMouse && !isPhysicalKbd)
+            if (isMouse || isPhysicalKbd)
             {
                 gotoNextText();
-                /* Try to set the focus back to input canvas: avoid unexpected click using Space */
-                // TODO: Disable before I find a solution
-                Console.Write("NextBtn KbdFocus:" + NextBtn.IsKeyboardFocused);
+
+                if (isPhysicalKbd)
+                {
+                    clearKbdFocus(NextBtn);
+                }
             }
         }
 
@@ -747,6 +749,21 @@ namespace SurfaceKeyboard
 
         /* Listening to the buttons */
 
+        /* Clear focus on the buttons after clicking. 
+         * If not doing so, the Space of physical keyboard will triger the click on the focused button. 
+         * Reference: decasteljau http://stackoverflow.com/a/2914599/4762924 */
+        private void clearKbdFocus(Button btn)
+        {
+            FrameworkElement parent = (FrameworkElement)btn.Parent;
+            while (parent != null && parent is IInputElement && !((IInputElement)parent).Focusable)
+            {
+                parent = (FrameworkElement)parent.Parent;
+            }
+
+            DependencyObject scope = FocusManager.GetFocusScope(btn);
+            FocusManager.SetFocusedElement(scope, parent as IInputElement);
+        }
+
         private void ClearBtn_TouchDown(object sender, TouchEventArgs e)
         {
             // Clear the touch points of this sentence
@@ -769,11 +786,11 @@ namespace SurfaceKeyboard
             if (isMouse || isPhysicalKbd)
             {
                 ClearBtn_TouchDown(null, null);
-                Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(delegate()
+
+                if (isPhysicalKbd)
                 {
-                    InputCanvas.Focus();
-                    Keyboard.Focus(InputCanvas);
-                }));
+                    clearKbdFocus(ClearBtn);
+                }
             }
         }
 
@@ -797,6 +814,11 @@ namespace SurfaceKeyboard
             if (isMouse)
             {
                 KeyboardBtn_TouchDown(null, null);
+
+                if (isPhysicalKbd)
+                {
+                    clearKbdFocus(KeyboardBtn);
+                }
             }
         }
 
@@ -822,6 +844,11 @@ namespace SurfaceKeyboard
             if (isMouse)
             {
                 CalibBtn_TouchDown(null, null);
+
+                if (isPhysicalKbd)
+                {
+                    clearKbdFocus(CalibBtn);
+                }
             }
         }
 
@@ -851,6 +878,11 @@ namespace SurfaceKeyboard
             if (isMouse || isPhysicalKbd)
             {
                 DeleteBtn_TouchDown(null, null);
+
+                if (isPhysicalKbd)
+                {
+                    clearKbdFocus(DeleteBtn);
+                }
             }
         }
 

@@ -3,6 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:s="http://schemas.microsoft.com/surface/2008"
     Title="SurfaceKeyboard" Keyboard.KeyDown="SurfaceWindow_KeyDown"
+    TabIndex="1"
     >
     <DockPanel LastChildFill="True"
                Width="1600"
@@ -36,7 +37,8 @@
                 FontSize="40"
                 BorderThickness="2"
                 TouchDown="NextBtn_TouchDown"
-                Click="NextBtn_Click">Next</Button>
+                Click="NextBtn_Click"
+                TabIndex="3">Next</Button>
 
                 <Button Name="SaveBtn" 
                 Width="220" 
@@ -46,7 +48,8 @@
                 FontSize="40"
                 BorderThickness="2"
                 TouchDown="SaveBtn_TouchDown"
-                Click="SaveBtn_Click">Save</Button>
+                Click="SaveBtn_Click"
+                TabIndex="2">Save</Button>
 
                 <Button Name="KeyboardBtn" 
                         Canvas.Left="1350" Canvas.Top="5" 

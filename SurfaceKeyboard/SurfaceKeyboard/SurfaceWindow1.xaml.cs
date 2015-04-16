@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using System.Diagnostics;
 using System.Collections;
 using Microsoft.Surface;
@@ -768,6 +769,11 @@ namespace SurfaceKeyboard
             if (isMouse || isPhysicalKbd)
             {
                 ClearBtn_TouchDown(null, null);
+                Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(delegate()
+                {
+                    InputCanvas.Focus();
+                    Keyboard.Focus(InputCanvas);
+                }));
             }
         }
 

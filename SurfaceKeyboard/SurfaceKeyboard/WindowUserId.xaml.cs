@@ -25,6 +25,8 @@ namespace SurfaceKeyboard
         {
             InitializeComponent();
             userId = "";
+            textBoxUserId.Focus();
+            Keyboard.Focus(textBoxUserId);
         }
 
         private void button1_Click(object sender, RoutedEventArgs e)

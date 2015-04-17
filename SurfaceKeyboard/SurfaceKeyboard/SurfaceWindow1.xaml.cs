@@ -257,17 +257,25 @@ namespace SurfaceKeyboard
         {
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
-                if (hpNo > 0)
+                if (isPhysicalKbd)
                 {
-                    HandPoint hpLast = handPoints.Last();
-                    // Show the information
-                    StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}",
-                        taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
+                    StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2})",
+                            taskNo + 1, taskSize, hpNo);
                 }
                 else
                 {
-                    StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
-                        taskNo + 1, taskSize, "N/A", "N/A", "N/A", "N/A");
+                    if (hpNo > 0)
+                    {
+                        HandPoint hpLast = handPoints.Last();
+                        // Show the information
+                        StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}",
+                            taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
+                    }
+                    else
+                    {
+                        StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
+                            taskNo + 1, taskSize, "N/A", "N/A", "N/A", "N/A");
+                    }
                 }
             }
             else
@@ -445,19 +453,22 @@ namespace SurfaceKeyboard
                 currTyping += str;
                 ++hpNo;
             }
-            /* Space */
             else if (str == "Space")
             {
                 currTyping += "_";
                 ++hpNo;
             }
-            /* Enter */
             else if (str == "Return")
             {
                 gotoNextText();
             }
+            else if (str == "Back")
+            {
+                deleteWord();
+            }
 
             updateTaskTextBlk();
+            updateStatusBlock();
         }
 
         /* Listening to the buttons */
@@ -852,7 +863,7 @@ namespace SurfaceKeyboard
             }
         }
 
-        private void DeleteBtn_TouchDown(object sender, TouchEventArgs e)
+        private void deleteWord()
         {
             // Delete one word. Now hpNo points to the position of next input char.
             string currText = taskTexts[taskNo % taskSize];
@@ -865,7 +876,15 @@ namespace SurfaceKeyboard
                     if (currText[removeStart - 1] == ' ')
                         break;
                 }
-                currValidPoints.RemoveRange(removeStart, hpNo - removeStart);
+
+                if (isPhysicalKbd)
+                {
+                    currTyping = currTyping.Substring(0, removeStart);
+                }
+                else
+                {
+                    currValidPoints.RemoveRange(removeStart, hpNo - removeStart);
+                }
                 hpNo = removeStart;
             }
 
@@ -873,11 +892,16 @@ namespace SurfaceKeyboard
             updateTaskTextBlk();
         }
 
+        private void DeleteBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            deleteWord();
+        }
+
         private void DeleteBtn_Click(object sender, RoutedEventArgs e)
         {
             if (isMouse || isPhysicalKbd)
             {
-                DeleteBtn_TouchDown(null, null);
+                deleteWord();
 
                 if (isPhysicalKbd)
                 {

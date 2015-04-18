@@ -74,11 +74,11 @@ namespace SurfaceKeyboard
         /* Hand Model for calibration */
         HandModel                   userHand = new HandModel();
 
-        /* Mark true if using mouse instead of fingers */
-        private bool                isMouse = true;
+        /* Different devices: Hand for touch typing, Keyboard for normal typing test, Mouse for debug on laptop */
+        enum InputDevice            { Hand, Keyboard, Mouse };
+        InputDevice                 currDevice;
 
         /* Physical keyboard test */
-        private bool                isPhysicalKbd;
         private String              currTyping;
         private List<String>        phyStrings = new List<String>();
 
@@ -97,15 +97,15 @@ namespace SurfaceKeyboard
             hpNo = 0;
             currValidPoints.Clear();
             showKeyboard = false;
-            isPhysicalKbd = true;
             currTyping = "";
+            currDevice = InputDevice.Keyboard;
 
-            // Keyboard Control Button Image
+            /* Keyboard Control Button Image */
             keyboardOpen = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_open.png")));
             keyboardClose = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_close.png")));
             KeyboardBtn.Background = keyboardClose;
 
-            // Keyboard Image
+            /* Keyboard Image (same as, or similar to physical keyboard) */
             BitmapImage kbdBitmap = new BitmapImage();
             kbdBitmap.BeginInit();
             kbdBitmap.UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1x.png");
@@ -116,7 +116,7 @@ namespace SurfaceKeyboard
             imgKeyboard.Source = kbdBitmap;
             imgKeyboard.Visibility = Visibility.Hidden;
             
-            // Calibration Control Button Image
+            /* Calibration Control Button Image */
             calibOn = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_on.png")));
             calibOff = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_off.png")));
             CalibBtn.Background = calibOff;
@@ -200,10 +200,12 @@ namespace SurfaceKeyboard
             //TODO: disable audio, animations here
         }
 
-        /* Update UI Information */
+        /** Update UI Information **/
 
-        /* There are various versions of code implementing Shuffle algorithm without bias. I don't want to focus on this topic. 
-         * My code is based on ShitalShah's answer from http://stackoverflow.com/a/22668974/4762924 */
+        /**
+         * There are various versions of code implementing Shuffle algorithm without bias. I don't want to focus on this topic. 
+         * My code is based on ShitalShah's answer from http://stackoverflow.com/a/22668974/4762924 
+         */
         private void swapTexts(int i, int j)
         {
             var temp = taskTexts[i];
@@ -224,19 +226,22 @@ namespace SurfaceKeyboard
             string fName = "TaskText.txt";
             taskTexts = System.IO.File.ReadAllLines(fPath + fName);
 
-            /* Shuffle if necessary
+            /* Shuffle if necessary, and save the shuffled text later.
              * Comment out when testing (So that I will know the order) */
             //shuffleTexts(new Random());
 
             taskSize = taskTexts.Length;
         }
 
+        /**
+         * TaskTextBlock: Main block in the top-center of the window.
+         * 1st line: Original text, 2nd line: User's input 
+         */
         private void updateTaskTextBlk()
         {
-            // Select next text for the textblock
             string currText = taskTexts[taskNo % taskSize];
 
-            // Show asterisk feedback for the user
+            /* Show asterisk feedback for the user */
             Regex rgx = new Regex(@"[^\s]");
             string typeText = rgx.Replace(currText, "*");
 
@@ -248,34 +253,42 @@ namespace SurfaceKeyboard
             }
             else
             {
-                // Use asterisk while calibrating
+                /* Use asterisk while calibrating */
                 TaskTextBlk.Text = typeText;
             }
         }
 
+        /**
+         * StatusBlock: Show some x,y,id.etc information on the top-left of the window
+         */
         private void updateStatusBlock()
         {
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
-                if (isPhysicalKbd)
+                switch (currDevice)
                 {
-                    StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2})",
+                    case InputDevice.Keyboard:
+                        /* Physical Keyboard */
+                        StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2})",
                             taskNo + 1, taskSize, hpNo);
-                }
-                else
-                {
-                    if (hpNo > 0)
-                    {
-                        HandPoint hpLast = handPoints.Last();
-                        // Show the information
-                        StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}",
-                            taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
-                    }
-                    else
-                    {
-                        StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
-                            taskNo + 1, taskSize, "N/A", "N/A", "N/A", "N/A");
-                    }
+                        break;
+
+                    case InputDevice.Hand:
+                    case InputDevice.Mouse:
+                        /* Touch or Mouse(Debug) */
+                        if (hpNo > 0)
+                        {
+                            HandPoint hpLast = handPoints.Last();
+
+                            StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}",
+                                taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
+                        }
+                        else
+                        {
+                            StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
+                                taskNo + 1, taskSize, "N/A", "N/A", "N/A", "N/A");
+                        }
+                        break;
                 }
             }
             else
@@ -284,27 +297,30 @@ namespace SurfaceKeyboard
             }
         }
 
-        /* Move the keyboard image to correct place */
+        /**
+         * Move the keyboard image to correct place 
+         */
         private void updateKeyboardImage()
         {
             Point kbdCenter = userHand.getCenterPt();
             if (showKeyboard)
             {
-                // TODO: Move keyboard image to correct place
                 /* Get help from Clint (http://stackoverflow.com/a/29516946/4762924)*/
                 Canvas.SetLeft(imgKeyboard, kbdCenter.X - kbdWidth / 2);
                 Canvas.SetTop(imgKeyboard, kbdCenter.Y - kbdHeight / 2 - TaskTextBlk.ActualHeight);
             }
         }
 
-        /* Process Touch Point Information */
+        /** Process Touch Point Information **/
 
-        // Calibrate the hand position
+        /**
+         * Calibrate the hand position
+         */
         private void calibrateHands(double x, double y, int id, HPType pointType)
         {
-            // New finger detected
             if (pointType == HPType.Touch)
             {
+                /* New finger detected */
                 switch (calibStatus)
                 {
                     case CalibStatus.Preparing:
@@ -318,7 +334,7 @@ namespace SurfaceKeyboard
                         calibPoints.Add(new HandPoint(x, y, DateTime.Now.Subtract(calibStartTime).TotalMilliseconds,
                             taskNo + "-" + (int)HpOthers.Calibrate + "-" + id, HPType.Calibrate));
 
-                        // If we get enough fingers
+                        /* If we get enough fingers */
                         if (calibPoints.Count == HandModel.FINGER_NUMBER)
                         {
                             calibStatus = CalibStatus.Waiting;
@@ -333,19 +349,21 @@ namespace SurfaceKeyboard
             }
             else
             {
+                /* Wait for some time */
                 switch (calibStatus)
                 {
                     case CalibStatus.Waiting:
                         if (DateTime.Now.Subtract(calibEndTime).TotalMilliseconds >= CALIB_WAITING_TIME)
                         {
                             calibStatus = CalibStatus.Done;
-                            // Save to variables
+
+                            /* Save to variables */
                             if (!userHand.loadHandPoints(calibPoints))
                                 Debug.Write("Error: load hand points failed.");
 
                             currValidPoints.AddRange(userHand.getFingerPoints().ToList<HandPoint>());
 
-                            // Show keyboard image at center position
+                            /* Show keyboard image at center position */
                             updateKeyboardImage();
 
                             calibPoints.Clear();
@@ -371,7 +389,7 @@ namespace SurfaceKeyboard
          */
         private void saveTouchPoints(double x, double y, int id)
         {
-            // Get touchdown time
+            /* Get touchdown time */
             double timeStamp = 0;
             if (!isStart)
             {
@@ -384,15 +402,14 @@ namespace SurfaceKeyboard
                 timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
             }
 
-            // Save the information
+            /* Save the information */
             HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id, HPType.Touch);
             handPoints.Add(touchPoint);
 
-            // Create elements in the hashtable
+            /* Create elements in the hashtable */
             if (!movement.ContainsKey(id))
             {
                 GesturePoints myPoints = new GesturePoints(touchPoint, HandStatus.Type);
-                // myPoints.Add(touchPoint);
                 movement.Add(id, myPoints);
             }
             else
@@ -401,21 +418,22 @@ namespace SurfaceKeyboard
             }
         }
 
-        /* Touch the main area (Input Canvas) */
-
+        /**
+         * Touch the main area (Input Canvas) 
+         */
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
         {
-            if (e.TouchDevice.GetIsFingerRecognized())
+            if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized())
             {
-                // Get touchdown position
+                /* Get touchdown position */
                 Point touchPos = e.TouchDevice.GetPosition(this);
 
-                // No calibration, or the user has done his calibration
+                /* Calibration off, or the user has done his calibration */
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                 {
                     saveTouchPoints(touchPos.X, touchPos.Y, e.TouchDevice.Id);
                 }
-                else // Calibration points
+                else
                 {
                     calibrateHands(touchPos.X, touchPos.Y, e.TouchDevice.Id, HPType.Touch);
                 }
@@ -424,191 +442,55 @@ namespace SurfaceKeyboard
 
         private void InputCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (isMouse)
+            if (currDevice == InputDevice.Mouse)
             {
-                // Get touchdown position
+                /* Get touchdown position */
                 Point touchPos = e.GetPosition(this);
 
-                // No calibration, or the user has done his calibration
+                /* No calibration, or the user has done his calibration */
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                 {
                     saveTouchPoints(touchPos.X, touchPos.Y, -1);
                 }
-                else // Calibration points
+                else
                 {
                     calibrateHands(touchPos.X, touchPos.Y, -1, HPType.Touch);
                 }
             }
         }
 
-        /* Typing with the physical keyboard */
+        /**
+         * Typing with the physical keyboard 
+         */
         private void SurfaceWindow_KeyDown(object sender, KeyEventArgs e)
         {
-            String str = e.Key.ToString();
-            Console.Write(str);
-
-            /* A-Z */
-            if (str.Length == 1)
+            if (currDevice == InputDevice.Keyboard)
             {
-                currTyping += str;
-                ++hpNo;
-            }
-            else if (str == "Space")
-            {
-                currTyping += "_";
-                ++hpNo;
-            }
-            else if (str == "Return")
-            {
-                gotoNextText();
-            }
-            else if (str == "Back")
-            {
-                deleteWord();
-            }
+                String str = e.Key.ToString();
+                Console.Write(e.Device + " " + str + "\n");
 
-            updateTaskTextBlk();
-            updateStatusBlock();
-        }
-
-        /* Listening to the buttons */
-
-        private string getTestingTag()
-        {
-            // Return the tag string for testing status( with/without keyboard .etc)
-            string myTag = "";
-
-            // User ID
-            myTag += "_" + userId;
-
-            if (isPhysicalKbd)
-            {
-                myTag += "_PhyKbd";
-            }
-            else
-            {
-                // Keyboard
-                if (showKeyboard)
-                    myTag += "_KbdOn";
-                else
-                    myTag += "_KbdOff";
-
-                // If using calibration
-                if (calibStatus == CalibStatus.Off)
-                    myTag += "_CalibOff";
-                else
-                    myTag += "_CalibOn";
-            }
-
-            return myTag;
-        }
-
-        private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
-        {
-            // Save the touchdown seq to file
-            string fPath = Directory.GetCurrentDirectory() + '\\';
-            string fName = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + getTestingTag() + ".csv";
-            string fNameTyping = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + getTestingTag() + "_typing.csv";
-            StatusTextBlk.Text = fPath + fName;
-
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
-            {
-                if (isPhysicalKbd)
+                /* A-Z */
+                if (str.Length == 1)
                 {
-                    if (currTyping.Length > 0)
-                        phyStrings.Add(currTyping);
-
-                    foreach (String str in phyStrings)
-                    {
-                        file.WriteLine(str);
-                    }
+                    currTyping += str;
+                    ++hpNo;
                 }
-                else
+                else if (str == "Space")
                 {
-                    file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
-                    foreach (HandPoint point in handPoints)
-                    {
-                        file.WriteLine(point.ToString());
-                    }
+                    currTyping += "_";
+                    ++hpNo;
                 }
-            }
-
-            if (!isPhysicalKbd)
-            {
-                if (currValidPoints.Count > 0)
+                else if (str == "Return")
                 {
-                    validPoints.AddRange(currValidPoints);
+                    gotoNextText();
                 }
-                using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameTyping, true))
+                else if (str == "Back")
                 {
-                    file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
-                    foreach (HandPoint point in validPoints)
-                    {
-                        file.WriteLine(point.ToString());
-                    }
+                    deleteWord();
                 }
-            }
 
-            // Clear the timer and storage
-            isStart = false;
-            handPoints.Clear();
-            validPoints.Clear();
-            currValidPoints.Clear();
-            currTyping = "";
-            phyStrings.Clear();
-        }
-
-        private void SaveBtn_Click(object sender, RoutedEventArgs e)
-        {
-            if (isMouse || isPhysicalKbd)
-            {
-                SaveBtn_TouchDown(null, null);
-            }
-        }
-
-        // Call when press the next button or do the 'next' gesture
-        private void gotoNextText()
-        {
-            taskNo++;
-            hpNo = 0;
-
-            if (isPhysicalKbd)
-            {
-                phyStrings.Add(currTyping);
-                currTyping = "";
-            }
-            else
-            {
-                validPoints.AddRange(currValidPoints);
-                currValidPoints.Clear();
-                calibPoints.Clear();
-
-                // Clear the status if the calibration mode is ON
-                if (calibStatus != CalibStatus.Off)
-                {
-                    calibStatus = CalibStatus.Preparing;
-                }
-            }
-
-            updateStatusBlock();
-            updateTaskTextBlk();
-        }
-
-        private void NextBtn_TouchDown(object sender, TouchEventArgs e)
-        {
-            gotoNextText();
-        }
-
-        private void NextBtn_Click(object sender, RoutedEventArgs e)
-        {
-            if (isMouse || isPhysicalKbd)
-            {
-                gotoNextText();
-
-                if (isPhysicalKbd)
-                {
-                    clearKbdFocus(NextBtn);
-                }
+                updateTaskTextBlk();
+                updateStatusBlock();
             }
         }
 
@@ -621,7 +503,7 @@ namespace SurfaceKeyboard
         * */
         private void handleGesture(double x, double y, int id)
         {
-            // Push to the movement queue and check time
+            /* Push to the movement queue and check time */
             double timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
             HandPoint movePoint = new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id, HPType.Move);
             if (movement.ContainsKey(id))
@@ -630,10 +512,10 @@ namespace SurfaceKeyboard
                 myPoints.Add(movePoint);
                 handPoints.Add(movePoint);
 
-                // Check Distance
+                /* Check Distance */
                 if (myPoints.checkBackspaceGesture())
                 {
-                    // Delete ONE character
+                    /* Delete ONE character */
                     // TODO: Delete one word?
                     if (myPoints.getStatus() != HandStatus.Backspace)
                     {
@@ -653,7 +535,7 @@ namespace SurfaceKeyboard
                     {
                         myPoints.setStatus(HandStatus.Enter);
                         // TODO: Output 'Enter' if applicable
-                        // Show the next task
+                        /* Show the next task */
                         gotoNextText();
                     }
                 }
@@ -666,7 +548,7 @@ namespace SurfaceKeyboard
 
         private void InputCanvas_TouchMove(object sender, TouchEventArgs e)
         {
-            if (e.TouchDevice.GetIsFingerRecognized())
+            if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized())
             {
                 Point touchPos = e.TouchDevice.GetPosition(this); 
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
@@ -682,7 +564,7 @@ namespace SurfaceKeyboard
 
         private void InputCanvas_MouseMove(object sender, MouseEventArgs e)
         {
-            if (isMouse)
+            if (currDevice == InputDevice.Mouse)
             {
                 if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
@@ -738,9 +620,9 @@ namespace SurfaceKeyboard
             {
                 /* If the user raise his finger, then reset. 
                  * Note: If the user raise the mouse, don't do this. Just for testing. */
-                if (!isMouse)
+                if (currDevice == InputDevice.Hand)
                 {
-                    // Reset calibration points
+                    /* Reset calibration points */
                     calibStatus = CalibStatus.Preparing;
                     calibPoints.Clear();
                     updateStatusBlock();
@@ -750,19 +632,191 @@ namespace SurfaceKeyboard
 
         private void InputCanvas_TouchUp(object sender, TouchEventArgs e)
         {
-            releaseGesture(e.TouchDevice.Id);
+            if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized())
+            {
+                releaseGesture(e.TouchDevice.Id);
+            }
         }
 
         private void InputCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            releaseGesture(-1);
+            if (currDevice == InputDevice.Mouse)
+            {
+                releaseGesture(-1);
+            }
         }
 
-        /* Listening to the buttons */
+        /** Listening to the buttons **/
 
-        /* Clear focus on the buttons after clicking. 
+        private string getTestingTag()
+        {
+            /* Return the tag string for testing status( with/without keyboard .etc) */
+            string myTag = "";
+
+            /* User ID */
+            myTag += "_" + userId;
+
+            switch (currDevice)
+            {
+                case InputDevice.Keyboard:
+                    myTag += "_PhyKbd";
+                    break;
+
+                case InputDevice.Hand:
+                case InputDevice.Mouse:
+                    if (showKeyboard)
+                        myTag += "_KbdOn";
+                    else
+                        myTag += "_KbdOff";
+
+                    if (calibStatus == CalibStatus.Off)
+                        myTag += "_CalibOff";
+                    else
+                        myTag += "_CalibOn";
+                    break;
+            }
+
+            return myTag;
+        }
+
+        /** 
+         * Save the touchdown seq to file. '_typing' file: major data 
+         */
+        private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            string fPath = Directory.GetCurrentDirectory() + '\\';
+            string fName = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + getTestingTag() + ".csv";
+            string fNameTyping = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + getTestingTag() + "_typing.csv";
+            StatusTextBlk.Text = fPath + fName;
+
+            switch (currDevice)
+            {
+                case InputDevice.Keyboard:
+                    if (currTyping.Length > 0)
+                        phyStrings.Add(currTyping);
+
+                    /* Save raw input strings into file */
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
+                    {
+                        foreach (String str in phyStrings)
+                        {
+                            file.WriteLine(str);
+                        }
+                    }
+                    break;
+
+                case InputDevice.Hand:
+                case InputDevice.Mouse:
+                    /* Save raw input points into file */
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
+                    {
+                        file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
+                        foreach (HandPoint point in handPoints)
+                        {
+                            file.WriteLine(point.ToString());
+                        }
+                    }
+
+                    /* Save major data points into '_typing' file */
+                    if (currValidPoints.Count > 0)
+                    {
+                        validPoints.AddRange(currValidPoints);
+                    }
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameTyping, true))
+                    {
+                        file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
+                        foreach (HandPoint point in validPoints)
+                        {
+                            file.WriteLine(point.ToString());
+                        }
+                    }
+                    break;
+            }
+
+            // TODO: Save the shuffled file.
+
+            /* Clear the timer and storage */
+            isStart = false;
+            handPoints.Clear();
+            validPoints.Clear();
+            currValidPoints.Clear();
+            currTyping = "";
+            phyStrings.Clear();
+        }
+
+        private void SaveBtn_Click(object sender, RoutedEventArgs e)
+        {
+            switch (currDevice)
+            {
+                case InputDevice.Mouse:
+                    SaveBtn_TouchDown(null, null);
+                    break;
+
+                case InputDevice.Keyboard:
+                    SaveBtn_TouchDown(null, null);
+                    clearKbdFocus(SaveBtn);
+                    break;
+            }
+        }
+
+        /** 
+         * Call when press the next button or do the 'next' gesture or input 'Enter'
+         */
+        private void gotoNextText()
+        {
+            taskNo++;
+            hpNo = 0;
+
+            switch (currDevice)
+            {
+                case InputDevice.Keyboard:
+                    phyStrings.Add(currTyping);
+                    currTyping = "";
+                    break;
+
+                case InputDevice.Hand:
+                case InputDevice.Mouse:
+                    validPoints.AddRange(currValidPoints);
+                    currValidPoints.Clear();
+                    calibPoints.Clear();
+
+                    /* Clear the status if the calibration mode is ON */
+                    if (calibStatus != CalibStatus.Off)
+                    {
+                        calibStatus = CalibStatus.Preparing;
+                    }
+                    break;
+            }
+
+            updateStatusBlock();
+            updateTaskTextBlk();
+        }
+
+        private void NextBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            gotoNextText();
+        }
+
+        private void NextBtn_Click(object sender, RoutedEventArgs e)
+        {
+            switch (currDevice)
+            {
+                case InputDevice.Mouse:
+                    gotoNextText();
+                    break;
+
+                case InputDevice.Keyboard:
+                    gotoNextText();
+                    clearKbdFocus(NextBtn);
+                    break;
+            }
+        }
+
+        /**
+         * Clear focus on the buttons after clicking. 
          * If not doing so, the Space of physical keyboard will triger the click on the focused button. 
-         * Reference: decasteljau http://stackoverflow.com/a/2914599/4762924 */
+         * Reference: decasteljau http://stackoverflow.com/a/2914599/4762924 
+         */
         private void clearKbdFocus(Button btn)
         {
             FrameworkElement parent = (FrameworkElement)btn.Parent;
@@ -775,14 +829,16 @@ namespace SurfaceKeyboard
             FocusManager.SetFocusedElement(scope, parent as IInputElement);
         }
 
-        private void ClearBtn_TouchDown(object sender, TouchEventArgs e)
+        /**
+         * Clear the touch points of this sentence
+         * Also delete the calibration points in the list 
+         */
+        private void clearSentence()
         {
-            // Clear the touch points of this sentence
-            // Also delete the calibration points in the list
             currValidPoints.Clear();
             calibPoints.Clear();
             hpNo = 0;
-            
+
             if (calibStatus != CalibStatus.Off)
             {
                 calibStatus = CalibStatus.Preparing;
@@ -792,21 +848,32 @@ namespace SurfaceKeyboard
             updateTaskTextBlk();
         }
 
+        private void ClearBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            clearSentence();
+        }
+
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (isMouse || isPhysicalKbd)
+            switch (currDevice)
             {
-                ClearBtn_TouchDown(null, null);
+                case InputDevice.Mouse:
+                    clearSentence();
+                    break;
 
-                if (isPhysicalKbd)
-                {
+                case InputDevice.Keyboard:
+                    clearSentence();
                     clearKbdFocus(ClearBtn);
-                }
+                    break;
             }
         }
 
-        private void KeyboardBtn_TouchDown(object sender, TouchEventArgs e)
+        /**
+         * Switch Keyboard Image On/Off
+         */
+        private void switchKbdImg()
         {
+            //TODO: Support more keyboard images
             showKeyboard = !showKeyboard;
             if (showKeyboard)
             {
@@ -820,20 +887,30 @@ namespace SurfaceKeyboard
             }
         }
 
+        private void KeyboardBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            switchKbdImg();
+        }
+
         private void KeyboardBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (isMouse)
+            switch (currDevice)
             {
-                KeyboardBtn_TouchDown(null, null);
+                case InputDevice.Mouse:
+                    switchKbdImg();
+                    break;
 
-                if (isPhysicalKbd)
-                {
+                case InputDevice.Keyboard:
+                    switchKbdImg();
                     clearKbdFocus(KeyboardBtn);
-                }
+                    break;
             }
         }
 
-        private void CalibBtn_TouchDown(object sender, TouchEventArgs e)
+        /**
+         * Set calibration options
+         */
+        private void switchCalibOption()
         {
             if (calibStatus == CalibStatus.Off)
             {
@@ -850,25 +927,36 @@ namespace SurfaceKeyboard
             updateTaskTextBlk();
         }
 
+        private void CalibBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            switchCalibOption();
+        }
+
         private void CalibBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (isMouse)
+            switch (currDevice)
             {
-                CalibBtn_TouchDown(null, null);
+                case InputDevice.Mouse:
+                    switchCalibOption();
+                    break;
 
-                if (isPhysicalKbd)
-                {
+                case InputDevice.Keyboard:
+                    /* Do not respond if using Physical Keyboard */
+                    MessageBox.Show("You don't need to calibrate in Physical Keyboard Mode");
                     clearKbdFocus(CalibBtn);
-                }
+                    break;
             }
         }
 
+        /**
+         * Delete one word. Now hpNo points to the position of next input char.
+         */
         private void deleteWord()
         {
-            // Delete one word. Now hpNo points to the position of next input char.
             string currText = taskTexts[taskNo % taskSize];
             int removeStart = hpNo - 1;
-            // Delete at least one character
+
+            /* Delete at least one character */
             if (removeStart >= 0)
             {
                 for (; removeStart > 0; --removeStart)
@@ -877,14 +965,18 @@ namespace SurfaceKeyboard
                         break;
                 }
 
-                if (isPhysicalKbd)
+                switch (currDevice)
                 {
-                    currTyping = currTyping.Substring(0, removeStart);
+                    case InputDevice.Keyboard:
+                        currTyping = currTyping.Substring(0, removeStart);
+                        break;
+
+                    case InputDevice.Hand:
+                    case InputDevice.Mouse:
+                        currValidPoints.RemoveRange(removeStart, hpNo - removeStart);
+                        break;
                 }
-                else
-                {
-                    currValidPoints.RemoveRange(removeStart, hpNo - removeStart);
-                }
+
                 hpNo = removeStart;
             }
 
@@ -899,14 +991,16 @@ namespace SurfaceKeyboard
 
         private void DeleteBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (isMouse || isPhysicalKbd)
+            switch (currDevice)
             {
-                deleteWord();
+                case InputDevice.Mouse:
+                    deleteWord();
+                    break;
 
-                if (isPhysicalKbd)
-                {
+                case InputDevice.Keyboard:
+                    deleteWord();
                     clearKbdFocus(DeleteBtn);
-                }
+                    break;
             }
         }
 

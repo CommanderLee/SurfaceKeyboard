@@ -30,7 +30,7 @@ namespace SurfaceKeyboard
     {
         /* The window to collect user id */
         WindowUserId                userIdWindow;
-        String                      userId;
+        string                      userId;
 
         /* The start time of the app */
         private bool                isStart;
@@ -79,8 +79,8 @@ namespace SurfaceKeyboard
         InputDevice                 currDevice;
 
         /* Physical keyboard test */
-        private String              currTyping;
-        private List<String>        phyStrings = new List<String>();
+        private string              currTyping;
+        private List<string>        phyStrings = new List<string>();
 
         /// <summary>
         /// Default constructor.
@@ -465,7 +465,7 @@ namespace SurfaceKeyboard
         {
             if (currDevice == InputDevice.Keyboard)
             {
-                String str = e.Key.ToString();
+                string str = e.Key.ToString();
                 Console.Write(e.Device + " " + str + "\n");
 
                 /* A-Z */
@@ -514,17 +514,20 @@ namespace SurfaceKeyboard
                 /* Check Distance */
                 if (myPoints.checkBackspaceGesture())
                 {
-                    /* Delete ONE character */
-                    // TODO: Delete one word?
                     if (myPoints.getStatus() != HandStatus.Backspace)
                     {
                         myPoints.setStatus(HandStatus.Backspace);
-                        if (hpNo > 0)
-                        {
-                            hpNo--;
-                            currValidPoints.RemoveAt(currValidPoints.Count - 1);
-                        }
-                        updateTaskTextBlk();
+
+                        /* Delete ONE WORD */
+                        deleteWord();
+
+                        /* ( Delete ONE character ? ) */
+                        //if (hpNo > 0)
+                        //{
+                        //    hpNo--;
+                        //    currValidPoints.RemoveAt(currValidPoints.Count - 1);
+                        //}
+                        //updateTaskTextBlk();
                         // Debug.WriteLine("do Backspace");
                     }
                 }
@@ -533,7 +536,7 @@ namespace SurfaceKeyboard
                     if (myPoints.getStatus() != HandStatus.Enter)
                     {
                         myPoints.setStatus(HandStatus.Enter);
-                        // TODO: Output 'Enter' if applicable
+                        // TODO: Output 'Enter' if applicable (in real text editor)
                         /* Show the next task */
                         gotoNextText();
                     }
@@ -701,6 +704,7 @@ namespace SurfaceKeyboard
                 }
             }
 
+            /* Save typing data */
             switch (currDevice)
             {
                 case InputDevice.Keyboard:
@@ -710,7 +714,7 @@ namespace SurfaceKeyboard
                     /* Save raw input strings into file */
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameAll, true))
                     {
-                        foreach (String str in phyStrings)
+                        foreach (string str in phyStrings)
                         {
                             file.WriteLine(str);
                         }
@@ -744,8 +748,6 @@ namespace SurfaceKeyboard
                     }
                     break;
             }
-
-            // TODO: Save the shuffled file.
 
             /* Clear the timer and storage */
             isStart = false;

@@ -226,9 +226,8 @@ namespace SurfaceKeyboard
             string fName = "TaskText.txt";
             taskTexts = System.IO.File.ReadAllLines(fPath + fName);
 
-            /* Shuffle if necessary, and save the shuffled text later.
-             * Comment out when testing (So that I will know the order) */
-            //shuffleTexts(new Random());
+            /* Shuffle if necessary, and save the shuffled text later. */
+            shuffleTexts(new Random());
 
             taskSize = taskTexts.Length;
         }
@@ -680,14 +679,27 @@ namespace SurfaceKeyboard
         }
 
         /** 
-         * Save the touchdown seq to file. '_typing' file: major data 
+         * Save the touchdown seq to file. '_major' file: major data 
          */
         private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
         {
             string fPath = Directory.GetCurrentDirectory() + '\\';
-            string fName = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + getTestingTag() + ".csv";
-            string fNameTyping = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + getTestingTag() + "_typing.csv";
-            StatusTextBlk.Text = fPath + fName;
+            string fTag = getTestingTag();
+
+            string fTextName = "Text" + fTag + ".txt";
+            string fNameAll = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + fTag + ".csv";
+            string fNameMajor = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + fTag + "_major.csv";
+
+            StatusTextBlk.Text = fPath + fNameAll;
+
+            /* Save shuffled text to file */
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fTextName, true))
+            {
+                foreach (string text in taskTexts)
+                {
+                    file.WriteLine(text);
+                }
+            }
 
             switch (currDevice)
             {
@@ -696,7 +708,7 @@ namespace SurfaceKeyboard
                         phyStrings.Add(currTyping);
 
                     /* Save raw input strings into file */
-                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameAll, true))
                     {
                         foreach (String str in phyStrings)
                         {
@@ -708,7 +720,7 @@ namespace SurfaceKeyboard
                 case InputDevice.Hand:
                 case InputDevice.Mouse:
                     /* Save raw input points into file */
-                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fName, true))
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameAll, true))
                     {
                         file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
                         foreach (HandPoint point in handPoints)
@@ -722,7 +734,7 @@ namespace SurfaceKeyboard
                     {
                         validPoints.AddRange(currValidPoints);
                     }
-                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameTyping, true))
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameMajor, true))
                     {
                         file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
                         foreach (HandPoint point in validPoints)

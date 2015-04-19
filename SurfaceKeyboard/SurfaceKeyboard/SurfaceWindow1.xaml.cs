@@ -74,8 +74,9 @@ namespace SurfaceKeyboard
         /* Hand Model for calibration */
         HandModel                   userHand = new HandModel();
 
-        /* Different devices: Hand for touch typing, Keyboard for normal typing test, Mouse for debug on laptop */
-        enum InputDevice            { Hand, Keyboard, Mouse };
+        /* Different devices: 
+         * Hand for touch typing, Physical Keyboard for normal typing test, Mouse for debug on laptop */
+        enum InputDevice            { Hand, PhyKbd, Mouse };
         InputDevice                 currDevice;
 
         /* Physical keyboard test */
@@ -98,7 +99,7 @@ namespace SurfaceKeyboard
             currValidPoints.Clear();
             showKeyboard = false;
             currTyping = "";
-            currDevice = InputDevice.Keyboard;
+            currDevice = InputDevice.PhyKbd;
 
             /* Keyboard Control Button Image */
             keyboardOpen = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_open.png")));
@@ -131,7 +132,7 @@ namespace SurfaceKeyboard
             userIdWindow.ShowDialog();
             userId = userIdWindow.getUserId();
 
-            this.Title = "Surface Keyboard - " + userId;
+            updateWindowTitle();
         }
 
         /// <summary>
@@ -223,7 +224,7 @@ namespace SurfaceKeyboard
         {
             /* Load task text from file */
             string fPath = Directory.GetCurrentDirectory() + "\\";
-            string fName = "TaskText.txt";
+            string fName = "TaskText_MaxOneHandValue.txt";
             taskTexts = System.IO.File.ReadAllLines(fPath + fName);
 
             /* Shuffle if necessary, and save the shuffled text later. */
@@ -266,7 +267,7 @@ namespace SurfaceKeyboard
             {
                 switch (currDevice)
                 {
-                    case InputDevice.Keyboard:
+                    case InputDevice.PhyKbd:
                         /* Physical Keyboard */
                         StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2})",
                             taskNo + 1, taskSize, hpNo);
@@ -308,6 +309,14 @@ namespace SurfaceKeyboard
                 Canvas.SetLeft(imgKeyboard, kbdCenter.X - kbdWidth / 2);
                 Canvas.SetTop(imgKeyboard, kbdCenter.Y - kbdHeight / 2 - TaskTextBlk.ActualHeight);
             }
+        }
+
+        /**
+         * Update Main Window Title
+         */
+        private void updateWindowTitle()
+        {
+            this.Title = "Surface Keyboard - " + userId + " - " + currDevice;
         }
 
         /** Process Touch Point Information **/
@@ -463,7 +472,7 @@ namespace SurfaceKeyboard
          */
         private void SurfaceWindow_KeyDown(object sender, KeyEventArgs e)
         {
-            if (currDevice == InputDevice.Keyboard)
+            if (currDevice == InputDevice.PhyKbd)
             {
                 string str = e.Key.ToString();
                 Console.Write(e.Device + " " + str + "\n");
@@ -660,7 +669,7 @@ namespace SurfaceKeyboard
 
             switch (currDevice)
             {
-                case InputDevice.Keyboard:
+                case InputDevice.PhyKbd:
                     myTag += "_PhyKbd";
                     break;
 
@@ -707,7 +716,7 @@ namespace SurfaceKeyboard
             /* Save typing data */
             switch (currDevice)
             {
-                case InputDevice.Keyboard:
+                case InputDevice.PhyKbd:
                     if (currTyping.Length > 0)
                         phyStrings.Add(currTyping);
 
@@ -766,7 +775,7 @@ namespace SurfaceKeyboard
                     SaveBtn_TouchDown(null, null);
                     break;
 
-                case InputDevice.Keyboard:
+                case InputDevice.PhyKbd:
                     SaveBtn_TouchDown(null, null);
                     clearKbdFocus(SaveBtn);
                     break;
@@ -783,7 +792,7 @@ namespace SurfaceKeyboard
 
             switch (currDevice)
             {
-                case InputDevice.Keyboard:
+                case InputDevice.PhyKbd:
                     phyStrings.Add(currTyping);
                     currTyping = "";
                     break;
@@ -819,7 +828,7 @@ namespace SurfaceKeyboard
                     gotoNextText();
                     break;
 
-                case InputDevice.Keyboard:
+                case InputDevice.PhyKbd:
                     gotoNextText();
                     clearKbdFocus(NextBtn);
                     break;
@@ -875,7 +884,7 @@ namespace SurfaceKeyboard
                     clearSentence();
                     break;
 
-                case InputDevice.Keyboard:
+                case InputDevice.PhyKbd:
                     clearSentence();
                     clearKbdFocus(ClearBtn);
                     break;
@@ -914,7 +923,7 @@ namespace SurfaceKeyboard
                     switchKbdImg();
                     break;
 
-                case InputDevice.Keyboard:
+                case InputDevice.PhyKbd:
                     switchKbdImg();
                     clearKbdFocus(KeyboardBtn);
                     break;
@@ -954,7 +963,7 @@ namespace SurfaceKeyboard
                     switchCalibOption();
                     break;
 
-                case InputDevice.Keyboard:
+                case InputDevice.PhyKbd:
                     /* Do not respond if using Physical Keyboard */
                     MessageBox.Show("You don't need to calibrate in Physical Keyboard Mode");
                     clearKbdFocus(CalibBtn);
@@ -981,7 +990,7 @@ namespace SurfaceKeyboard
 
                 switch (currDevice)
                 {
-                    case InputDevice.Keyboard:
+                    case InputDevice.PhyKbd:
                         currTyping = currTyping.Substring(0, removeStart);
                         break;
 
@@ -1011,9 +1020,37 @@ namespace SurfaceKeyboard
                     deleteWord();
                     break;
 
-                case InputDevice.Keyboard:
+                case InputDevice.PhyKbd:
                     deleteWord();
                     clearKbdFocus(DeleteBtn);
+                    break;
+            }
+        }
+
+        private void switchInputDevice()
+        {
+            /* Cycle of all input devices defined in the enum InputDevice */
+            currDevice = (InputDevice)(((int)currDevice + 1) % Enum.GetNames(typeof(InputDevice)).Length);
+            SwitchBtn.Content = currDevice;
+            updateWindowTitle();
+        }
+
+        private void SwitchBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            switchInputDevice();
+        }
+
+        private void SwitchBtn_Click(object sender, RoutedEventArgs e)
+        {
+            switch (currDevice)
+            {
+                case InputDevice.Mouse:
+                    switchInputDevice();
+                    break;
+
+                case InputDevice.PhyKbd:
+                    switchInputDevice();
+                    clearKbdFocus(SwitchBtn);
                     break;
             }
         }

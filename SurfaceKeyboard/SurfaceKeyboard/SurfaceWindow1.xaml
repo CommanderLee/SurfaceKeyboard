@@ -51,31 +51,38 @@
                 Click="SaveBtn_Click"
                 TabIndex="2">Save</Button>
 
+                <Button Name="SwitchBtn"
+                        Canvas.Left="1350" Canvas.Top="5"
+                        Height="45" Width="245"
+                        Content="PhysicalKeyboard"
+                        FontSize="20" BorderThickness="2"
+                        TouchDown="SwitchBtn_TouchDown" Click="SwitchBtn_Click"/>
+                
                 <Button Name="KeyboardBtn" 
-                        Canvas.Left="1350" Canvas.Top="5" 
+                        Canvas.Left="1350" Canvas.Top="55" 
                         Content="Keyboard"
                         Height="60"  Width="120" 
                         FontSize="20" BorderThickness="2" 
                         TouchDown="KeyboardBtn_TouchDown" Click="KeyboardBtn_Click" />
 
                 <Button Name="CalibBtn"
-                        Canvas.Left="1475" Canvas.Top="5" 
+                        Canvas.Left="1475" Canvas.Top="55" 
                         Content="Calibration"
                         Height="60"  Width="120"
                         FontSize="20" BorderThickness="2" 
                         TouchDown="CalibBtn_TouchDown" Click="CalibBtn_Click" />
                 
                 <Button Name="ClearBtn" 
-                        Canvas.Left="1350" Canvas.Top="70" 
+                        Canvas.Left="1350" Canvas.Top="120" 
                         Content="Clear" 
-                        Height="110"  Width="120" 
+                        Height="60"  Width="120" 
                         FontSize="30" BorderThickness="2" 
                         TouchDown="ClearBtn_TouchDown" Click="ClearBtn_Click" />
 
                 <Button Name="DeleteBtn" 
-                        Canvas.Left="1475" Canvas.Top="70" 
+                        Canvas.Left="1475" Canvas.Top="120" 
                         Content="Delete"
-                        Height="110"  Width="120" 
+                        Height="60"  Width="120" 
                         FontSize="30" BorderThickness="2" 
                         TouchDown="DeleteBtn_TouchDown" Click="DeleteBtn_Click" />
                 

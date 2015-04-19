@@ -80,8 +80,13 @@ namespace SurfaceKeyboard
         InputDevice                 currDevice;
 
         /* Physical keyboard test */
-        private string              currTyping;
-        private List<string>        phyStrings = new List<string>();
+        private string currTyping;
+        private List<string> phyStrings = new List<string>();
+        private bool                isTypingStart;
+
+        /* typingTime: ms */
+        private DateTime            typingStartTime;
+        private double              typingTime;
 
         /// <summary>
         /// Default constructor.
@@ -93,13 +98,16 @@ namespace SurfaceKeyboard
             // Add handlers for window availability events
             AddWindowAvailabilityHandlers();
 
+            currDevice = InputDevice.PhyKbd;
+
             isStart = false;
             taskNo = 0;
             hpNo = 0;
+
             currValidPoints.Clear();
             showKeyboard = false;
             currTyping = "";
-            currDevice = InputDevice.PhyKbd;
+            isTypingStart = false;
 
             /* Keyboard Control Button Image */
             keyboardOpen = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_open.png")));
@@ -477,6 +485,16 @@ namespace SurfaceKeyboard
                 string str = e.Key.ToString();
                 Console.Write(e.Device + " " + str + "\n");
 
+                if (!isTypingStart)
+                {
+                    typingStartTime = DateTime.Now;
+                    isTypingStart = true;
+                }
+                else
+                {
+                    typingTime = DateTime.Now.Subtract(typingStartTime).TotalMilliseconds;
+                }
+
                 /* A-Z */
                 if (str.Length == 1)
                 {
@@ -696,11 +714,12 @@ namespace SurfaceKeyboard
         private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
         {
             string fPath = Directory.GetCurrentDirectory() + '\\';
+            string fTime = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now);
             string fTag = getTestingTag();
 
-            string fTextName = "Text" + fTag + ".txt";
-            string fNameAll = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + fTag + ".csv";
-            string fNameMajor = String.Format("{0:MM-dd_HH_mm_ss}", DateTime.Now) + fTag + "_major.csv";
+            string fTextName = fTime + fTag + "_TaskText.txt";
+            string fNameAll = fTime + fTag + ".csv";
+            string fNameMajor = fTime + fTag + "_major.csv";
 
             StatusTextBlk.Text = fPath + fNameAll;
 
@@ -718,11 +737,12 @@ namespace SurfaceKeyboard
             {
                 case InputDevice.PhyKbd:
                     if (currTyping.Length > 0)
-                        phyStrings.Add(currTyping);
+                        phyStrings.Add(currTyping + "," + typingTime);
 
                     /* Save raw input strings into file */
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameAll, true))
                     {
+                        file.WriteLine("RawInput, TypingTime");
                         foreach (string str in phyStrings)
                         {
                             file.WriteLine(str);
@@ -764,6 +784,7 @@ namespace SurfaceKeyboard
             validPoints.Clear();
             currValidPoints.Clear();
             currTyping = "";
+            isTypingStart = false;
             phyStrings.Clear();
         }
 
@@ -793,8 +814,9 @@ namespace SurfaceKeyboard
             switch (currDevice)
             {
                 case InputDevice.PhyKbd:
-                    phyStrings.Add(currTyping);
+                    phyStrings.Add(currTyping + "," + typingTime);
                     currTyping = "";
+                    isTypingStart = false;
                     break;
 
                 case InputDevice.Hand:

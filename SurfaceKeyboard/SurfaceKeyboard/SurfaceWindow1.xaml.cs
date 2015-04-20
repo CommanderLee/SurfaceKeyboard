@@ -835,6 +835,11 @@ namespace SurfaceKeyboard
 
             updateStatusBlock();
             updateTaskTextBlk();
+
+            if (taskNo == taskTexts.Length)
+            {
+                MessageBox.Show("Congratulations! You have finished the [" + currDevice + "] test.");
+            }
         }
 
         private void NextBtn_TouchDown(object sender, TouchEventArgs e)
@@ -888,6 +893,9 @@ namespace SurfaceKeyboard
             {
                 calibStatus = CalibStatus.Preparing;
             }
+
+            currTyping = "";
+            isTypingStart = false;
 
             updateStatusBlock();
             updateTaskTextBlk();

@@ -57,6 +57,7 @@ namespace SurfaceKeyboard
         /* Show the soft keyboard on the screen (default: close) */
         private bool                showKeyboard = false;
         ImageBrush                  keyboardOpen, keyboardClose;
+        BitmapImage                 kbdImgSurface, kbdImgPhy;
         double                      kbdWidth, kbdHeight;
 
         /* Calibrate before each test sentence */

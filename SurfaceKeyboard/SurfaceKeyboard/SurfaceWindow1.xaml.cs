@@ -40,7 +40,9 @@ namespace SurfaceKeyboard
         private int                 hpNo;
         private List<HandPoint>     handPoints = new List<HandPoint>();
         /* hpNo: [0, ...) normal points. Others: -1, -2 ... */
-        enum HpOthers               { Calibrate = -1, CenterPoint = -2 };
+        private const string        hpNoCalibPnt = "CALIB";
+        private const string        hpNoCenterPnt = "CENTER";
+        //enum HpOthers               { Calibrate = -1, CenterPoint = -2 };
 
         /* Valid points: the touch point of each char. */
         private List<HandPoint>     currValidPoints = new List<HandPoint>();
@@ -354,12 +356,12 @@ namespace SurfaceKeyboard
                         calibStatus = CalibStatus.Calibrating;
                         calibStartTime = DateTime.Now;
                         calibPoints.Add(new HandPoint(x, y, 0,
-                            taskNo + "-" + (int)HpOthers.Calibrate + "-" + id, HPType.Calibrate));
+                            taskNo + "-" + hpNoCalibPnt + "-" + id, HPType.Calibrate));
                         break;
 
                     case CalibStatus.Calibrating:
                         calibPoints.Add(new HandPoint(x, y, DateTime.Now.Subtract(calibStartTime).TotalMilliseconds,
-                            taskNo + "-" + (int)HpOthers.Calibrate + "-" + id, HPType.Calibrate));
+                            taskNo + "-" + hpNoCalibPnt + "-" + id, HPType.Calibrate));
 
                         /* If we get enough fingers */
                         if (calibPoints.Count == HandModel.FINGER_NUMBER)

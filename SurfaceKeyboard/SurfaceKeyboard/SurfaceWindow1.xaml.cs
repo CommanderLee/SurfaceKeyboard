@@ -55,9 +55,10 @@ namespace SurfaceKeyboard
         Hashtable                   movement = new Hashtable();
 
         /* Show the soft keyboard on the screen (default: close) */
-        private bool                showKeyboard = false;
-        ImageBrush                  keyboardOpen, keyboardClose;
-        BitmapImage                 kbdImgSurface, kbdImgPhy;
+        ImageBrush                  kbdBtnImgOn, kbdBtnImgOff;
+        enum KbdImgStatus           { Surface, Physical, Off };
+        KbdImgStatus                kbdImgStatus;
+        BitmapImage[]               kbdImages;
         double                      kbdWidth, kbdHeight;
 
         /* Calibrate before each test sentence */
@@ -70,7 +71,7 @@ namespace SurfaceKeyboard
         private const double        CALIB_WAITING_TIME = 500;
 
         /* Calibration Button image */
-        ImageBrush                  calibOn, calibOff;
+        ImageBrush                  calibBtnImgOn, calibBtnImgOff;
 
         /* Hand Model for calibration */
         HandModel                   userHand = new HandModel();
@@ -106,30 +107,39 @@ namespace SurfaceKeyboard
             hpNo = 0;
 
             currValidPoints.Clear();
-            showKeyboard = false;
             currTyping = "";
             isTypingStart = false;
 
+            kbdImgStatus = KbdImgStatus.Off;
             /* Keyboard Control Button Image */
-            keyboardOpen = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_open.png")));
-            keyboardClose = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_close.png")));
-            KeyboardBtn.Background = keyboardClose;
+            kbdBtnImgOn = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_open.png")));
+            kbdBtnImgOff = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_close.png")));
+            KeyboardBtn.Background = kbdBtnImgOff;
+            KeyboardBtn.Content = "";
 
             /* Keyboard Image (same as, or similar to physical keyboard) */
-            BitmapImage kbdBitmap = new BitmapImage();
-            kbdBitmap.BeginInit();
-            kbdBitmap.UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1x.png");
-            kbdBitmap.EndInit();
-            kbdWidth = kbdBitmap.PixelWidth;
-            kbdHeight = kbdBitmap.PixelHeight;
+            kbdImages = new BitmapImage[2];
 
-            imgKeyboard.Source = kbdBitmap;
+            /* Surface Keyboard Image */
+            int statusId = (int)KbdImgStatus.Surface;
+            kbdImages[statusId] = new BitmapImage();
+            kbdImages[statusId].BeginInit();
+            kbdImages[statusId].UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1x.png");
+            kbdImages[statusId].EndInit();
+
+            /* Physical Keyboard Image */
+            statusId = (int)KbdImgStatus.Physical;
+            kbdImages[statusId] = new BitmapImage();
+            kbdImages[statusId].BeginInit();
+            kbdImages[statusId].UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1_5x.png");
+            kbdImages[statusId].EndInit();
+
             imgKeyboard.Visibility = Visibility.Hidden;
             
             /* Calibration Control Button Image */
-            calibOn = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_on.png")));
-            calibOff = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_off.png")));
-            CalibBtn.Background = calibOff;
+            calibBtnImgOn = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_on.png")));
+            calibBtnImgOff = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_off.png")));
+            CalibBtn.Background = calibBtnImgOff;
 
             loadTaskTexts();
             updateStatusBlock();
@@ -312,7 +322,7 @@ namespace SurfaceKeyboard
         private void updateKeyboardImage()
         {
             Point kbdCenter = userHand.getCenterPt();
-            if (showKeyboard)
+            if (kbdImgStatus != KbdImgStatus.Off)
             {
                 /* Get help from Clint (http://stackoverflow.com/a/29516946/4762924)*/
                 Canvas.SetLeft(imgKeyboard, kbdCenter.X - kbdWidth / 2);
@@ -694,10 +704,10 @@ namespace SurfaceKeyboard
 
                 case InputDevice.Hand:
                 case InputDevice.Mouse:
-                    if (showKeyboard)
-                        myTag += "_KbdOn";
-                    else
+                    if (kbdImgStatus == KbdImgStatus.Off)
                         myTag += "_KbdOff";
+                    else
+                        myTag += "_KbdOn";
 
                     if (calibStatus == CalibStatus.Off)
                         myTag += "_CalibOff";
@@ -927,17 +937,39 @@ namespace SurfaceKeyboard
          */
         private void switchKbdImg()
         {
-            //TODO: Support more keyboard images
-            showKeyboard = !showKeyboard;
-            if (showKeyboard)
+            BitmapImage kbdImg;
+            switch (kbdImgStatus)
             {
-                KeyboardBtn.Background = keyboardOpen;
-                imgKeyboard.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                KeyboardBtn.Background = keyboardClose;
-                imgKeyboard.Visibility = Visibility.Hidden;
+                case KbdImgStatus.Surface:
+                    kbdImgStatus = KbdImgStatus.Physical;
+                    KeyboardBtn.Background = kbdBtnImgOn;
+                    KeyboardBtn.Content = "PhyKbd";
+
+                    kbdImg = kbdImages[(int)KbdImgStatus.Physical];
+                    imgKeyboard.Source = kbdImg;
+                    kbdWidth = kbdImg.PixelWidth;
+                    kbdHeight = kbdImg.PixelHeight;
+                    imgKeyboard.Visibility = Visibility.Visible;
+                    break;
+                case KbdImgStatus.Physical:
+                    kbdImgStatus = KbdImgStatus.Off;
+                    KeyboardBtn.Background = kbdBtnImgOff;
+                    KeyboardBtn.Content = "";
+
+                    imgKeyboard.Visibility = Visibility.Hidden;
+                    break;
+
+                case KbdImgStatus.Off:
+                    kbdImgStatus = KbdImgStatus.Surface;
+                    KeyboardBtn.Background = kbdBtnImgOn;
+                    KeyboardBtn.Content = "SurfKbd";
+
+                    kbdImg = kbdImages[(int)KbdImgStatus.Surface];
+                    imgKeyboard.Source = kbdImg;
+                    kbdWidth = kbdImg.PixelWidth;
+                    kbdHeight = kbdImg.PixelHeight;
+                    imgKeyboard.Visibility = Visibility.Visible;
+                    break;
             }
         }
 
@@ -970,12 +1002,12 @@ namespace SurfaceKeyboard
             {
                 calibPoints.Clear();
                 calibStatus = CalibStatus.Preparing;
-                CalibBtn.Background = calibOn;
+                CalibBtn.Background = calibBtnImgOn;
             }
             else
             {
                 calibStatus = CalibStatus.Off;
-                CalibBtn.Background = calibOff;
+                CalibBtn.Background = calibBtnImgOff;
             }
             updateStatusBlock();
             updateTaskTextBlk();

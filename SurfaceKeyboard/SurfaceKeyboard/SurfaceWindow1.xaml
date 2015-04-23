@@ -100,8 +100,8 @@
                     MouseMove="InputCanvas_MouseMove"
                     MouseLeftButtonUp="InputCanvas_MouseLeftButtonUp">
                 
-                <Image Height="258" Width="736"
-                       Canvas.Left="400" Canvas.Top="200"
+                <Image Height="387" Width="1104"
+                       Canvas.Left="250" Canvas.Top="100"
                        Name="imgKeyboard" Stretch="None" />
             </Canvas>
         </Border>

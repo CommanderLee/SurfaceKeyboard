@@ -21,7 +21,7 @@ namespace SurfaceKeyboard
         */
         private const double MOVE_TIME_LIMIT = 300;
         private const double TOUCH_TIME_MAX = 500;
-        private const double TOUCH_TIME_MIN = 5;
+        private const double TOUCH_TIME_MIN = 0;
         private const double BACK_THRE = 150;
         private const double ENTER_THRE = 150;
 
@@ -111,7 +111,8 @@ namespace SurfaceKeyboard
                 hStatus = HandStatus.Enter;
             }
 
-            return hStatus;
+            return HandStatus.Type;
+            //return hStatus;
         }
 
         /**
@@ -129,7 +130,7 @@ namespace SurfaceKeyboard
             {
                 bool isTyping = false;
                 double touchTime = _queue.Last().getTime() - _startTime;
-                if (touchTime < TOUCH_TIME_MAX && touchTime > TOUCH_TIME_MIN)
+                if (touchTime <= TOUCH_TIME_MAX && touchTime >= TOUCH_TIME_MIN)
                 {
                     isTyping = true;
                 }

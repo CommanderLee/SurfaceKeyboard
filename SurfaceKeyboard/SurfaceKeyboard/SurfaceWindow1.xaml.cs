@@ -454,6 +454,7 @@ namespace SurfaceKeyboard
         {
             if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized())
             {
+                Console.WriteLine("Hand Detected.");
                 /* Get touchdown position */
                 Point touchPos = e.TouchDevice.GetPosition(this);
 
@@ -473,6 +474,7 @@ namespace SurfaceKeyboard
         {
             if (currDevice == InputDevice.Mouse)
             {
+                Console.WriteLine("Mouse Detected.");
                 /* Get touchdown position */
                 Point touchPos = e.GetPosition(this);
 

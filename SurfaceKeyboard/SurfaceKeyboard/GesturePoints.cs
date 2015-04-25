@@ -19,11 +19,11 @@ namespace SurfaceKeyboard
         * - Touch time limit: touch time min < touch time <  touch time max
         * - xxxTHRE: Length threshold (pixels) for backspace and enter
         */
-        private const double MOVE_TIME_LIMIT = 100;
+        private const double MOVE_TIME_LIMIT = 300;
         private const double TOUCH_TIME_MAX = 500;
         private const double TOUCH_TIME_MIN = 5;
-        private const double BACK_THRE = 100;
-        private const double ENTER_THRE = 100;
+        private const double BACK_THRE = 150;
+        private const double ENTER_THRE = 150;
 
         private Queue<HandPoint> _queue;
         private HandStatus       _status;
@@ -76,53 +76,42 @@ namespace SurfaceKeyboard
         }
 
         /**
-         * Check backspace gesture based on the distance and time
-         * TODO: Maybe an arc or a oblique line, instead of a horizontal line from right to left.
+         * Calculate moving distance
+         * positive: enter, negative: backspace, 0: typing
          */
-        public bool checkBackspaceGesture()
+        public HandStatus checkGesture()
         {
-            return false;
-            if (_queue.Count == 0)
-            {
-                Console.WriteLine("[Error] checkBackspaceGesture(): The queue is empty.");
-                return false;
-            }
-            else
-            {
-                HandPoint hpFirst = _queue.First(), hpLast = _queue.Last();
-                bool isBackspace = false;
+            HandPoint lastHP = _queue.First();
+            double sumDist = 0.0;
+            int directionCnt = 0;
+            HandStatus hStatus = HandStatus.Away;
 
-                if (hpFirst.getX() - hpLast.getX() > BACK_THRE)
+            foreach (HandPoint hPoint in _queue)
+            {
+                if (hPoint.getX() > lastHP.getX())
                 {
-                    isBackspace = true;
+                    ++directionCnt;
                 }
-                return isBackspace;
-            }
-        }
-
-        /**
-         * Check enter gesture based on the distance and time
-         * TODO: Maybe an arc or a oblique line, instead of a horizontal line from left to right.
-         */
-        public bool checkEnterGesture()
-        {
-            return false;
-            if (_queue.Count == 0)
-            {
-                Console.WriteLine("[Error] checkEnterGesture(): The queue is empty.");
-                return false;
-            }
-            else
-            {
-                HandPoint hpFirst = _queue.First(), hpLast = _queue.Last();
-                bool isEnter = false;
-
-                if (hpLast.getX() - hpFirst.getX() > ENTER_THRE)
+                else if (hPoint.getX() < lastHP.getX())
                 {
-                    isEnter = true;
+                    --directionCnt;
                 }
-                return isEnter;
+
+                sumDist += Math.Sqrt(Math.Pow(hPoint.getX() - lastHP.getX(), 2) + 
+                    Math.Pow(hPoint.getY() - lastHP.getY(), 2));
+                lastHP = hPoint;
             }
+
+            if (directionCnt < 0 && sumDist > BACK_THRE)
+            {
+                hStatus = HandStatus.Backspace;
+            }
+            else if (directionCnt > 0 && sumDist > ENTER_THRE)
+            {
+                hStatus = HandStatus.Enter;
+            }
+
+            return hStatus;
         }
 
         /**

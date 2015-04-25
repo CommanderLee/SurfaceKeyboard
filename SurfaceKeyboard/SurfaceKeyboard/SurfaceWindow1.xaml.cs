@@ -551,8 +551,9 @@ namespace SurfaceKeyboard
                 myPoints.Add(movePoint);
                 handPoints.Add(movePoint);
 
+                HandStatus gestureStatus = myPoints.checkGesture();
                 /* Check Distance */
-                if (myPoints.checkBackspaceGesture())
+                if (gestureStatus == HandStatus.Backspace)
                 {
                     if (myPoints.getStatus() != HandStatus.Backspace)
                     {
@@ -571,7 +572,7 @@ namespace SurfaceKeyboard
                         // Debug.WriteLine("do Backspace");
                     }
                 }
-                else if (myPoints.checkEnterGesture())
+                else if (gestureStatus == HandStatus.Enter)
                 {
                     if (myPoints.getStatus() != HandStatus.Enter)
                     {

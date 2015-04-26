@@ -7,10 +7,10 @@ namespace SurfaceKeyboard
 {
     enum HandStatus { Away, Backspace, Enter, Type, Rest };
 
-    /**
-     * A queue of consecutive data points.
-     * Some methods to recognize different gestures.
-     */
+    /// <summary>
+    /// A queue of consecutive data points.
+    /// Some methods to recognize different gestures.
+    /// </summary>
     class GesturePoints
     {
         /**
@@ -20,7 +20,7 @@ namespace SurfaceKeyboard
         * - xxxTHRE: Length threshold (pixels) for backspace and enter
         */
         private const double MOVE_TIME_LIMIT = 300;
-        private const double TOUCH_TIME_MAX = 500;
+        private const double TOUCH_TIME_MAX = 10000;
         private const double TOUCH_TIME_MIN = 0;
         private const double BACK_THRE = 150;
         private const double ENTER_THRE = 150;
@@ -84,7 +84,6 @@ namespace SurfaceKeyboard
             HandPoint lastHP = _queue.First();
             double sumDist = 0.0;
             int directionCnt = 0;
-            HandStatus hStatus = HandStatus.Away;
 
             foreach (HandPoint hPoint in _queue)
             {
@@ -104,15 +103,14 @@ namespace SurfaceKeyboard
 
             if (directionCnt < 0 && sumDist > BACK_THRE)
             {
-                hStatus = HandStatus.Backspace;
+                _status = HandStatus.Backspace;
             }
             else if (directionCnt > 0 && sumDist > ENTER_THRE)
             {
-                hStatus = HandStatus.Enter;
+                _status = HandStatus.Enter;
             }
 
-            return HandStatus.Type;
-            //return hStatus;
+            return _status;
         }
 
         /**
@@ -133,6 +131,7 @@ namespace SurfaceKeyboard
                 if (touchTime <= TOUCH_TIME_MAX && touchTime >= TOUCH_TIME_MIN)
                 {
                     isTyping = true;
+                    _status = HandStatus.Type;
                 }
                 return isTyping;
             }

@@ -39,7 +39,7 @@ namespace SurfaceKeyboard
         /* Number of the hand points and the list to store them */
         private int                 hpNo;
         private List<HandPoint>     handPoints = new List<HandPoint>();
-        /* hpNo: [0, ...) normal points. Others: -1, -2 ... */
+        /* hpNo: [0, ...) normal points. Others: strings. */
         private const string        hpNoCalibPnt = "CALIB";
         private const string        hpNoCenterPnt = "CENTER";
         //enum HpOthers               { Calibrate = -1, CenterPoint = -2 };
@@ -224,10 +224,10 @@ namespace SurfaceKeyboard
 
         /** Update UI Information **/
 
-        /**
-         * There are various versions of code implementing Shuffle algorithm without bias. I don't want to focus on this topic. 
-         * My code is based on ShitalShah's answer from http://stackoverflow.com/a/22668974/4762924 
-         */
+        /// <summary>
+        /// There are various versions of code implementing Shuffle algorithm without bias. I don't want to focus on this topic. 
+        /// My code is based on ShitalShah's answer from http://stackoverflow.com/a/22668974/4762924 
+        /// </summary>
         private void swapTexts(int i, int j)
         {
             var temp = taskTexts[i];
@@ -245,7 +245,7 @@ namespace SurfaceKeyboard
         {
             /* Load task text from file */
             string fPath = Directory.GetCurrentDirectory() + "\\";
-            string fName = "TaskText_MaxOneHandValue.txt";
+            string fName = "TaskText.txt";
             taskTexts = System.IO.File.ReadAllLines(fPath + fName);
 
             /* Shuffle if necessary, and save the shuffled text later. */
@@ -254,10 +254,10 @@ namespace SurfaceKeyboard
             taskSize = taskTexts.Length;
         }
 
-        /**
-         * TaskTextBlock: Main block in the top-center of the window.
-         * 1st line: Original text, 2nd line: User's input 
-         */
+        /// <summary>
+        /// TaskTextBlock: Main block in the top-center of the window.
+        /// 1st line: Original text, 2nd line: User's input 
+        /// </summary>
         private void updateTaskTextBlk()
         {
             string currText = taskTexts[taskNo % taskSize];
@@ -279,9 +279,9 @@ namespace SurfaceKeyboard
             }
         }
 
-        /**
-         * StatusBlock: Show some x,y,id.etc information on the top-left of the window
-         */
+        /// <summary>
+        /// StatusBlock: Show some x,y,id.etc information on the top-left of the window
+        /// </summary>
         private void updateStatusBlock()
         {
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
@@ -318,9 +318,9 @@ namespace SurfaceKeyboard
             }
         }
 
-        /**
-         * Move the keyboard image to correct place 
-         */
+        /// <summary>
+        /// Move the keyboard image to correct place  
+        /// </summary>
         private void updateKeyboardImage()
         {
             Point kbdCenter = userHand.getCenterPt();
@@ -332,9 +332,9 @@ namespace SurfaceKeyboard
             }
         }
 
-        /**
-         * Update Main Window Title
-         */
+        /// <summary>
+        /// Update Main Window Title 
+        /// </summary>
         private void updateWindowTitle()
         {
             this.Title = "Surface Keyboard - " + userId + " - " + currDevice;
@@ -342,9 +342,9 @@ namespace SurfaceKeyboard
 
         /** Process Touch Point Information **/
 
-        /**
-         * Calibrate the hand position
-         */
+        /// <summary>
+        /// Calibrate the hand position 
+        /// </summary>
         private void calibrateHands(double x, double y, int id, HPType pointType)
         {
             if (pointType == HPType.Touch)
@@ -409,16 +409,16 @@ namespace SurfaceKeyboard
             updateTaskTextBlk();
         }
 
-        /**
-         * 1. The user touch the screen ( type a key )
-         * 2. Call 'saveTouchPoints' function: save the point in the 'handPoints' List
-         * 3. Create hash table key for this point id.
-         * 4. When the user lift his finger, call 'showTouchPoints' function: Give feedback, 
-         * or: If it is a swipe ( gesture ).
-         */
+        /// <summary>
+        /// Save the point to the 'handPoints' List.
+        /// </summary>
+        /// 1. The user touch the screen ( type a key ) 
+        /// 2. Call 'saveTouchPoints' function: save the point in the 'handPoints' List 
+        /// 3. Create hash table key for this point id. 
+        /// 4. When the user lift his finger, call 'showTouchPoints' function: Give feedback, 
         private void saveTouchPoints(double x, double y, int id)
         {
-            /* Get touchdown time */
+            // Get touchdown time
             double timeStamp = 0;
             if (!isStart)
             {
@@ -431,15 +431,20 @@ namespace SurfaceKeyboard
                 timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
             }
 
-            /* Save the information */
+            // Save the information 
             HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id, HPType.Touch);
             handPoints.Add(touchPoint);
 
-            /* Create elements in the hashtable */
+            // Create elements in the hashtable
             if (!movement.ContainsKey(id))
             {
                 GesturePoints myPoints = new GesturePoints(touchPoint, HandStatus.Type);
                 movement.Add(id, myPoints);
+
+                // Real-time UI feedback. Note: Save it later after released.
+                ++hpNo;
+                updateTaskTextBlk();
+                updateStatusBlock();
             }
             else
             {
@@ -447,9 +452,9 @@ namespace SurfaceKeyboard
             }
         }
 
-        /**
-         * Touch the main area (Input Canvas) 
-         */
+        /// <summary>
+        /// Touch the main area (Input Canvas)  
+        /// </summary>
         private void InputCanvas_TouchDown(object sender, TouchEventArgs e)
         {
             if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized())
@@ -470,6 +475,9 @@ namespace SurfaceKeyboard
             }
         }
 
+        /// <summary>
+        /// Left-click the main area (Input Canvas)  
+        /// </summary>
         private void InputCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (currDevice == InputDevice.Mouse)
@@ -490,9 +498,9 @@ namespace SurfaceKeyboard
             }
         }
 
-        /**
-         * Typing with the physical keyboard 
-         */
+        /// <summary>
+        /// Typing with the physical keyboard 
+        /// </summary>
         private void SurfaceWindow_KeyDown(object sender, KeyEventArgs e)
         {
             if (currDevice == InputDevice.PhyKbd)
@@ -535,13 +543,12 @@ namespace SurfaceKeyboard
             }
         }
 
-        /**
-        * Gesture Handler - Zhen. 
-        * Update: Jan. 29th 2014.
-        * 1. Get the queue with the id.
-        * 2. Call the function of GesturePoints Class
-        * 3. Complete gestures based on the return value
-        * */
+        /// <summary>
+        /// Gesture Handler - Zhen. 
+        /// </summary>
+        /// 1. Get the queue with the id.
+        /// 2. Call the function of GesturePoints Class
+        /// 3. Complete gestures based on the return value
         private void handleGesture(double x, double y, int id)
         {
             /* Push to the movement queue and check time */
@@ -561,17 +568,11 @@ namespace SurfaceKeyboard
                     {
                         myPoints.setStatus(HandStatus.Backspace);
 
-                        /* Delete ONE WORD */
-                        deleteWord();
+                        // Reset the hpNo (added one when touching)
+                        --hpNo;
 
-                        /* ( Delete ONE character ? ) */
-                        //if (hpNo > 0)
-                        //{
-                        //    hpNo--;
-                        //    currValidPoints.RemoveAt(currValidPoints.Count - 1);
-                        //}
-                        //updateTaskTextBlk();
-                        // Debug.WriteLine("do Backspace");
+                        // Delete ONE WORD
+                        deleteWord();
                     }
                 }
                 else if (gestureStatus == HandStatus.Enter)
@@ -579,9 +580,14 @@ namespace SurfaceKeyboard
                     if (myPoints.getStatus() != HandStatus.Enter)
                     {
                         myPoints.setStatus(HandStatus.Enter);
-                        // TODO: Output 'Enter' if applicable (in real text editor)
-                        /* Show the next task */
+
+                        // Reset the hpNo (added one when touching)
+                        --hpNo;
+
+                        // Show the next task 
                         gotoNextText();
+
+                        // TODO: Output 'Enter' if applicable (in real text editor)
                     }
                 }
             }
@@ -646,12 +652,15 @@ namespace SurfaceKeyboard
                         case HandStatus.Type:
                             if (myPoints.checkTyping())
                             {
-                                currValidPoints.Add(myPoints.getStartPoint());
-
-                                hpNo++;
-                                updateStatusBlock();
-                                updateTaskTextBlk();
+                                currValidPoints.Add(myPoints.getStartPoint());    
                             }
+                            else
+                            {
+                                // Not a valid typing point
+                                --hpNo;
+                            }
+                            updateStatusBlock();
+                            updateTaskTextBlk();
                             break;
                     }
                     movement.Remove(id);
@@ -677,6 +686,13 @@ namespace SurfaceKeyboard
 
         private void InputCanvas_TouchUp(object sender, TouchEventArgs e)
         {
+            // Call handleGesture is important if the user just 'touch down' - 'touch up' without movement
+            Point touchPos = e.TouchDevice.GetPosition(this);
+            if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
+            {
+                handleGesture(touchPos.X, touchPos.Y, e.TouchDevice.Id);
+            }
+
             if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized())
             {
                 releaseGesture(e.TouchDevice.Id);
@@ -687,6 +703,12 @@ namespace SurfaceKeyboard
         {
             if (currDevice == InputDevice.Mouse)
             {
+                Point touchPos = e.GetPosition(this);
+                if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
+                {
+                    handleGesture(touchPos.X, touchPos.Y, -1);
+                }
+
                 releaseGesture(-1);
             }
         }

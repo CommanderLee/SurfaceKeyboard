@@ -746,6 +746,23 @@ namespace SurfaceKeyboard
             return myTag;
         }
 
+        /**
+         * Clear focus on the buttons after clicking. 
+         * If not doing so, the Space of physical keyboard will triger the click on the focused button. 
+         * Reference: decasteljau http://stackoverflow.com/a/2914599/4762924 
+         */
+        private void clearKbdFocus(Button btn)
+        {
+            FrameworkElement parent = (FrameworkElement)btn.Parent;
+            while (parent != null && parent is IInputElement && !((IInputElement)parent).Focusable)
+            {
+                parent = (FrameworkElement)parent.Parent;
+            }
+
+            DependencyObject scope = FocusManager.GetFocusScope(btn);
+            FocusManager.SetFocusedElement(scope, parent as IInputElement);
+        }
+
         /** 
          * Save the touchdown seq to file. '_major' file: major data 
          */
@@ -786,6 +803,8 @@ namespace SurfaceKeyboard
                             file.WriteLine(str);
                         }
                     }
+
+                    clearKbdFocus(SaveBtn);
                     break;
 
                 case InputDevice.Hand:
@@ -828,17 +847,21 @@ namespace SurfaceKeyboard
 
         private void SaveBtn_Click(object sender, RoutedEventArgs e)
         {
-            switch (currDevice)
+            if (currDevice != InputDevice.Hand)
             {
-                case InputDevice.Mouse:
-                    SaveBtn_TouchDown(null, null);
-                    break;
-
-                case InputDevice.PhyKbd:
-                    SaveBtn_TouchDown(null, null);
-                    clearKbdFocus(SaveBtn);
-                    break;
+                SaveBtn_TouchDown(null, null);
             }
+            //switch (currDevice)
+            //{
+            //    case InputDevice.Mouse:
+            //        SaveBtn_TouchDown(null, null);
+            //        break;
+
+            //    case InputDevice.PhyKbd:
+            //        SaveBtn_TouchDown(null, null);
+            //        clearKbdFocus(SaveBtn);
+            //        break;
+            //}
         }
 
         /** 
@@ -883,38 +906,26 @@ namespace SurfaceKeyboard
         private void NextBtn_TouchDown(object sender, TouchEventArgs e)
         {
             gotoNextText();
+            clearKbdFocus(NextBtn);
         }
 
         private void NextBtn_Click(object sender, RoutedEventArgs e)
         {
-            switch (currDevice)
-            {
-                case InputDevice.Mouse:
-                    gotoNextText();
-                    break;
+            if (currDevice != InputDevice.Hand)
+                gotoNextText();
 
-                case InputDevice.PhyKbd:
-                    gotoNextText();
-                    clearKbdFocus(NextBtn);
-                    break;
-            }
-        }
+            clearKbdFocus(NextBtn);
+            //switch (currDevice)
+            //{
+            //    case InputDevice.Mouse:
+            //        gotoNextText();
+            //        break;
 
-        /**
-         * Clear focus on the buttons after clicking. 
-         * If not doing so, the Space of physical keyboard will triger the click on the focused button. 
-         * Reference: decasteljau http://stackoverflow.com/a/2914599/4762924 
-         */
-        private void clearKbdFocus(Button btn)
-        {
-            FrameworkElement parent = (FrameworkElement)btn.Parent;
-            while (parent != null && parent is IInputElement && !((IInputElement)parent).Focusable)
-            {
-                parent = (FrameworkElement)parent.Parent;
-            }
-
-            DependencyObject scope = FocusManager.GetFocusScope(btn);
-            FocusManager.SetFocusedElement(scope, parent as IInputElement);
+            //    case InputDevice.PhyKbd:
+            //        gotoNextText();
+            //        clearKbdFocus(NextBtn);
+            //        break;
+            //}
         }
 
         /**
@@ -942,21 +953,26 @@ namespace SurfaceKeyboard
         private void ClearBtn_TouchDown(object sender, TouchEventArgs e)
         {
             clearSentence();
+            clearKbdFocus(ClearBtn);
         }
 
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
-            switch (currDevice)
-            {
-                case InputDevice.Mouse:
-                    clearSentence();
-                    break;
+            if (currDevice != InputDevice.Hand)
+                clearSentence();
+            
+            clearKbdFocus(ClearBtn);
+            //switch (currDevice)
+            //{
+            //    case InputDevice.Mouse:
+            //        clearSentence();
+            //        break;
 
-                case InputDevice.PhyKbd:
-                    clearSentence();
-                    clearKbdFocus(ClearBtn);
-                    break;
-            }
+            //    case InputDevice.PhyKbd:
+            //        clearSentence();
+            //        clearKbdFocus(ClearBtn);
+            //        break;
+            //}
         }
 
         /**
@@ -1003,21 +1019,26 @@ namespace SurfaceKeyboard
         private void KeyboardBtn_TouchDown(object sender, TouchEventArgs e)
         {
             switchKbdImg();
+            clearKbdFocus(KeyboardBtn);
         }
 
         private void KeyboardBtn_Click(object sender, RoutedEventArgs e)
         {
-            switch (currDevice)
-            {
-                case InputDevice.Mouse:
-                    switchKbdImg();
-                    break;
+            if (currDevice != InputDevice.Hand)
+                switchKbdImg();
+                
+            clearKbdFocus(KeyboardBtn);
+            //switch (currDevice)
+            //{
+            //    case InputDevice.Mouse:
+            //        switchKbdImg();
+            //        break;
 
-                case InputDevice.PhyKbd:
-                    switchKbdImg();
-                    clearKbdFocus(KeyboardBtn);
-                    break;
-            }
+            //    case InputDevice.PhyKbd:
+            //        switchKbdImg();
+            //        clearKbdFocus(KeyboardBtn);
+            //        break;
+            //}
         }
 
         /**
@@ -1043,6 +1064,7 @@ namespace SurfaceKeyboard
         private void CalibBtn_TouchDown(object sender, TouchEventArgs e)
         {
             switchCalibOption();
+            clearKbdFocus(CalibBtn);
         }
 
         private void CalibBtn_Click(object sender, RoutedEventArgs e)
@@ -1056,9 +1078,9 @@ namespace SurfaceKeyboard
                 case InputDevice.PhyKbd:
                     /* Do not respond if using Physical Keyboard */
                     MessageBox.Show("You don't need to calibrate in Physical Keyboard Mode");
-                    clearKbdFocus(CalibBtn);
                     break;
             }
+            clearKbdFocus(CalibBtn);
         }
 
         /**
@@ -1100,21 +1122,26 @@ namespace SurfaceKeyboard
         private void DeleteBtn_TouchDown(object sender, TouchEventArgs e)
         {
             deleteWord();
+            clearKbdFocus(DeleteBtn);
         }
 
         private void DeleteBtn_Click(object sender, RoutedEventArgs e)
         {
-            switch (currDevice)
-            {
-                case InputDevice.Mouse:
-                    deleteWord();
-                    break;
+            if (currDevice != InputDevice.Hand)
+                deleteWord();
 
-                case InputDevice.PhyKbd:
-                    deleteWord();
-                    clearKbdFocus(DeleteBtn);
-                    break;
-            }
+            clearKbdFocus(DeleteBtn);
+            //switch (currDevice)
+            //{
+            //    case InputDevice.Mouse:
+            //        deleteWord();
+            //        break;
+
+            //    case InputDevice.PhyKbd:
+            //        deleteWord();
+            //        clearKbdFocus(DeleteBtn);
+            //        break;
+            //}
         }
 
         private void switchInputDevice()
@@ -1128,21 +1155,26 @@ namespace SurfaceKeyboard
         private void SwitchBtn_TouchDown(object sender, TouchEventArgs e)
         {
             switchInputDevice();
+            clearKbdFocus(SwitchBtn);
         }
 
         private void SwitchBtn_Click(object sender, RoutedEventArgs e)
         {
-            switch (currDevice)
-            {
-                case InputDevice.Mouse:
-                    switchInputDevice();
-                    break;
+            if (currDevice != InputDevice.Hand)
+                switchInputDevice();
 
-                case InputDevice.PhyKbd:
-                    switchInputDevice();
-                    clearKbdFocus(SwitchBtn);
-                    break;
-            }
+            clearKbdFocus(SwitchBtn);
+            //switch (currDevice)
+            //{
+            //    case InputDevice.Mouse:
+            //        switchInputDevice();
+            //        break;
+
+            //    case InputDevice.PhyKbd:
+            //        switchInputDevice();
+            //        clearKbdFocus(SwitchBtn);
+            //        break;
+            //}
         }
 
     }

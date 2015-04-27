@@ -746,11 +746,11 @@ namespace SurfaceKeyboard
             return myTag;
         }
 
-        /**
-         * Clear focus on the buttons after clicking. 
-         * If not doing so, the Space of physical keyboard will triger the click on the focused button. 
-         * Reference: decasteljau http://stackoverflow.com/a/2914599/4762924 
-         */
+        /// <summary>
+        /// Clear focus on the buttons after clicking. 
+        /// </summary>
+        /// If not doing so, the Space of physical keyboard will triger the click on the focused button. 
+        /// Reference: decasteljau http://stackoverflow.com/a/2914599/4762924 
         private void clearKbdFocus(Button btn)
         {
             FrameworkElement parent = (FrameworkElement)btn.Parent;
@@ -763,9 +763,9 @@ namespace SurfaceKeyboard
             FocusManager.SetFocusedElement(scope, parent as IInputElement);
         }
 
-        /** 
-         * Save the touchdown seq to file. '_major' file: major data 
-         */
+        /// <summary>
+        /// Save the touchdown seq to file. '_major' file: major data  
+        /// </summary>
         private void SaveBtn_TouchDown(object sender, TouchEventArgs e)
         {
             string fPath = Directory.GetCurrentDirectory() + '\\';
@@ -851,22 +851,11 @@ namespace SurfaceKeyboard
             {
                 SaveBtn_TouchDown(null, null);
             }
-            //switch (currDevice)
-            //{
-            //    case InputDevice.Mouse:
-            //        SaveBtn_TouchDown(null, null);
-            //        break;
-
-            //    case InputDevice.PhyKbd:
-            //        SaveBtn_TouchDown(null, null);
-            //        clearKbdFocus(SaveBtn);
-            //        break;
-            //}
         }
 
-        /** 
-         * Call when press the next button or do the 'next' gesture or input 'Enter'
-         */
+        /// <summary>
+        /// Call when press the next button or do the 'next' gesture or input 'Enter' 
+        /// </summary>
         private void gotoNextText()
         {
             taskNo++;
@@ -915,23 +904,11 @@ namespace SurfaceKeyboard
                 gotoNextText();
 
             clearKbdFocus(NextBtn);
-            //switch (currDevice)
-            //{
-            //    case InputDevice.Mouse:
-            //        gotoNextText();
-            //        break;
-
-            //    case InputDevice.PhyKbd:
-            //        gotoNextText();
-            //        clearKbdFocus(NextBtn);
-            //        break;
-            //}
         }
 
-        /**
-         * Clear the touch points of this sentence
-         * Also delete the calibration points in the list 
-         */
+        /// <summary>
+        ///  Clear the touch points of this sentence£¬and delete the calibration points in the list.
+        /// </summary>
         private void clearSentence()
         {
             currValidPoints.Clear();
@@ -962,22 +939,11 @@ namespace SurfaceKeyboard
                 clearSentence();
             
             clearKbdFocus(ClearBtn);
-            //switch (currDevice)
-            //{
-            //    case InputDevice.Mouse:
-            //        clearSentence();
-            //        break;
-
-            //    case InputDevice.PhyKbd:
-            //        clearSentence();
-            //        clearKbdFocus(ClearBtn);
-            //        break;
-            //}
         }
 
-        /**
-         * Switch Keyboard Image On/Off
-         */
+        /// <summary>
+        /// Switch Keyboard Image On/Off
+        /// </summary>
         private void switchKbdImg()
         {
             BitmapImage kbdImg;
@@ -1028,22 +994,11 @@ namespace SurfaceKeyboard
                 switchKbdImg();
                 
             clearKbdFocus(KeyboardBtn);
-            //switch (currDevice)
-            //{
-            //    case InputDevice.Mouse:
-            //        switchKbdImg();
-            //        break;
-
-            //    case InputDevice.PhyKbd:
-            //        switchKbdImg();
-            //        clearKbdFocus(KeyboardBtn);
-            //        break;
-            //}
         }
 
-        /**
-         * Set calibration options
-         */
+        /// <summary>
+        /// Set calibration options 
+        /// </summary>
         private void switchCalibOption()
         {
             if (calibStatus == CalibStatus.Off)
@@ -1083,9 +1038,9 @@ namespace SurfaceKeyboard
             clearKbdFocus(CalibBtn);
         }
 
-        /**
-         * Delete one word. Now hpNo points to the position of next input char.
-         */
+        /// <summary>
+        /// Delete one word. Now hpNo points to the position of next input char. 
+        /// </summary>
         private void deleteWord()
         {
             string currText = taskTexts[taskNo % taskSize];
@@ -1131,17 +1086,6 @@ namespace SurfaceKeyboard
                 deleteWord();
 
             clearKbdFocus(DeleteBtn);
-            //switch (currDevice)
-            //{
-            //    case InputDevice.Mouse:
-            //        deleteWord();
-            //        break;
-
-            //    case InputDevice.PhyKbd:
-            //        deleteWord();
-            //        clearKbdFocus(DeleteBtn);
-            //        break;
-            //}
         }
 
         private void switchInputDevice()
@@ -1164,17 +1108,6 @@ namespace SurfaceKeyboard
                 switchInputDevice();
 
             clearKbdFocus(SwitchBtn);
-            //switch (currDevice)
-            //{
-            //    case InputDevice.Mouse:
-            //        switchInputDevice();
-            //        break;
-
-            //    case InputDevice.PhyKbd:
-            //        switchInputDevice();
-            //        clearKbdFocus(SwitchBtn);
-            //        break;
-            //}
         }
 
     }

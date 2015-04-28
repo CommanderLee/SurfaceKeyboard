@@ -118,6 +118,7 @@
     <Resource Include="Resources\keyboard_1_5x.png" />
     <Content Include="SurfaceKeyboard.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

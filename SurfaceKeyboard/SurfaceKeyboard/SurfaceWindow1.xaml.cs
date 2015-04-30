@@ -28,25 +28,25 @@ namespace SurfaceKeyboard
     /// </summary>
     public partial class SurfaceWindow1 : SurfaceWindow
     {
-        /* The window to collect user id */
+        // The window to collect user id 
         WindowUserId                userIdWindow;
         string                      userId;
 
-        /* The start time of the app */
+        // The start time of the app 
         private bool                isStart;
         private DateTime            startTime;
 
-        /* Number of the hand points and the list to store them */
+        // Number of the hand points and the list to store them 
         private int                 hpNo;
         private List<HandPoint>     handPoints = new List<HandPoint>();
-        /* hpNo: [0, ...) normal points. Others: strings. */
+        // hpNo: [0, ...) normal points. Others: strings. 
         private const string        hpNoCalibPnt = "CALIB";
         private const string        hpNoCenterPnt = "CENTER";
         //enum HpOthers               { Calibrate = -1, CenterPoint = -2 };
 
         // TODO: Replace them
         //private List<HandPoint>     currValidPoints = new List<HandPoint>();
-        ///* Id -> GesturePoints Queue */
+        //// Id -> GesturePoints Queue 
         //Hashtable movement = new Hashtable();
 
         // Valid points: the touch point of each char.
@@ -54,44 +54,44 @@ namespace SurfaceKeyboard
         // Gesture: Type, Enter, Backspace .etc. Move into validPoints after 'Next'
         private List<GesturePoints> currGestures = new List<GesturePoints>();
 
-        /* Number(index) of the task texts, its size, and its content */
+        // Number(index) of the task texts, its size, and its content 
         private int                 taskNo;
         private int                 taskSize;
         private string[]            taskTexts;
 
-        /* Show the soft keyboard on the screen (default: close) */
+        // Show the soft keyboard on the screen (default: close) 
         ImageBrush                  kbdBtnImgOn, kbdBtnImgOff;
         enum KbdImgStatus           { Surface, Physical, Off };
         KbdImgStatus                kbdImgStatus;
         BitmapImage[]               kbdImages;
         double                      kbdWidth, kbdHeight;
 
-        /* Calibrate before each test sentence */
+        // Calibrate before each test sentence 
         enum CalibStatus            { Off, Preparing, Calibrating, Waiting, Done };
         private CalibStatus         calibStatus = CalibStatus.Off;
         private List<HandPoint>     calibPoints = new List<HandPoint>();
 
-        /* Calibration time threshold and timer */
+        // Calibration time threshold and timer 
         DateTime                    calibStartTime, calibEndTime;
         private const double        CALIB_WAITING_TIME = 500;
 
-        /* Calibration Button image */
+        // Calibration Button image 
         ImageBrush                  calibBtnImgOn, calibBtnImgOff;
 
-        /* Hand Model for calibration */
+        // Hand Model for calibration 
         HandModel                   userHand = new HandModel();
 
-        /* Different devices: 
-         * Hand for touch typing, Physical Keyboard for normal typing test, Mouse for debug on laptop */
+        // Different devices: 
+        // Hand for touch typing, Physical Keyboard for normal typing test, Mouse for debug on laptop 
         enum InputDevice            { Hand, PhyKbd, Mouse };
         InputDevice                 currDevice;
 
-        /* Physical keyboard test */
+        // Physical keyboard test 
         private string currTyping;
         private List<string> phyStrings = new List<string>();
         private bool                isTypingStart;
 
-        /* typingTime: ms */
+        // typingTime: ms 
         private DateTime            typingStartTime;
         private double              typingTime;
 
@@ -116,23 +116,23 @@ namespace SurfaceKeyboard
             isTypingStart = false;
 
             kbdImgStatus = KbdImgStatus.Off;
-            /* Keyboard Control Button Image */
+            // Keyboard Control Button Image 
             kbdBtnImgOn = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_open.png")));
             kbdBtnImgOff = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_close.png")));
             KeyboardBtn.Background = kbdBtnImgOff;
             KeyboardBtn.Content = "";
 
-            /* Keyboard Image (same as, or similar to physical keyboard) */
+            // Keyboard Image (same as, or similar to physical keyboard) 
             kbdImages = new BitmapImage[2];
 
-            /* Surface Keyboard Image */
+            // Surface Keyboard Image 
             int statusId = (int)KbdImgStatus.Surface;
             kbdImages[statusId] = new BitmapImage();
             kbdImages[statusId].BeginInit();
             kbdImages[statusId].UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1x.png");
             kbdImages[statusId].EndInit();
 
-            /* Physical Keyboard Image */
+            // Physical Keyboard Image 
             statusId = (int)KbdImgStatus.Physical;
             kbdImages[statusId] = new BitmapImage();
             kbdImages[statusId].BeginInit();
@@ -141,7 +141,7 @@ namespace SurfaceKeyboard
 
             imgKeyboard.Visibility = Visibility.Hidden;
             
-            /* Calibration Control Button Image */
+            // Calibration Control Button Image 
             calibBtnImgOn = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_on.png")));
             calibBtnImgOff = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/hand_calibration_off.png")));
             CalibBtn.Background = calibBtnImgOff;
@@ -150,7 +150,7 @@ namespace SurfaceKeyboard
             updateStatusBlock();
             updateTaskTextBlk();
 
-            /* Open a window to input the User ID */
+            // Open a window to input the User ID 
             userIdWindow = new WindowUserId();
             userIdWindow.ShowActivated = true;
             userIdWindow.ShowDialog();
@@ -265,7 +265,7 @@ namespace SurfaceKeyboard
         {
             string currText = taskTexts[taskNo % taskSize];
 
-            /* Show asterisk feedback for the user */
+            // Show asterisk feedback for the user 
             Regex rgx = new Regex(@"[^\s]");
             string typeText = rgx.Replace(currText, "*");
 
@@ -277,7 +277,7 @@ namespace SurfaceKeyboard
             }
             else
             {
-                /* Use asterisk while calibrating */
+                // Use asterisk while calibrating 
                 TaskTextBlk.Text = typeText;
             }
         }
@@ -292,14 +292,14 @@ namespace SurfaceKeyboard
                 switch (currDevice)
                 {
                     case InputDevice.PhyKbd:
-                        /* Physical Keyboard */
+                        // Physical Keyboard 
                         StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2})",
                             taskNo + 1, taskSize, hpNo);
                         break;
 
                     case InputDevice.Hand:
                     case InputDevice.Mouse:
-                        /* Touch or Mouse(Debug) */
+                        // Touch or Mouse(Debug) 
                         if (hpNo > 0)
                         {
                             HandPoint hpLast = handPoints.Last();
@@ -329,7 +329,7 @@ namespace SurfaceKeyboard
             Point kbdCenter = userHand.getCenterPt();
             if (kbdImgStatus != KbdImgStatus.Off)
             {
-                /* Get help from Clint (http://stackoverflow.com/a/29516946/4762924)*/
+                // Get help from Clint (http://stackoverflow.com/a/29516946/4762924)
                 Canvas.SetLeft(imgKeyboard, kbdCenter.X - kbdWidth / 2);
                 Canvas.SetTop(imgKeyboard, kbdCenter.Y - kbdHeight / 2 - TaskTextBlk.ActualHeight);
             }
@@ -352,7 +352,7 @@ namespace SurfaceKeyboard
         {
             if (pointType == HPType.Touch)
             {
-                /* New finger detected */
+                // New finger detected 
                 switch (calibStatus)
                 {
                     case CalibStatus.Preparing:
@@ -366,7 +366,7 @@ namespace SurfaceKeyboard
                         calibPoints.Add(new HandPoint(x, y, DateTime.Now.Subtract(calibStartTime).TotalMilliseconds,
                             taskNo + "-" + hpNoCalibPnt + "-" + id, HPType.Calibrate));
 
-                        /* If we get enough fingers */
+                        // If we get enough fingers 
                         if (calibPoints.Count == HandModel.FINGER_NUMBER)
                         {
                             calibStatus = CalibStatus.Waiting;
@@ -381,7 +381,7 @@ namespace SurfaceKeyboard
             }
             else
             {
-                /* Wait for some time */
+                // Wait for some time 
                 switch (calibStatus)
                 {
                     case CalibStatus.Waiting:
@@ -389,14 +389,14 @@ namespace SurfaceKeyboard
                         {
                             calibStatus = CalibStatus.Done;
 
-                            /* Save to variables */
+                            // Save to variables 
                             if (!userHand.loadHandPoints(calibPoints))
                                 Debug.Write("Error: load hand points failed.");
 
                             // TODO: Push calibration point from userHand to validPoints after 'Next'
                             // currValidPoints.AddRange(userHand.getFingerPoints().ToList<HandPoint>());
 
-                            /* Show keyboard image at center position */
+                            // Show keyboard image at center position 
                             updateKeyboardImage();
 
                             calibPoints.Clear();
@@ -508,10 +508,10 @@ namespace SurfaceKeyboard
             if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized())
             {
                 Console.WriteLine("Hand Detected.");
-                /* Get touchdown position */
+                // Get touchdown position 
                 Point touchPos = e.TouchDevice.GetPosition(this);
 
-                /* Calibration off, or the user has done his calibration */
+                // Calibration off, or the user has done his calibration 
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                 {
                     saveTouchPoints(touchPos.X, touchPos.Y, e.TouchDevice.Id);
@@ -531,10 +531,10 @@ namespace SurfaceKeyboard
             if (currDevice == InputDevice.Mouse)
             {
                 Console.WriteLine("Mouse Detected.");
-                /* Get touchdown position */
+                // Get touchdown position 
                 Point touchPos = e.GetPosition(this);
 
-                /* No calibration, or the user has done his calibration */
+                // No calibration, or the user has done his calibration 
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                 {
                     saveTouchPoints(touchPos.X, touchPos.Y, -1);
@@ -566,7 +566,7 @@ namespace SurfaceKeyboard
                     typingTime = DateTime.Now.Subtract(typingStartTime).TotalMilliseconds;
                 }
 
-                /* A-Z */
+                // A-Z 
                 if (str.Length == 1)
                 {
                     currTyping += str;
@@ -599,7 +599,7 @@ namespace SurfaceKeyboard
         /// 3. Complete gestures based on the return value
         private void handleGesture(double x, double y, int id)
         {
-            /* Push to the movement queue and check time */
+            // Push to the movement queue and check time 
             double timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
             HandPoint movePoint = new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id, HPType.Move);
             handPoints.Add(movePoint);
@@ -614,7 +614,7 @@ namespace SurfaceKeyboard
                 //handPoints.Add(movePoint);
 
                 HandStatus gestureStatus = myPoints.checkGesture();
-                /* Check Distance */
+                // Check Distance 
                 if (gestureStatus == HandStatus.Backspace)
                 {
                     //if (myPoints.getStatus() != HandStatus.Backspace)
@@ -741,11 +741,11 @@ namespace SurfaceKeyboard
             }
             else
             {
-                /* If the user raise his finger, then reset. 
-                 * Note: If the user raise the mouse, don't do this. Just for testing. */
+                // If the user raise his finger, then reset. 
+                // Note: If the user raise the mouse, don't do this. Just for testing. 
                 if (currDevice == InputDevice.Hand)
                 {
-                    /* Reset calibration points */
+                    // Reset calibration points 
                     calibStatus = CalibStatus.Preparing;
                     calibPoints.Clear();
                     updateStatusBlock();
@@ -786,10 +786,10 @@ namespace SurfaceKeyboard
 
         private string getTestingTag()
         {
-            /* Return the tag string for testing status( with/without keyboard .etc) */
+            // Return the tag string for testing status( with/without keyboard .etc) 
             string myTag = "";
 
-            /* User ID */
+            // User ID 
             myTag += "_" + userId;
 
             switch (currDevice)
@@ -847,7 +847,7 @@ namespace SurfaceKeyboard
 
             StatusTextBlk.Text = fPath + fNameAll;
 
-            /* Save shuffled text to file */
+            // Save shuffled text to file 
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fTextName, true))
             {
                 foreach (string text in taskTexts)
@@ -856,14 +856,14 @@ namespace SurfaceKeyboard
                 }
             }
 
-            /* Save typing data */
+            // Save typing data 
             switch (currDevice)
             {
                 case InputDevice.PhyKbd:
                     if (currTyping.Length > 0)
                         phyStrings.Add(currTyping + "," + typingTime);
 
-                    /* Save raw input strings into file */
+                    // Save raw input strings into file 
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameAll, true))
                     {
                         file.WriteLine("RawInput, TypingTime");
@@ -878,7 +878,7 @@ namespace SurfaceKeyboard
 
                 case InputDevice.Hand:
                 case InputDevice.Mouse:
-                    /* Save raw input points into file */
+                    // Save raw input points into file 
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameAll, true))
                     {
                         file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
@@ -888,7 +888,7 @@ namespace SurfaceKeyboard
                         }
                     }
 
-                    /* Save major data points into '_typing' file */
+                    // Save major data points into '_typing' file 
                     if (currGestures.Count > 0)
                     {
                         // TODO: Parse and move 'Type' points into validPoints.
@@ -908,7 +908,7 @@ namespace SurfaceKeyboard
                     break;
             }
 
-            /* Clear the timer and storage */
+            // Clear the timer and storage 
             isStart = false;
             handPoints.Clear();
             validPoints.Clear();
@@ -951,7 +951,7 @@ namespace SurfaceKeyboard
                     //currValidPoints.Clear();
                     calibPoints.Clear();
 
-                    /* Clear the status if the calibration mode is ON */
+                    // Clear the status if the calibration mode is ON 
                     if (calibStatus != CalibStatus.Off)
                     {
                         calibStatus = CalibStatus.Preparing;
@@ -1108,7 +1108,7 @@ namespace SurfaceKeyboard
                     break;
 
                 case InputDevice.PhyKbd:
-                    /* Do not respond if using Physical Keyboard */
+                    // Do not respond if using Physical Keyboard 
                     MessageBox.Show("You don't need to calibrate in Physical Keyboard Mode");
                     break;
             }
@@ -1123,7 +1123,7 @@ namespace SurfaceKeyboard
             string currText = taskTexts[taskNo % taskSize];
             int removeStart = hpNo - 1;
 
-            /* Delete at least one character */
+            // Delete at least one character 
             if (removeStart >= 0)
             {
                 for (; removeStart > 0; --removeStart)
@@ -1168,7 +1168,7 @@ namespace SurfaceKeyboard
 
         private void switchInputDevice()
         {
-            /* Cycle of all input devices defined in the enum InputDevice */
+            // Cycle of all input devices defined in the enum InputDevice 
             currDevice = (InputDevice)(((int)currDevice + 1) % Enum.GetNames(typeof(InputDevice)).Length);
             SwitchBtn.Content = currDevice;
             updateWindowTitle();

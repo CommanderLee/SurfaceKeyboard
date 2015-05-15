@@ -37,6 +37,7 @@ namespace SurfaceKeyboard
         private DateTime            startTime;
 
         // Number of the hand points and the list to store them 
+        // hpNo: number of current hp. Backspacing when deleted.
         private int                 hpNo;
         private List<HandPoint>     handPoints = new List<HandPoint>();
         // hpNo: [0, ...) normal points. Others: strings. 
@@ -54,14 +55,14 @@ namespace SurfaceKeyboard
         // Gesture: Type, Enter, Backspace .etc. Move into validPoints after 'Next'
         private List<GesturePoints> currGestures = new List<GesturePoints>();
 
-        // Number(index) of the task texts, its size, and its content 
-        private int                 taskNo;
+        // Index of the task texts, its size, and its content 
+        private int                 taskIndex;
         private int                 taskSize;
         private string[]            taskTexts;
 
         // Show the soft keyboard on the screen (default: close) 
         ImageBrush                  kbdBtnImgOn, kbdBtnImgOff;
-        enum KbdImgStatus           { Surface, Physical, Off };
+        enum KbdImgStatus           { SurfSize, PhySize, Off };
         KbdImgStatus                kbdImgStatus;
         BitmapImage[]               kbdImages;
         double                      kbdWidth, kbdHeight;
@@ -87,8 +88,8 @@ namespace SurfaceKeyboard
         InputDevice                 currDevice;
 
         // Physical keyboard test 
-        private string currTyping;
-        private List<string> phyStrings = new List<string>();
+        private string              currTyping;
+        private List<string>        phyStrings = new List<string>();
         private bool                isTypingStart;
 
         // typingTime: ms 
@@ -108,7 +109,7 @@ namespace SurfaceKeyboard
             currDevice = InputDevice.PhyKbd;
 
             isStart = false;
-            taskNo = 0;
+            taskIndex = 0;
             hpNo = 0;
 
             //currValidPoints.Clear();
@@ -126,14 +127,14 @@ namespace SurfaceKeyboard
             kbdImages = new BitmapImage[2];
 
             // Surface Keyboard Image 
-            int statusId = (int)KbdImgStatus.Surface;
+            int statusId = (int)KbdImgStatus.SurfSize;
             kbdImages[statusId] = new BitmapImage();
             kbdImages[statusId].BeginInit();
             kbdImages[statusId].UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1x.png");
             kbdImages[statusId].EndInit();
 
             // Physical Keyboard Image 
-            statusId = (int)KbdImgStatus.Physical;
+            statusId = (int)KbdImgStatus.PhySize;
             kbdImages[statusId] = new BitmapImage();
             kbdImages[statusId].BeginInit();
             kbdImages[statusId].UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1_5x.png");
@@ -263,7 +264,7 @@ namespace SurfaceKeyboard
         /// </summary>
         private void updateTaskTextBlk()
         {
-            string currText = taskTexts[taskNo % taskSize];
+            string currText = taskTexts[taskIndex % taskSize];
 
             // Show asterisk feedback for the user 
             Regex rgx = new Regex(@"[^\s]");
@@ -289,28 +290,30 @@ namespace SurfaceKeyboard
         {
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
+                int hpIndex = currGestures.Count;
                 switch (currDevice)
                 {
                     case InputDevice.PhyKbd:
                         // Physical Keyboard 
                         StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2})",
-                            taskNo + 1, taskSize, hpNo);
+                            taskIndex + 1, taskSize, hpIndex);
                         break;
 
                     case InputDevice.Hand:
                     case InputDevice.Mouse:
-                        // Touch or Mouse(Debug) 
+                        // Touch or Mouse(Debug), points > 0
                         if (hpNo > 0)
                         {
                             HandPoint hpLast = handPoints.Last();
 
                             StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}",
-                                taskNo + 1, taskSize, hpNo, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
+                                taskIndex + 1, taskSize, hpIndex, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
                         }
+                        // points == 0 or PhysicalKeyboard Mode
                         else
                         {
                             StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}",
-                                taskNo + 1, taskSize, "N/A", "N/A", "N/A", "N/A");
+                                taskIndex + 1, taskSize, "N/A", "N/A", "N/A", "N/A");
                         }
                         break;
                 }
@@ -329,7 +332,6 @@ namespace SurfaceKeyboard
             Point kbdCenter = userHand.getCenterPt();
             if (kbdImgStatus != KbdImgStatus.Off)
             {
-                // Get help from Clint (http://stackoverflow.com/a/29516946/4762924)
                 Canvas.SetLeft(imgKeyboard, kbdCenter.X - kbdWidth / 2);
                 Canvas.SetTop(imgKeyboard, kbdCenter.Y - kbdHeight / 2 - TaskTextBlk.ActualHeight);
             }
@@ -359,12 +361,12 @@ namespace SurfaceKeyboard
                         calibStatus = CalibStatus.Calibrating;
                         calibStartTime = DateTime.Now;
                         calibPoints.Add(new HandPoint(x, y, 0,
-                            taskNo + "-" + hpNoCalibPnt + "-" + id, HPType.Calibrate));
+                            taskIndex + "_" + hpNoCalibPnt + "_" + id, HPType.Calibrate));
                         break;
 
                     case CalibStatus.Calibrating:
                         calibPoints.Add(new HandPoint(x, y, DateTime.Now.Subtract(calibStartTime).TotalMilliseconds,
-                            taskNo + "-" + hpNoCalibPnt + "-" + id, HPType.Calibrate));
+                            taskIndex + "_" + hpNoCalibPnt + "_" + id, HPType.Calibrate));
 
                         // If we get enough fingers 
                         if (calibPoints.Count == HandModel.FINGER_NUMBER)
@@ -426,7 +428,7 @@ namespace SurfaceKeyboard
             // Find the same queue
             foreach (GesturePoints gPoint in currGestures)
             {
-                string[] currHPId = gPoint.getStartPoint().getId().Split('-');
+                string[] currHPId = gPoint.getStartPoint().getId().Split('_');
                 if (currHPId.Length == 3)
                 {
                     int currDeviceId = Convert.ToInt32(currHPId[2]);
@@ -472,7 +474,8 @@ namespace SurfaceKeyboard
             }
 
             // Save the information 
-            HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id, HPType.Touch);
+            int hpIndex = currGestures.Count;
+            HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Touch);
             handPoints.Add(touchPoint);
 
             // Add new point(should return null because it is new)
@@ -600,8 +603,9 @@ namespace SurfaceKeyboard
         private void handleGesture(double x, double y, int id)
         {
             // Push to the movement queue and check time 
+            int hpIndex = currGestures.Count;
             double timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-            HandPoint movePoint = new HandPoint(x, y, timeStamp, taskNo + "-" + hpNo + "-" + id, HPType.Move);
+            HandPoint movePoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Move);
             handPoints.Add(movePoint);
 
             GesturePoints myPoints = updateGesturePoints(movePoint, id);
@@ -613,13 +617,13 @@ namespace SurfaceKeyboard
                 //myPoints.Add(movePoint);
                 //handPoints.Add(movePoint);
 
-                HandStatus gestureStatus = myPoints.checkGesture();
+                HandStatus gestureStatus = myPoints.updateGestureStatus();
                 // Check Distance 
                 if (gestureStatus == HandStatus.Backspace)
                 {
                     //if (myPoints.getStatus() != HandStatus.Backspace)
                     //{
-                        myPoints.setStatus(HandStatus.Backspace);
+                        //myPoints.setStatus(HandStatus.Backspace);
 
                         // Reset the hpNo (added one when touching)
                         --hpNo;
@@ -632,7 +636,7 @@ namespace SurfaceKeyboard
                 {
                     //if (myPoints.getStatus() != HandStatus.Enter)
                     //{
-                        myPoints.setStatus(HandStatus.Enter);
+                        //myPoints.setStatus(HandStatus.Enter);
 
                         // Reset the hpNo (added one when touching)
                         --hpNo;
@@ -697,6 +701,7 @@ namespace SurfaceKeyboard
                 GesturePoints myPoints = updateGesturePoints(null, id);
                 if (myPoints != null)
                 {
+                    myPoints.checkTyping();
                     if (myPoints.getStatus() == HandStatus.Unknown)
                     {
                         --hpNo;
@@ -755,15 +760,15 @@ namespace SurfaceKeyboard
 
         private void InputCanvas_TouchUp(object sender, TouchEventArgs e)
         {
-            // Call handleGesture is important if the user just 'touch down' - 'touch up' without movement
-            Point touchPos = e.TouchDevice.GetPosition(this);
-            if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
-            {
-                handleGesture(touchPos.X, touchPos.Y, e.TouchDevice.Id);
-            }
-
             if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized())
             {
+                // Call handleGesture is important if the user just 'touch down' - 'touch up' without movement
+                Point touchPos = e.TouchDevice.GetPosition(this);
+                if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
+                {
+                    handleGesture(touchPos.X, touchPos.Y, e.TouchDevice.Id);
+                }
+
                 releaseGesture(e.TouchDevice.Id);
             }
         }
@@ -881,7 +886,7 @@ namespace SurfaceKeyboard
                     // Save raw input points into file 
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameAll, true))
                     {
-                        file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
+                        file.WriteLine("X, Y, Time, TaskIndex_PointIndex_FingerId, PointType");
                         foreach (HandPoint point in handPoints)
                         {
                             file.WriteLine(point.ToString());
@@ -891,7 +896,13 @@ namespace SurfaceKeyboard
                     // Save major data points into '_typing' file 
                     if (currGestures.Count > 0)
                     {
-                        // TODO: Parse and move 'Type' points into validPoints.
+                        foreach (GesturePoints gp in currGestures)
+                        {
+                            if (gp.getStatus() == HandStatus.Type)
+                            {
+                                validPoints.Add(gp.getStartPoint());
+                            }
+                        }
                     }
                     //if (currValidPoints.Count > 0)
                     //{
@@ -899,7 +910,7 @@ namespace SurfaceKeyboard
                     //}
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameMajor, true))
                     {
-                        file.WriteLine("X, Y, Time, TaskNo-PointNo-FingerId, PointType");
+                        file.WriteLine("X, Y, Time, TaskIndex_PointIndex_FingerId, PointType");
                         foreach (HandPoint point in validPoints)
                         {
                             file.WriteLine(point.ToString());
@@ -932,7 +943,7 @@ namespace SurfaceKeyboard
         /// </summary>
         private void gotoNextText()
         {
-            taskNo++;
+            taskIndex++;
             hpNo = 0;
 
             switch (currDevice)
@@ -945,7 +956,16 @@ namespace SurfaceKeyboard
 
                 case InputDevice.Hand:
                 case InputDevice.Mouse:
-                    // TODO Move Type points
+                    if (currGestures.Count > 0)
+                    {
+                        foreach (GesturePoints gp in currGestures)
+                        {
+                            if (gp.getStatus() == HandStatus.Type)
+                            {
+                                validPoints.Add(gp.getStartPoint());
+                            }
+                        }
+                    }
                     //validPoints.AddRange(currValidPoints);
                     currGestures.Clear();
                     //currValidPoints.Clear();
@@ -962,7 +982,7 @@ namespace SurfaceKeyboard
             updateStatusBlock();
             updateTaskTextBlk();
 
-            if (taskNo == taskTexts.Length)
+            if (taskIndex == taskTexts.Length)
             {
                 MessageBox.Show("Congratulations! You have finished the [" + currDevice + "] test.");
             }
@@ -1026,18 +1046,18 @@ namespace SurfaceKeyboard
             BitmapImage kbdImg;
             switch (kbdImgStatus)
             {
-                case KbdImgStatus.Surface:
-                    kbdImgStatus = KbdImgStatus.Physical;
+                case KbdImgStatus.SurfSize:
+                    kbdImgStatus = KbdImgStatus.PhySize;
                     KeyboardBtn.Background = kbdBtnImgOn;
                     KeyboardBtn.Content = "PhyKbd";
 
-                    kbdImg = kbdImages[(int)KbdImgStatus.Physical];
+                    kbdImg = kbdImages[(int)KbdImgStatus.PhySize];
                     imgKeyboard.Source = kbdImg;
                     kbdWidth = kbdImg.PixelWidth;
                     kbdHeight = kbdImg.PixelHeight;
                     imgKeyboard.Visibility = Visibility.Visible;
                     break;
-                case KbdImgStatus.Physical:
+                case KbdImgStatus.PhySize:
                     kbdImgStatus = KbdImgStatus.Off;
                     KeyboardBtn.Background = kbdBtnImgOff;
                     KeyboardBtn.Content = "";
@@ -1046,11 +1066,11 @@ namespace SurfaceKeyboard
                     break;
 
                 case KbdImgStatus.Off:
-                    kbdImgStatus = KbdImgStatus.Surface;
+                    kbdImgStatus = KbdImgStatus.SurfSize;
                     KeyboardBtn.Background = kbdBtnImgOn;
                     KeyboardBtn.Content = "SurfKbd";
 
-                    kbdImg = kbdImages[(int)KbdImgStatus.Surface];
+                    kbdImg = kbdImages[(int)KbdImgStatus.SurfSize];
                     imgKeyboard.Source = kbdImg;
                     kbdWidth = kbdImg.PixelWidth;
                     kbdHeight = kbdImg.PixelHeight;
@@ -1120,7 +1140,7 @@ namespace SurfaceKeyboard
         /// </summary>
         private void deleteWord()
         {
-            string currText = taskTexts[taskNo % taskSize];
+            string currText = taskTexts[taskIndex % taskSize];
             int removeStart = hpNo - 1;
 
             // Delete at least one character 
@@ -1140,7 +1160,18 @@ namespace SurfaceKeyboard
 
                     case InputDevice.Hand:
                     case InputDevice.Mouse:
-                        // TODO: Disable / Delete in currGestures
+                        int validNum = 0;
+                        foreach (GesturePoints gp in currGestures)
+                        {
+                            if (gp.getStatus() == HandStatus.Type)
+                            {
+                                ++validNum;
+                                if (validNum > removeStart)
+                                {
+                                    gp.setStatus(HandStatus.Backspace);
+                                }
+                            }
+                        }
                         //currValidPoints.RemoveRange(removeStart, hpNo - removeStart);
                         break;
                 }

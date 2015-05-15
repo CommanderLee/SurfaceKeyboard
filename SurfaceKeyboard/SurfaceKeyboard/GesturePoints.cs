@@ -76,10 +76,10 @@ namespace SurfaceKeyboard
         }
 
         /**
-         * Calculate moving distance
+         * Calculate moving distance and update gesture status
          * positive: enter, negative: backspace, 0: typing
          */
-        public HandStatus checkGesture()
+        public HandStatus updateGestureStatus()
         {
             HandPoint lastHP = _queue.First();
             double sumDist = 0.0;
@@ -115,26 +115,30 @@ namespace SurfaceKeyboard
 
         /**
          * Check typing based on the movement within a single touch.
-         * TODO: Using distance or variance. 
          */
         public bool checkTyping()
         {
+            bool isTyping = false;
             if (_queue.Count == 0)
             {
                 Console.WriteLine("[Error] checkTyping(): The queue is empty.");
-                return false;
             }
             else
             {
-                bool isTyping = false;
-                double touchTime = _queue.Last().getTime() - _startTime;
-                if (touchTime <= TOUCH_TIME_MAX && touchTime >= TOUCH_TIME_MIN)
-                {
-                    isTyping = true;
-                    _status = HandStatus.Type;
-                }
-                return isTyping;
+                // TODO: Use distance or variance. 
+                isTyping = true;
+                _status = HandStatus.Type;
+
+                //double touchTime = _queue.Last().getTime() - _startTime;
+                //if (touchTime <= TOUCH_TIME_MAX && touchTime >= TOUCH_TIME_MIN)
+                //{
+                //    isTyping = true;
+                //    _status = HandStatus.Type;
+                //}
+                
             }
+            return isTyping;
         }
+
     }
 }

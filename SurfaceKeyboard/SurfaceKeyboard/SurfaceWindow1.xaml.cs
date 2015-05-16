@@ -416,12 +416,11 @@ namespace SurfaceKeyboard
         }
 
         /// <summary>
-        /// Update the pointQueue(currGestures) with given hand point 
+        /// Find corresponding gesture points list
         /// </summary>
-        /// <param name="touchPoint">New point detected</param>
-        /// <param name="touchId">ID of the new point</param>
-        /// <returns>If the ID exists, return gesturepoints</returns>
-        private GesturePoints updateGesturePoints(HandPoint touchPoint, int touchId)
+        /// <param name="touchId"></param>
+        /// <returns></returns>
+        private GesturePoints findGesturePoints(int touchId)
         {
             GesturePoints findPoints = null;
 
@@ -434,15 +433,30 @@ namespace SurfaceKeyboard
                     int currDeviceId = Convert.ToInt32(currHPId[2]);
                     if (currDeviceId == touchId)
                     {
-                        gPoint.Add(touchPoint);
                         findPoints = gPoint;
                         break;
                     }
                 }
             }
 
-            // Create a new gesture queue
-            if (findPoints == null)
+            return findPoints;
+        }
+
+        /// <summary>
+        /// Update the pointQueue(currGestures) with given hand point 
+        /// </summary>
+        /// <param name="touchPoint">New point detected</param>
+        /// <param name="touchId">ID of the new point</param>
+        /// <returns>If the ID exists, return gesturepoints</returns>
+        private GesturePoints updateGesturePoints(HandPoint touchPoint, int touchId)
+        {
+            GesturePoints findPoints = findGesturePoints(touchId);
+
+            if (findPoints != null)
+            {
+                findPoints.Add(touchPoint);
+            }
+            else
             {
                 GesturePoints myPoints = new GesturePoints(touchPoint, HandStatus.Unknown);
                 currGestures.Add(myPoints);
@@ -537,14 +551,16 @@ namespace SurfaceKeyboard
                 // Get touchdown position 
                 Point touchPos = e.GetPosition(this);
 
+                // To avoid repetition. This is the first one
+                int mouseTouchId = - (currGestures.Count + 1);
                 // No calibration, or the user has done his calibration 
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                 {
-                    saveTouchPoints(touchPos.X, touchPos.Y, -1);
+                    saveTouchPoints(touchPos.X, touchPos.Y, mouseTouchId);
                 }
                 else
                 {
-                    calibrateHands(touchPos.X, touchPos.Y, -1, HPType.Touch);
+                    calibrateHands(touchPos.X, touchPos.Y, mouseTouchId, HPType.Touch);
                 }
             }
         }
@@ -610,19 +626,22 @@ namespace SurfaceKeyboard
 
             GesturePoints myPoints = updateGesturePoints(movePoint, id);
             // If the point exists and status not set
-            if (myPoints != null && myPoints.getStatus() == HandStatus.Unknown)
+            if (myPoints != null)
             //if (movement.ContainsKey(id))
             {
-                //GesturePoints myPoints = (GesturePoints)movement[id];
-                //myPoints.Add(movePoint);
-                //handPoints.Add(movePoint);
-
-                HandStatus gestureStatus = myPoints.updateGestureStatus();
-                // Check Distance 
-                if (gestureStatus == HandStatus.Backspace)
+                // If the status is unknown, try to check its status
+                if (myPoints.getStatus() == HandStatus.Unknown)
                 {
-                    //if (myPoints.getStatus() != HandStatus.Backspace)
-                    //{
+                    //GesturePoints myPoints = (GesturePoints)movement[id];
+                    //myPoints.Add(movePoint);
+                    //handPoints.Add(movePoint);
+
+                    HandStatus gestureStatus = myPoints.updateGestureStatus();
+                    // Check Distance 
+                    if (gestureStatus == HandStatus.Backspace)
+                    {
+                        //if (myPoints.getStatus() != HandStatus.Backspace)
+                        //{
                         //myPoints.setStatus(HandStatus.Backspace);
 
                         // Reset the hpNo (added one when touching)
@@ -630,12 +649,12 @@ namespace SurfaceKeyboard
 
                         // Delete ONE WORD
                         deleteWord();
-                    //}
-                }
-                else if (gestureStatus == HandStatus.Enter)
-                {
-                    //if (myPoints.getStatus() != HandStatus.Enter)
-                    //{
+                        //}
+                    }
+                    else if (gestureStatus == HandStatus.Enter)
+                    {
+                        //if (myPoints.getStatus() != HandStatus.Enter)
+                        //{
                         //myPoints.setStatus(HandStatus.Enter);
 
                         // Reset the hpNo (added one when touching)
@@ -645,13 +664,14 @@ namespace SurfaceKeyboard
                         gotoNextText();
 
                         // TODO: Output 'Enter' if applicable (in real text editor)
+                        //}
+                    }
+                    // Do not need to do anything when type
+                    //else if (gestureStatus == HandStatus.Type)
+                    //{
+
                     //}
                 }
-                // Do not need to do anything when type
-                //else if (gestureStatus == HandStatus.Type)
-                //{
-                    
-                //}
             }
             else
             {
@@ -682,13 +702,14 @@ namespace SurfaceKeyboard
                 if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
                     Point touchPos = e.GetPosition(this);
+                    int mouseTouchId = -currGestures.Count;
                     if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                     {
-                        handleGesture(touchPos.X, touchPos.Y, -1);
+                        handleGesture(touchPos.X, touchPos.Y, mouseTouchId);
                     }
                     else
                     {
-                        calibrateHands(touchPos.X, touchPos.Y, -1, HPType.Move);
+                        calibrateHands(touchPos.X, touchPos.Y, mouseTouchId, HPType.Move);
                     }
                 }
             }
@@ -698,7 +719,7 @@ namespace SurfaceKeyboard
         {
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
-                GesturePoints myPoints = updateGesturePoints(null, id);
+                GesturePoints myPoints = findGesturePoints(id);
                 if (myPoints != null)
                 {
                     myPoints.checkTyping();
@@ -708,7 +729,6 @@ namespace SurfaceKeyboard
                         updateStatusBlock();
                         updateTaskTextBlk();
                     }
-                    // TODO: Remove all non-typing gesture points?
                 }
                 //if (movement.ContainsKey(id))
                 //{
@@ -778,12 +798,13 @@ namespace SurfaceKeyboard
             if (currDevice == InputDevice.Mouse)
             {
                 Point touchPos = e.GetPosition(this);
+                int mouseTouchId = -currGestures.Count;
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                 {
-                    handleGesture(touchPos.X, touchPos.Y, -1);
+                    handleGesture(touchPos.X, touchPos.Y, mouseTouchId);
                 }
 
-                releaseGesture(-1);
+                releaseGesture(mouseTouchId);
             }
         }
 

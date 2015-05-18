@@ -1,6 +1,8 @@
 # Check some important features of the testing set.
 # Zhen Li, Tsinghua University.
 import numpy as np
+import random as rd
+import copy
 
 from filesHelper import loadTestingSet
 from constants import handCode
@@ -80,6 +82,7 @@ def saveSelectedText(fileName, textNum, textContent, textTotalValue, textOneHand
     
     for text in descendTextList[:textNum]:
         writeText.write(text + '\n')
+    print 'Total Value Order: '
     print textStructArray[::-1][:textNum]
 
     # One Hand Value Order
@@ -89,7 +92,24 @@ def saveSelectedText(fileName, textNum, textContent, textTotalValue, textOneHand
 
     for text in descendTextList[:textNum]:
         writeText.write(text + '\n')
+    print 'One Hand Value Order: '
     print textStructArray[::-1][:textNum]
+
+    # Save a mixed version of TaskText, say, 15+15
+    # Lower/Upper limit for the mixed version
+    mixedTextList = copy.copy(descendTextList)
+    randLower = textNum / 2
+    randUpper = len(mixedTextList) - 1
+    print 'Random from %d to %d' % (randLower, randUpper)
+    for i in range(randLower, randUpper + 1):
+        randNum = rd.randint(randLower, randUpper)
+        mixedTextList[i], mixedTextList[randNum] = mixedTextList[randNum], mixedTextList[i]
+
+    writeText = open(fileName + '_Mixed.txt', 'w')
+    for text in mixedTextList[:textNum]:
+        writeText.write(text + '\n')
+    print 'Mixed version: '
+    print mixedTextList[:textNum]
 
 # Main Procedure #
 

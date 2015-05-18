@@ -361,7 +361,7 @@ if openFiles:
     for result in results:
         print result
 
-    fileNo = 6
+    fileNo = 7
 
     saveErrorPatternResults('matchingResult%d.csv' % (fileNo), totalErrorPattern, totalWordPattern, wordDic)
     
@@ -369,4 +369,4 @@ if openFiles:
 
     saveSinglePointResults('pointPosResult%d.csv' % (fileNo), totalPointPos)
 
-    savePointPairResults('pointPairResutl%d.csv' % (fileNo), totalPointPair)
+    savePointPairResults('pointPairResult%d.csv' % (fileNo), totalPointPair)

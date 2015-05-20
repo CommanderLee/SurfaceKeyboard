@@ -6,21 +6,7 @@ using System.Windows;
 
 namespace SurfaceKeyboard
 {
-    enum HPType { Touch, Move, Calibrate };
-
-    /* Basic Point Class */
-    //class BasicPoint
-    //{
-    //    public BasicPoint() { }
-    //    public BasicPoint(double _x, double _y)
-    //    {
-    //        x = _x;
-    //        y = _y;
-    //    }
-
-    //    public double x;
-    //    public double y;
-    //}
+    enum HPType { Touch, Move, Calibrate, Delete };
 
     /**
      * Elemental class for this project.
@@ -63,8 +49,12 @@ namespace SurfaceKeyboard
 
         public double getX() { return _pt.X; }
         public double getY() { return _pt.Y; }
+
         public double getTime() { return _time; }
+
         public String getId() { return _id; }
         public void setId(String id) { _id = id; }
+
+        public void setType(HPType type) { _type = type; }
     }
 }

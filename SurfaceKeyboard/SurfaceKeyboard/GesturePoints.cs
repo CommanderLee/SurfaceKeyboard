@@ -44,6 +44,7 @@ namespace SurfaceKeyboard
             _startPoint = startPoint;
 
             _status = status;
+            Console.WriteLine("Create new start point:" + _startPoint.ToString());
         }
 
         public void Add(HandPoint handPoint)
@@ -104,6 +105,7 @@ namespace SurfaceKeyboard
             if (directionCnt < 0 && sumDist > BACK_THRE)
             {
                 _status = HandStatus.Backspace;
+                _startPoint.setType(HPType.Delete);
             }
             else if (directionCnt > 0 && sumDist > ENTER_THRE)
             {

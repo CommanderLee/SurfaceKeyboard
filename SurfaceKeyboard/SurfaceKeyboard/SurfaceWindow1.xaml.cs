@@ -29,20 +29,23 @@ namespace SurfaceKeyboard
     public partial class SurfaceWindow1 : SurfaceWindow
     {
         // The window to collect user id 
-        WindowUserId                userIdWindow;
-        string                      userId;
+        WindowUserId        userIdWindow;
+        string              userId;
 
         // The start time of the app 
-        private bool                isStart;
-        private DateTime            startTime;
+        bool                isStart;
+        DateTime            startTime;
+
+        // Number of deletions
+        int                 deleteNum;
 
         // Number of the hand points and the list to store them 
         // hpNo: number of current hp. Backspacing when deleted.
-        private int                 hpNo;
-        private List<HandPoint>     handPoints = new List<HandPoint>();
+        int                 hpNo;
+        List<HandPoint>     handPoints = new List<HandPoint>();
         // hpNo: [0, ...) normal points. Others: strings. 
-        private const string        hpNoCalibPnt = "CALIB";
-        private const string        hpNoCenterPnt = "CENTER";
+        const string        hpNoCalibPnt = "CALIB";
+        const string        hpNoCenterPnt = "CENTER";
         //enum HpOthers               { Calibrate = -1, CenterPoint = -2 };
 
         // TODO: Replace them
@@ -51,50 +54,50 @@ namespace SurfaceKeyboard
         //Hashtable movement = new Hashtable();
 
         // Valid points: the touch point of each char.
-        private List<HandPoint>     validPoints = new List<HandPoint>();
+        List<HandPoint>     validPoints = new List<HandPoint>();
         // Gesture: Type, Enter, Backspace .etc. Move into validPoints after 'Next'
-        private List<GesturePoints> currGestures = new List<GesturePoints>();
+        List<GesturePoints> currGestures = new List<GesturePoints>();
 
         // Index of the task texts, its size, and its content 
-        private int                 taskIndex;
-        private int                 taskSize;
-        private string[]            taskTexts;
+        int                 taskIndex;
+        int                 taskSize;
+        string[]            taskTexts;
 
         // Show the soft keyboard on the screen (default: close) 
-        ImageBrush                  kbdBtnImgOn, kbdBtnImgOff;
-        enum KbdImgStatus           { SurfSize, PhySize, Off };
-        KbdImgStatus                kbdImgStatus;
-        BitmapImage[]               kbdImages;
-        double                      kbdWidth, kbdHeight;
+        ImageBrush          kbdBtnImgOn, kbdBtnImgOff;
+        enum KbdImgStatus   { SurfSize, PhySize, Off };
+        KbdImgStatus        kbdImgStatus;
+        BitmapImage[]       kbdImages;
+        double              kbdWidth, kbdHeight;
 
         // Calibrate before each test sentence 
-        enum CalibStatus            { Off, Preparing, Calibrating, Waiting, Done };
-        private CalibStatus         calibStatus = CalibStatus.Off;
-        private List<HandPoint>     calibPoints = new List<HandPoint>();
+        enum CalibStatus    { Off, Preparing, Calibrating, Waiting, Done };
+        CalibStatus         calibStatus = CalibStatus.Off;
+        List<HandPoint>     calibPoints = new List<HandPoint>();
 
         // Calibration time threshold and timer 
-        DateTime                    calibStartTime, calibEndTime;
-        private const double        CALIB_WAITING_TIME = 500;
+        DateTime            calibStartTime, calibEndTime;
+        const double        CALIB_WAITING_TIME = 500;
 
         // Calibration Button image 
-        ImageBrush                  calibBtnImgOn, calibBtnImgOff;
+        ImageBrush          calibBtnImgOn, calibBtnImgOff;
 
         // Hand Model for calibration 
-        HandModel                   userHand = new HandModel();
+        HandModel           userHand = new HandModel();
 
         // Different devices: 
         // Hand for touch typing, Physical Keyboard for normal typing test, Mouse for debug on laptop 
-        enum InputDevice            { Hand, PhyKbd, Mouse };
-        InputDevice                 currDevice;
+        enum InputDevice    { Hand, PhyKbd, Mouse };
+        InputDevice         currDevice;
 
         // Physical keyboard test 
-        private string              currTyping;
-        private List<string>        phyStrings = new List<string>();
-        private bool                isTypingStart;
+        string              currTyping;
+        List<string>        phyStrings = new List<string>();
+        bool                isTypingStart;
 
         // typingTime: ms 
-        private DateTime            typingStartTime;
-        private double              typingTime;
+        DateTime            typingStartTime;
+        double              typingTime;
 
         /// <summary>
         /// Default constructor.
@@ -109,6 +112,7 @@ namespace SurfaceKeyboard
             currDevice = InputDevice.PhyKbd;
 
             isStart = false;
+            deleteNum = 0;
             taskIndex = 0;
             hpNo = 0;
 
@@ -887,12 +891,12 @@ namespace SurfaceKeyboard
             {
                 case InputDevice.PhyKbd:
                     if (currTyping.Length > 0)
-                        phyStrings.Add(currTyping + "," + typingTime);
+                        phyStrings.Add(currTyping + "," + typingTime + "," + deleteNum);
 
                     // Save raw input strings into file 
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameAll, true))
                     {
-                        file.WriteLine("RawInput, TypingTime");
+                        file.WriteLine("RawInput,TypingTime,DeleteNumber");
                         foreach (string str in phyStrings)
                         {
                             file.WriteLine(str);
@@ -970,7 +974,7 @@ namespace SurfaceKeyboard
             switch (currDevice)
             {
                 case InputDevice.PhyKbd:
-                    phyStrings.Add(currTyping + "," + typingTime);
+                    phyStrings.Add(currTyping + "," + typingTime + "," + deleteNum);
                     currTyping = "";
                     isTypingStart = false;
                     break;
@@ -1000,6 +1004,7 @@ namespace SurfaceKeyboard
                     break;
             }
 
+            deleteNum = 0;
             updateStatusBlock();
             updateTaskTextBlk();
 
@@ -1198,6 +1203,7 @@ namespace SurfaceKeyboard
                 }
 
                 hpNo = removeStart;
+                ++deleteNum;
             }
 
             updateStatusBlock();

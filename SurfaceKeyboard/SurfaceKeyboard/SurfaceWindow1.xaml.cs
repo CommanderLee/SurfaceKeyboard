@@ -33,15 +33,17 @@ namespace SurfaceKeyboard
         string              userId;
 
         // The start time of the app 
-        bool                isStart;
-        DateTime            startTime;
+        // Now I use 'typingTime' instead
+        //bool                isStart;
+        //DateTime            startTime;
 
         // Number of deletions
         int                 deleteNum;
 
         // Number of the hand points and the list to store them 
         // hpNo: number of current hp. Backspacing when deleted.
-        int                 hpNo;
+        // hpIndex: the real index of the points. always incresing(hand) or decresing(mouse)
+        int                 hpNo, hpIndex;
         List<HandPoint>     handPoints = new List<HandPoint>();
         // hpNo: [0, ...) normal points. Others: strings. 
         const string        hpNoCalibPnt = "CALIB";
@@ -111,9 +113,10 @@ namespace SurfaceKeyboard
 
             currDevice = InputDevice.PhyKbd;
 
-            isStart = false;
+            //isStart = false;
             deleteNum = 0;
             taskIndex = 0;
+            hpIndex = -1;
             hpNo = 0;
 
             //currValidPoints.Clear();
@@ -294,7 +297,7 @@ namespace SurfaceKeyboard
         {
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
-                int hpIndex = currGestures.Count;
+                //int hpIndex = currGestures.Count - 1;
                 switch (currDevice)
                 {
                     case InputDevice.PhyKbd:
@@ -480,19 +483,29 @@ namespace SurfaceKeyboard
         {
             // Get touchdown time
             double timeStamp = 0;
-            if (!isStart)
+            if (!isTypingStart)
             {
-                isStart = true;
-                startTime = DateTime.Now;
+                isTypingStart = true;
+                typingStartTime = DateTime.Now;
                 timeStamp = 0;
             }
             else
             {
-                timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
+                timeStamp = DateTime.Now.Subtract(typingStartTime).TotalMilliseconds;
             }
+            //if (!isStart)
+            //{
+            //    isStart = true;
+            //    startTime = DateTime.Now;
+            //    timeStamp = 0;
+            //}
+            //else
+            //{
+            //    timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
+            //}
 
             // Save the information 
-            int hpIndex = currGestures.Count;
+            //int hpIndex = currGestures.Count;
             HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Touch);
             handPoints.Add(touchPoint);
 
@@ -535,6 +548,7 @@ namespace SurfaceKeyboard
                 // Calibration off, or the user has done his calibration 
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                 {
+                    ++hpIndex;
                     saveTouchPoints(touchPos.X, touchPos.Y, e.TouchDevice.Id);
                 }
                 else
@@ -556,7 +570,7 @@ namespace SurfaceKeyboard
                 Point touchPos = e.GetPosition(this);
 
                 // To avoid repetition. This is the first one
-                int mouseTouchId = - (currGestures.Count + 1);
+                int mouseTouchId = --hpIndex;
                 // No calibration, or the user has done his calibration 
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                 {
@@ -623,8 +637,9 @@ namespace SurfaceKeyboard
         private void handleGesture(double x, double y, int id)
         {
             // Push to the movement queue and check time 
-            int hpIndex = currGestures.Count;
-            double timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
+            //int hpIndex = currGestures.Count;
+            double timeStamp = DateTime.Now.Subtract(typingStartTime).TotalMilliseconds;
+            //double timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
             HandPoint movePoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Move);
             handPoints.Add(movePoint);
 
@@ -685,7 +700,7 @@ namespace SurfaceKeyboard
 
         private void InputCanvas_TouchMove(object sender, TouchEventArgs e)
         {
-            if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized())
+            if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized() && isTypingStart)
             {
                 Point touchPos = e.TouchDevice.GetPosition(this); 
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
@@ -701,12 +716,12 @@ namespace SurfaceKeyboard
 
         private void InputCanvas_MouseMove(object sender, MouseEventArgs e)
         {
-            if (currDevice == InputDevice.Mouse)
+            if (currDevice == InputDevice.Mouse && isTypingStart)
             {
                 if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
                     Point touchPos = e.GetPosition(this);
-                    int mouseTouchId = -currGestures.Count;
+                    int mouseTouchId = hpIndex;
                     if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                     {
                         handleGesture(touchPos.X, touchPos.Y, mouseTouchId);
@@ -784,7 +799,7 @@ namespace SurfaceKeyboard
 
         private void InputCanvas_TouchUp(object sender, TouchEventArgs e)
         {
-            if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized())
+            if (currDevice == InputDevice.Hand && e.TouchDevice.GetIsFingerRecognized() && isTypingStart)
             {
                 // Call handleGesture is important if the user just 'touch down' - 'touch up' without movement
                 Point touchPos = e.TouchDevice.GetPosition(this);
@@ -799,10 +814,10 @@ namespace SurfaceKeyboard
 
         private void InputCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (currDevice == InputDevice.Mouse)
+            if (currDevice == InputDevice.Mouse && isTypingStart)
             {
                 Point touchPos = e.GetPosition(this);
-                int mouseTouchId = -currGestures.Count;
+                int mouseTouchId = hpIndex;
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                 {
                     handleGesture(touchPos.X, touchPos.Y, mouseTouchId);
@@ -945,7 +960,7 @@ namespace SurfaceKeyboard
             }
 
             // Clear the timer and storage 
-            isStart = false;
+            //isStart = false;
             handPoints.Clear();
             validPoints.Clear();
             //currValidPoints.Clear();
@@ -970,6 +985,8 @@ namespace SurfaceKeyboard
         {
             taskIndex++;
             hpNo = 0;
+            hpIndex = -1;
+            isTypingStart = false;
 
             switch (currDevice)
             {

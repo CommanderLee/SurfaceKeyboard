@@ -11,8 +11,8 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Navigation;
 using System.Windows.Threading;
 using System.Diagnostics;
 using System.Collections;
@@ -101,6 +101,20 @@ namespace SurfaceKeyboard
         DateTime            typingStartTime;
         double              typingTime;
 
+        // UI InputCanvas Top
+        const int           inputCanvasTop = 287;
+
+        const int           touchCircleSize = 30;
+        const int           moveCircleSize = 10;
+        const int           releaseCircleSize = 20;
+        const int           circleThickness = 1;
+
+        Brush               touchCircleBrush;
+        Brush               moveCircleBrush;
+        Brush               releaseCircleBrush;
+
+        List<Ellipse>       circleList = new List<Ellipse>();
+
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -118,6 +132,10 @@ namespace SurfaceKeyboard
             taskIndex = 0;
             hpIndex = -1;
             hpNo = 0;
+
+            touchCircleBrush = Brushes.Red;
+            moveCircleBrush = Brushes.White;
+            releaseCircleBrush = Brushes.Blue;
 
             //currValidPoints.Clear();
             currTyping = "";
@@ -473,6 +491,33 @@ namespace SurfaceKeyboard
         }
 
         /// <summary>
+        /// draw circles on the canvas (debugging)
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        private void drawCircles(double x, double y, Brush fillBrush, int size)
+        {
+            Ellipse myEllipse = new Ellipse();
+            myEllipse.Fill = fillBrush;
+            myEllipse.Stroke = Brushes.Black;
+            myEllipse.StrokeThickness = circleThickness;
+            myEllipse.Width = myEllipse.Height = size;
+            Canvas.SetLeft(myEllipse, x - myEllipse.Width / 2);
+            Canvas.SetTop(myEllipse, y - inputCanvasTop - myEllipse.Height / 2);
+            InputCanvas.Children.Add(myEllipse);
+            circleList.Add(myEllipse);
+        }
+
+        private void clearCircles()
+        {
+            foreach (Ellipse circle in circleList)
+            {
+                InputCanvas.Children.Remove(circle);
+            }
+            circleList.Clear();
+        }
+
+        /// <summary>
         /// Save the point to the 'handPoints' List.
         /// </summary>
         /// 1. The user touch the screen ( type a key ) 
@@ -508,6 +553,9 @@ namespace SurfaceKeyboard
             //int hpIndex = currGestures.Count;
             HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Touch);
             handPoints.Add(touchPoint);
+
+            // Draw on the canvas
+            drawCircles(x, y, touchCircleBrush, touchCircleSize);
 
             // Add new point(should return null because it is new)
             if (updateGesturePoints(touchPoint, id) == null)
@@ -643,6 +691,9 @@ namespace SurfaceKeyboard
             HandPoint movePoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Move);
             handPoints.Add(movePoint);
 
+            //Draw
+            drawCircles(x, y, moveCircleBrush, moveCircleSize);
+
             GesturePoints myPoints = updateGesturePoints(movePoint, id);
             // If the point exists and status not set
             if (myPoints != null)
@@ -734,10 +785,11 @@ namespace SurfaceKeyboard
             }
         }
 
-        private void releaseGesture(int id)
+        private void releaseGesture(double x, double y, int id)
         {
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
+                drawCircles(x, y, releaseCircleBrush, releaseCircleSize);
                 GesturePoints myPoints = findGesturePoints(id);
                 if (myPoints != null)
                 {
@@ -749,35 +801,7 @@ namespace SurfaceKeyboard
                         updateTaskTextBlk();
                     }
                 }
-                //if (movement.ContainsKey(id))
-                //{
-                //    GesturePoints myPoints = (GesturePoints)movement[id];
-                //    switch (myPoints.getStatus())
-                //    {
-                //        case HandStatus.Away:
-                //            break;
-                //        case HandStatus.Backspace:
-                //            break;
-                //        case HandStatus.Enter:
-                //            break;
-                //        case HandStatus.Rest:
-                //            break;
-                //        case HandStatus.Type:
-                //            if (myPoints.checkTyping())
-                //            {
-                //                currValidPoints.Add(myPoints.getStartPoint());    
-                //            }
-                //            else
-                //            {
-                //                // Not a valid typing point
-                //                --hpNo;
-                //            }
-                //            updateStatusBlock();
-                //            updateTaskTextBlk();
-                //            break;
-                //    }
-                //    movement.Remove(id);
-                //}
+
                 else
                 {
                     Debug.WriteLine("[Error] releaseGesture(): id not exist." + id);
@@ -808,7 +832,7 @@ namespace SurfaceKeyboard
                     handleGesture(touchPos.X, touchPos.Y, e.TouchDevice.Id);
                 }
 
-                releaseGesture(e.TouchDevice.Id);
+                releaseGesture(touchPos.X, touchPos.Y, e.TouchDevice.Id);
             }
         }
 
@@ -823,7 +847,7 @@ namespace SurfaceKeyboard
                     handleGesture(touchPos.X, touchPos.Y, mouseTouchId);
                 }
 
-                releaseGesture(mouseTouchId);
+                releaseGesture(touchPos.X, touchPos.Y, mouseTouchId);
             }
         }
 
@@ -987,6 +1011,7 @@ namespace SurfaceKeyboard
             hpNo = 0;
             hpIndex = -1;
             isTypingStart = false;
+            clearCircles();
 
             switch (currDevice)
             {

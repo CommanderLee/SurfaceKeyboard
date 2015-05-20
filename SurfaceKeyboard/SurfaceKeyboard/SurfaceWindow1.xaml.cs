@@ -101,12 +101,13 @@ namespace SurfaceKeyboard
         DateTime            typingStartTime;
         double              typingTime;
 
-        // UI InputCanvas Top
-        const int           inputCanvasTop = 287;
-
-        const int           touchCircleSize = 30;
-        const int           moveCircleSize = 10;
-        const int           releaseCircleSize = 20;
+        // Circle bias
+        const int           circleBiasY = 25;
+        
+        // Size of debug circles
+        const int           touchCircleSize = 20;
+        const int           moveCircleSize = 5;
+        const int           releaseCircleSize = 10;
         const int           circleThickness = 1;
 
         Brush               touchCircleBrush;
@@ -495,15 +496,18 @@ namespace SurfaceKeyboard
         /// </summary>
         /// <param name="x"></param>
         /// <param name="y"></param>
-        private void drawCircles(double x, double y, Brush fillBrush, int size)
+        private void drawCircle(double x, double y, Brush fillBrush, int size)
         {
             Ellipse myEllipse = new Ellipse();
             myEllipse.Fill = fillBrush;
             myEllipse.Stroke = Brushes.Black;
             myEllipse.StrokeThickness = circleThickness;
             myEllipse.Width = myEllipse.Height = size;
-            Canvas.SetLeft(myEllipse, x - myEllipse.Width / 2);
-            Canvas.SetTop(myEllipse, y - inputCanvasTop - myEllipse.Height / 2);
+
+            Point rawPoint = new Point(x, y);
+            Point relativePoint = InputCanvas.PointFromScreen(rawPoint);
+            Canvas.SetLeft(myEllipse, relativePoint.X - myEllipse.Width / 2);
+            Canvas.SetTop(myEllipse, relativePoint.Y - myEllipse.Height / 2 + circleBiasY);
             InputCanvas.Children.Add(myEllipse);
             circleList.Add(myEllipse);
         }
@@ -555,7 +559,7 @@ namespace SurfaceKeyboard
             handPoints.Add(touchPoint);
 
             // Draw on the canvas
-            drawCircles(x, y, touchCircleBrush, touchCircleSize);
+            drawCircle(x, y, touchCircleBrush, touchCircleSize);
 
             // Add new point(should return null because it is new)
             if (updateGesturePoints(touchPoint, id) == null)
@@ -616,7 +620,8 @@ namespace SurfaceKeyboard
                 Console.WriteLine("Mouse Detected.");
                 // Get touchdown position 
                 Point touchPos = e.GetPosition(this);
-
+                //Point relativePos = Input.PointFromScreen(touchPos);
+                //Console.WriteLine(String.Format("X:{0}, Y:{1}, Relative X:{2}, Y:{3}", touchPos.X, touchPos.Y, relativePos.X, relativePos.Y));
                 // To avoid repetition. This is the first one
                 int mouseTouchId = --hpIndex;
                 // No calibration, or the user has done his calibration 
@@ -692,7 +697,7 @@ namespace SurfaceKeyboard
             handPoints.Add(movePoint);
 
             //Draw
-            drawCircles(x, y, moveCircleBrush, moveCircleSize);
+            drawCircle(x, y, moveCircleBrush, moveCircleSize);
 
             GesturePoints myPoints = updateGesturePoints(movePoint, id);
             // If the point exists and status not set
@@ -700,7 +705,7 @@ namespace SurfaceKeyboard
             //if (movement.ContainsKey(id))
             {
                 // If the status is unknown, try to check its status
-                if (myPoints.getStatus() == HandStatus.Unknown)
+                if (GesturePoints.getGestureSwitch() && myPoints.getStatus() == HandStatus.Unknown)
                 {
                     //GesturePoints myPoints = (GesturePoints)movement[id];
                     //myPoints.Add(movePoint);
@@ -789,7 +794,7 @@ namespace SurfaceKeyboard
         {
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
-                drawCircles(x, y, releaseCircleBrush, releaseCircleSize);
+                drawCircle(x, y, releaseCircleBrush, releaseCircleSize);
                 GesturePoints myPoints = findGesturePoints(id);
                 if (myPoints != null)
                 {
@@ -1286,6 +1291,29 @@ namespace SurfaceKeyboard
                 switchInputDevice();
 
             clearKbdFocus(SwitchBtn);
+        }
+
+        private void reverseGestureSwitch()
+        {
+            if (GesturePoints.getGestureSwitch())
+                GestureCtrlBtn.Content = "Gesture OFF";
+            else
+                GestureCtrlBtn.Content = "Gesture ON";
+            GesturePoints.reverseGestureSwitch();
+        }
+
+        private void GestureCtrlBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            reverseGestureSwitch();
+            clearKbdFocus(GestureCtrlBtn);
+        }
+
+        private void GestureCtrlBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (currDevice != InputDevice.Hand)
+                reverseGestureSwitch();
+
+            clearKbdFocus(GestureCtrlBtn);
         }
 
     }

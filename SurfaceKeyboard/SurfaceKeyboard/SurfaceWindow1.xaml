@@ -53,10 +53,17 @@
 
                 <Button Name="SwitchBtn"
                         Canvas.Left="1350" Canvas.Top="5"
-                        Height="45" Width="245"
+                        Height="45" Width="120"
                         Content="PhysicalKeyboard"
-                        FontSize="20" BorderThickness="2"
+                        FontSize="12" BorderThickness="2"
                         TouchDown="SwitchBtn_TouchDown" Click="SwitchBtn_Click"/>
+                
+                <Button Name="GestureCtrlBtn"
+                        Canvas.Left="1475" Canvas.Top="5"
+                        Height="45" Width="120"
+                        Content="Gesture ON"
+                        FontSize="18" BorderThickness="2"
+                        TouchDown="GestureCtrlBtn_TouchDown" Click="GestureCtrlBtn_Click"/>
                 
                 <Button Name="KeyboardBtn" 
                         Canvas.Left="1350" Canvas.Top="55" 
@@ -90,7 +97,8 @@
         </Border>
         
         <Border BorderBrush="WhiteSmoke"
-                BorderThickness="2">
+                BorderThickness="2"
+                Name="InputArea">
             <Canvas Name="InputCanvas"
                     Background="SeaGreen"
                     TouchDown="InputCanvas_TouchDown"

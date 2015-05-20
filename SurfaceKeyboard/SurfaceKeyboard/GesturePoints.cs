@@ -30,6 +30,10 @@ namespace SurfaceKeyboard
         private double           _startTime = -1;
         private HandPoint        _startPoint;
 
+        private static bool      gestureSwitch = true;
+        public static bool getGestureSwitch() { return gestureSwitch; }
+        public static void reverseGestureSwitch() { gestureSwitch = !gestureSwitch; }
+
         public GesturePoints()
         {
             _queue = new Queue<HandPoint>();

@@ -101,6 +101,7 @@ namespace SurfaceKeyboard
         DateTime            typingStartTime;
         double              typingTime;
 
+        bool                circleControl = true;
         // Circle bias
         const int           circleBiasY = 25;
         
@@ -298,7 +299,7 @@ namespace SurfaceKeyboard
 
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
-                if (hpNo <= typeText.Length)
+                if (hpNo >= 0 && hpNo <= typeText.Length)
                     typeText = typeText.Substring(0, hpNo) + "_";
                 TaskTextBlk.Text = currText + "\n" + typeText;
             }
@@ -559,7 +560,10 @@ namespace SurfaceKeyboard
             handPoints.Add(touchPoint);
 
             // Draw on the canvas
-            drawCircle(x, y, touchCircleBrush, touchCircleSize);
+            if (circleControl)
+            {
+                drawCircle(x, y, touchCircleBrush, touchCircleSize);
+            }
 
             // Add new point(should return null because it is new)
             if (updateGesturePoints(touchPoint, id) == null)
@@ -697,7 +701,10 @@ namespace SurfaceKeyboard
             handPoints.Add(movePoint);
 
             //Draw
-            drawCircle(x, y, moveCircleBrush, moveCircleSize);
+            if (circleControl)
+            {
+                drawCircle(x, y, moveCircleBrush, moveCircleSize);
+            }
 
             GesturePoints myPoints = updateGesturePoints(movePoint, id);
             // If the point exists and status not set
@@ -794,7 +801,11 @@ namespace SurfaceKeyboard
         {
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
-                drawCircle(x, y, releaseCircleBrush, releaseCircleSize);
+                if (circleControl)
+                {
+                    drawCircle(x, y, releaseCircleBrush, releaseCircleSize);
+                }
+
                 GesturePoints myPoints = findGesturePoints(id);
                 if (myPoints != null)
                 {
@@ -1016,7 +1027,11 @@ namespace SurfaceKeyboard
             hpNo = 0;
             hpIndex = -1;
             isTypingStart = false;
-            clearCircles();
+
+            if (circleControl)
+            {
+                clearCircles();
+            }
 
             switch (currDevice)
             {
@@ -1214,7 +1229,7 @@ namespace SurfaceKeyboard
         private void deleteWord()
         {
             string currText = taskTexts[taskIndex % taskSize];
-            int removeStart = hpNo - 1;
+            int removeStart = Math.Min(currText.Length, hpNo) - 1;
 
             // Delete at least one character 
             if (removeStart >= 0)

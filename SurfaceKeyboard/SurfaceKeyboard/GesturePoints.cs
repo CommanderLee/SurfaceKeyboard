@@ -22,8 +22,8 @@ namespace SurfaceKeyboard
         private const double MOVE_TIME_LIMIT = 300;
         private const double TOUCH_TIME_MAX = 10000;
         private const double TOUCH_TIME_MIN = 0;
-        private const double BACK_THRE = 150;
-        private const double ENTER_THRE = 150;
+        private const double BACK_THRE = 200;
+        private const double ENTER_THRE = 200;
 
         private Queue<HandPoint> _queue;
         private HandStatus       _status;

@@ -87,6 +87,9 @@ namespace SurfaceKeyboard
         // Hand Model for calibration 
         HandModel           userHand = new HandModel();
 
+        // Constants for recovering missing points
+        const int           TYPING_DIST_THRE = 30;
+
         // Different devices: 
         // Hand for touch typing, Physical Keyboard for normal typing test, Mouse for debug on laptop 
         enum InputDevice    { Hand, PhyKbd, Mouse };
@@ -109,11 +112,15 @@ namespace SurfaceKeyboard
         const int           touchCircleSize = 20;
         const int           moveCircleSize = 5;
         const int           releaseCircleSize = 10;
+        const int           recoverCircleSize = 8;
         const int           circleThickness = 1;
 
+        // Different colors for debug circles
         Brush               touchCircleBrush;
-        Brush               moveCircleBrush;
+        Brush               moveCircleNearBrush;
+        Brush               moveCircleFarBrush;
         Brush               releaseCircleBrush;
+        Brush               recoverCircleBrush;
 
         List<Ellipse>       circleList = new List<Ellipse>();
 
@@ -136,8 +143,10 @@ namespace SurfaceKeyboard
             hpNo = 0;
 
             touchCircleBrush = Brushes.Red;
-            moveCircleBrush = Brushes.White;
+            moveCircleNearBrush = Brushes.Yellow;
+            moveCircleFarBrush = Brushes.White;
             releaseCircleBrush = Brushes.Blue;
+            recoverCircleBrush = Brushes.Magenta;
 
             //currValidPoints.Clear();
             currTyping = "";
@@ -485,7 +494,7 @@ namespace SurfaceKeyboard
             }
             else
             {
-                GesturePoints myPoints = new GesturePoints(touchPoint, HandStatus.Unknown);
+                GesturePoints myPoints = new GesturePoints(touchPoint, HandStatus.Wait);
                 currGestures.Add(myPoints);
             }
 
@@ -559,12 +568,6 @@ namespace SurfaceKeyboard
             HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Touch);
             handPoints.Add(touchPoint);
 
-            // Draw on the canvas
-            if (circleControl)
-            {
-                drawCircle(x, y, touchCircleBrush, touchCircleSize);
-            }
-
             // Add new point(should return null because it is new)
             if (updateGesturePoints(touchPoint, id) == null)
             {
@@ -606,6 +609,12 @@ namespace SurfaceKeyboard
                 {
                     ++hpIndex;
                     saveTouchPoints(touchPos.X, touchPos.Y, e.TouchDevice.Id);
+
+                    // Draw on the canvas
+                    if (circleControl)
+                    {
+                        drawCircle(touchPos.X, touchPos.Y, touchCircleBrush, touchCircleSize);
+                    }
                 }
                 else
                 {
@@ -632,6 +641,12 @@ namespace SurfaceKeyboard
                 if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
                 {
                     saveTouchPoints(touchPos.X, touchPos.Y, mouseTouchId);
+
+                    // Draw on the canvas
+                    if (circleControl)
+                    {
+                        drawCircle(touchPos.X, touchPos.Y, touchCircleBrush, touchCircleSize);
+                    }
                 }
                 else
                 {
@@ -700,19 +715,14 @@ namespace SurfaceKeyboard
             HandPoint movePoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Move);
             handPoints.Add(movePoint);
 
-            //Draw
-            if (circleControl)
-            {
-                drawCircle(x, y, moveCircleBrush, moveCircleSize);
-            }
-
             GesturePoints myPoints = updateGesturePoints(movePoint, id);
             // If the point exists and status not set
             if (myPoints != null)
             //if (movement.ContainsKey(id))
             {
                 // If the status is unknown, try to check its status
-                if (GesturePoints.getGestureSwitch() && myPoints.getStatus() == HandStatus.Unknown)
+                if (GesturePoints.getGestureSwitch() && 
+                    (myPoints.getStatus() == HandStatus.Wait || myPoints.getStatus() == HandStatus.Unknown))
                 {
                     //GesturePoints myPoints = (GesturePoints)movement[id];
                     //myPoints.Add(movePoint);
@@ -753,6 +763,15 @@ namespace SurfaceKeyboard
                     //{
 
                     //}
+
+                    //Draw
+                    if (circleControl)
+                    {
+                        if (myPoints.getStatus() == HandStatus.Wait)
+                            drawCircle(x, y, moveCircleNearBrush, moveCircleSize);
+                        else
+                            drawCircle(x, y, moveCircleFarBrush, moveCircleSize);
+                    }
                 }
             }
             else
@@ -801,14 +820,87 @@ namespace SurfaceKeyboard
         {
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
+                // Push to the movement queue and check time 
+                //int hpIndex = currGestures.Count;
+                double timeStamp = DateTime.Now.Subtract(typingStartTime).TotalMilliseconds;
+                //double timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
+                HandPoint releasePoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Release);
+                handPoints.Add(releasePoint);
+
+                //Draw
                 if (circleControl)
                 {
                     drawCircle(x, y, releaseCircleBrush, releaseCircleSize);
                 }
 
-                GesturePoints myPoints = findGesturePoints(id);
+                GesturePoints myPoints = updateGesturePoints(releasePoint, id);
+
+                // If the point exists and status not set
                 if (myPoints != null)
+                //if (movement.ContainsKey(id))
                 {
+                    // If the status is unknown, try to check its status
+                    if (GesturePoints.getGestureSwitch() && 
+                        (myPoints.getStatus() == HandStatus.Wait || myPoints.getStatus() == HandStatus.Unknown))
+                    {
+                        //GesturePoints myPoints = (GesturePoints)movement[id];
+                        //myPoints.Add(movePoint);
+                        //handPoints.Add(movePoint);
+
+                        HandStatus gestureStatus = myPoints.updateGestureStatus();
+                        // Check Distance 
+                        if (gestureStatus == HandStatus.Backspace)
+                        {
+                            //if (myPoints.getStatus() != HandStatus.Backspace)
+                            //{
+                            //myPoints.setStatus(HandStatus.Backspace);
+
+                            // Reset the hpNo (added one when touching)
+                            --hpNo;
+
+                            // Delete ONE WORD
+                            deleteWord();
+                            //}
+                        }
+                        else if (gestureStatus == HandStatus.Enter)
+                        {
+                            //if (myPoints.getStatus() != HandStatus.Enter)
+                            //{
+                            //myPoints.setStatus(HandStatus.Enter);
+
+                            // Reset the hpNo (added one when touching)
+                            --hpNo;
+
+                            // Show the next task 
+                            gotoNextText();
+
+                            // TODO: Output 'Enter' if applicable (in real text editor)
+                            //}
+                        }
+                        // Do not need to do anything when type
+                        //else if (gestureStatus == HandStatus.Type)
+                        //{
+
+                        //}
+                    }
+
+                    double movingDist = myPoints.calcMovingParam();
+                    Console.WriteLine("Move " + movingDist + " when release.");
+                    // Try to fix a system error of the Surface 2.0 Platform
+                    // When you touch 2 close points, say pA and pB, in a short time, 
+                    // they will be recognized as: pA down -> a short move -> pB up.
+                    if (myPoints.getStatus() == HandStatus.Wait && movingDist > TYPING_DIST_THRE)
+                    {
+                        // Recover the missing point
+                        int newId = id * 10;
+                        Console.WriteLine("Recover missing point:" + x + "," + y + "," + newId);
+                        ++hpIndex;
+                        saveTouchPoints(x, y, newId);
+                        GesturePoints newPoints = findGesturePoints(newId);
+                        newPoints.setStatus(HandStatus.Type);
+                        drawCircle(x, y, recoverCircleBrush, recoverCircleSize);
+                    }
+                    
                     myPoints.checkTyping();
                     if (myPoints.getStatus() == HandStatus.Unknown)
                     {
@@ -817,7 +909,6 @@ namespace SurfaceKeyboard
                         updateTaskTextBlk();
                     }
                 }
-
                 else
                 {
                     Debug.WriteLine("[Error] releaseGesture(): id not exist." + id);

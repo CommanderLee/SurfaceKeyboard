@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SurfaceKeyboard
 {
-    enum HandStatus { Away, Backspace, Enter, Type, Rest, Unknown };
+    enum HandStatus { Away, Backspace, Enter, Type, Rest, Wait, Unknown };
 
     /// <summary>
     /// A queue of consecutive data points.
@@ -13,30 +13,32 @@ namespace SurfaceKeyboard
     /// </summary>
     class GesturePoints
     {
-        /**
-        * Constants for the gesture
-        * - A gesture will be triggered if it occured within the move time limit
-        * - Touch time limit: touch time min < touch time <  touch time max
-        * - xxxTHRE: Length threshold (pixels) for backspace and enter
-        */
-        private const double MOVE_TIME_LIMIT = 300;
-        private const double TOUCH_TIME_MAX = 10000;
-        private const double TOUCH_TIME_MIN = 0;
-        private const double BACK_THRE = 200;
-        private const double ENTER_THRE = 200;
+        // G_T_Max: max time sequence for the queue. Only nearest points are saved.
+        // G_T_Min: min time threshold for the gesture checking
+        const double     GESTURE_TIME_MAX = 400;
+        //private const double TOUCH_TIME_MAX = 10000;
+        const double     GESTURE_TIME_MIN = 300;
 
-        private Queue<HandPoint> _queue;
-        private HandStatus       _status;
-        private double           _startTime = -1;
-        private HandPoint        _startPoint;
+        // Distance threshold for backspace and enter
+        const double     BACK_DIST_THRE = 200;
+        const double     ENTER_DIST_THRE = 200;
 
-        private static bool      gestureSwitch = true;
-        public static bool getGestureSwitch() { return gestureSwitch; }
-        public static void reverseGestureSwitch() { gestureSwitch = !gestureSwitch; }
+        Queue<HandPoint> _queue;
+        HandStatus       _status;
+        double           _startTime = -1;
+        HandPoint        _startPoint;
+
+        int              movingDirection;
+        double           movingDistance;
+
+        private static bool     gestureSwitch = true;
+        public static bool      getGestureSwitch() { return gestureSwitch; }
+        public static void      reverseGestureSwitch() { gestureSwitch = !gestureSwitch; }
 
         public GesturePoints()
         {
             _queue = new Queue<HandPoint>();
+            _status = HandStatus.Wait;
         }
 
         public GesturePoints(HandPoint startPoint, HandStatus status)
@@ -58,7 +60,7 @@ namespace SurfaceKeyboard
             //    _startTime = handPoint.getTime();
             //}
 
-            while (_queue.Count > 0 && handPoint.getTime() - _queue.Peek().getTime() > MOVE_TIME_LIMIT)
+            while (_queue.Count > 0 && handPoint.getTime() - _queue.Peek().getTime() > GESTURE_TIME_MAX)
             {
                 _queue.Dequeue();
             }
@@ -80,11 +82,7 @@ namespace SurfaceKeyboard
             return _startPoint;
         }
 
-        /**
-         * Calculate moving distance and update gesture status
-         * positive: enter, negative: backspace, 0: typing
-         */
-        public HandStatus updateGestureStatus()
+        public double calcMovingParam()
         {
             HandPoint lastHP = _queue.First();
             double sumDist = 0.0;
@@ -101,19 +99,46 @@ namespace SurfaceKeyboard
                     --directionCnt;
                 }
 
-                sumDist += Math.Sqrt(Math.Pow(hPoint.getX() - lastHP.getX(), 2) + 
+                sumDist += Math.Sqrt(Math.Pow(hPoint.getX() - lastHP.getX(), 2) +
                     Math.Pow(hPoint.getY() - lastHP.getY(), 2));
                 lastHP = hPoint;
             }
 
-            if (directionCnt < 0 && sumDist > BACK_THRE)
+            movingDirection = directionCnt;
+            movingDistance = sumDist;
+
+            return sumDist;
+        }
+
+        /**
+         * Calculate moving distance and update gesture status
+         * positive: enter, negative: backspace, 0: typing
+         */
+        public HandStatus updateGestureStatus()
+        {
+            double touchTime = _queue.Last().getTime() - _startTime;
+            if (touchTime > GESTURE_TIME_MIN)
             {
-                _status = HandStatus.Backspace;
-                _startPoint.setType(HPType.Delete);
+                calcMovingParam();
+
+                if (movingDirection < 0 && movingDistance > BACK_DIST_THRE)
+                {
+                    _status = HandStatus.Backspace;
+                    _startPoint.setType(HPType.Delete);
+                }
+                else if (movingDirection > 0 && movingDistance > ENTER_DIST_THRE)
+                {
+                    _status = HandStatus.Enter;
+                }
+                else
+                {
+                    _status = HandStatus.Unknown;
+                }
             }
-            else if (directionCnt > 0 && sumDist > ENTER_THRE)
+            else
             {
-                _status = HandStatus.Enter;
+                Console.WriteLine("Current touch time:" + touchTime);
+                _status = HandStatus.Wait;
             }
 
             return _status;

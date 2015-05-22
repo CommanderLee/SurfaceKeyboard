@@ -166,14 +166,14 @@ namespace SurfaceKeyboard
             int statusId = (int)KbdImgStatus.SurfSize;
             kbdImages[statusId] = new BitmapImage();
             kbdImages[statusId].BeginInit();
-            kbdImages[statusId].UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1x.png");
+            kbdImages[statusId].UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1_23x_surface.png");
             kbdImages[statusId].EndInit();
 
             // Physical Keyboard Image 
             statusId = (int)KbdImgStatus.PhySize;
             kbdImages[statusId] = new BitmapImage();
             kbdImages[statusId].BeginInit();
-            kbdImages[statusId].UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1_5x.png");
+            kbdImages[statusId].UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_1_02x_physical.png");
             kbdImages[statusId].EndInit();
 
             imgKeyboard.Visibility = Visibility.Hidden;

@@ -113,9 +113,8 @@
     <Resource Include="Resources\hand_calibration_on.png" />
     <Resource Include="Resources\keyboard_open.png" />
     <Resource Include="Resources\keyboard_close.png" />
-    <Resource Include="Resources\keyboard_1x.png" />
-    <Resource Include="Resources\keyboard_1_25x.png" />
-    <Resource Include="Resources\keyboard_1_5x.png" />
+    <Resource Include="Resources\keyboard_1_02x_physical.png" />
+    <Resource Include="Resources\keyboard_1_23x_surface.png" />
     <Content Include="SurfaceKeyboard.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>

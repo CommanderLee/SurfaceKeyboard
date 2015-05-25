@@ -695,7 +695,8 @@ namespace SurfaceKeyboard
                 }
                 else if (str == "Back")
                 {
-                    deleteWord();
+                    //deleteWord();
+                    deleteCharacter();
                 }
 
                 updateTaskTextBlk();

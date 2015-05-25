@@ -81,18 +81,10 @@
                 
                 <Button Name="ClearBtn" 
                         Canvas.Left="1350" Canvas.Top="120" 
-                        Content="Clear" 
-                        Height="60"  Width="120" 
+                        Content="Clear Sentence" 
+                        Height="60"  Width="245" 
                         FontSize="30" BorderThickness="2" 
                         TouchDown="ClearBtn_TouchDown" Click="ClearBtn_Click" />
-
-                <Button Name="DeleteBtn" 
-                        Canvas.Left="1475" Canvas.Top="120" 
-                        Content="Delete"
-                        Height="60"  Width="120" 
-                        FontSize="30" BorderThickness="2" 
-                        TouchDown="DeleteBtn_TouchDown" Click="DeleteBtn_Click" />
-                
             </Canvas>    
         </Border>
         
@@ -111,6 +103,19 @@
                 <Image Height="387" Width="1104"
                        Canvas.Left="250" Canvas.Top="100"
                        Name="imgKeyboard" Stretch="None" />
+                
+                <Button Name="DeleteBtn" 
+                        Canvas.Left="1350" Canvas.Top="30" 
+                        Content="Delete Word" 
+                        Height="100" Width="245" FontSize="30" BorderThickness="2" 
+                        TouchDown="DeleteBtn_TouchDown" Click="DeleteBtn_Click" />
+                
+                <Button Name="BackspaceBtn" 
+                        BorderThickness="2" 
+                        Canvas.Left="1350" Canvas.Top="160" 
+                        Content="Backspace" 
+                        FontSize="30" Height="100" Width="245" 
+                        TouchDown="BackspaceBtn_TouchDown" Click="BackspaceBtn_Click"/>
             </Canvas>
         </Border>
                 

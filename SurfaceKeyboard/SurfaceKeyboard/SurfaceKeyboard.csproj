@@ -107,6 +107,7 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\hand_calibration_off.png" />
+    <Resource Include="Resources\backspace.png" />
     <Content Include="Resources\icon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

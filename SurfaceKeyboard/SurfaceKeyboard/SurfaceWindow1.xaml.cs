@@ -159,6 +159,9 @@ namespace SurfaceKeyboard
             KeyboardBtn.Background = kbdBtnImgOff;
             KeyboardBtn.Content = "";
 
+            BackspaceBtn.Background = new ImageBrush(new BitmapImage(new Uri(BaseUriHelper.GetBaseUri(this), "Resources/backspace.png")));
+            BackspaceBtn.Content = "";
+
             // Keyboard Image (same as, or similar to physical keyboard) 
             kbdImages = new BitmapImage[2];
 
@@ -1315,7 +1318,7 @@ namespace SurfaceKeyboard
         }
 
         /// <summary>
-        /// Delete one word. Now hpNo points to the position of next input char. 
+        /// Delete one word. Make hpNo point to the position of next input char. 
         /// </summary>
         private void deleteWord()
         {
@@ -1377,6 +1380,62 @@ namespace SurfaceKeyboard
             clearKbdFocus(DeleteBtn);
         }
 
+        /// <summary>
+        /// Delete one character. Make hpNo point to the position of next input char. 
+        /// </summary>
+        private void deleteCharacter()
+        {
+            string currText = taskTexts[taskIndex % taskSize];
+            int removeStart = Math.Min(currText.Length, hpNo) - 1;
+
+            // Delete at least one character 
+            if (removeStart >= 0)
+            {
+                switch (currDevice)
+                {
+                    case InputDevice.PhyKbd:
+                        currTyping = currTyping.Substring(0, removeStart);
+                        break;
+
+                    case InputDevice.Hand:
+                    case InputDevice.Mouse:
+                        int validNum = 0;
+                        foreach (GesturePoints gp in currGestures)
+                        {
+                            if (gp.getStatus() == HandStatus.Type)
+                            {
+                                ++validNum;
+                                if (validNum > removeStart)
+                                {
+                                    gp.setStatus(HandStatus.Backspace);
+                                }
+                            }
+                        }
+                        //currValidPoints.RemoveRange(removeStart, hpNo - removeStart);
+                        break;
+                }
+
+                hpNo = removeStart;
+                ++deleteNum;
+            }
+
+            updateStatusBlock();
+            updateTaskTextBlk();
+        }
+
+        private void BackspaceBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            deleteCharacter();
+            clearKbdFocus(BackspaceBtn);
+        }
+
+        private void BackspaceBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (currDevice != InputDevice.Hand)
+                deleteCharacter();
+            clearKbdFocus(BackspaceBtn);
+        }
+
         private void switchInputDevice()
         {
             // Cycle of all input devices defined in the enum InputDevice 
@@ -1421,6 +1480,7 @@ namespace SurfaceKeyboard
 
             clearKbdFocus(GestureCtrlBtn);
         }
+
 
     }
 }

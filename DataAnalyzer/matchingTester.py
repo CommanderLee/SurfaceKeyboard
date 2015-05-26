@@ -6,6 +6,7 @@ from pylab import *
 import Tkinter, tkFileDialog
 import numpy as np 
 import math
+import pickle
 
 from constants import *
 from keyboardLayoutHelper import *
@@ -17,19 +18,29 @@ from filesHelper import *
 allWords = loadCorpus()
 wordDic = {}
 wordCnt = {}
-for word in allWords:
-    # print word + ' : ' + encode(word)
-    code = encode(word)
-    if {code}.issubset(wordDic.keys()):
-        wordDic[code].add(word)
-    else:
-        wordDic[code] = set()
-        wordDic[code].add(word)
-        
-    if {word}.issubset(wordCnt.keys()):
-        wordCnt[word] += 1
-    else:
-        wordCnt[word] = 1
+
+if False:
+    for word in allWords:
+        # print word + ' : ' + encode(word)
+        code = encode(word)
+        if {code}.issubset(wordDic.keys()):
+            wordDic[code].add(word)
+        else:
+            wordDic[code] = set()
+            wordDic[code].add(word)
+            
+        if {word}.issubset(wordCnt.keys()):
+            wordCnt[word] += 1
+        else:
+            wordCnt[word] = 1
+
+    corpusFile = file('corpus.pkl', 'wb')
+    pickle.dump(wordDic, corpusFile, True)
+    pickle.dump(wordCnt, corpusFile, True)
+else:
+    corpusFile = file('corpus.pkl', 'rb')
+    wordDic = pickle.load(corpusFile)
+    wordCnt = pickle.load(corpusFile)
 
 # print wordDic
 # print wordCnt

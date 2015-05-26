@@ -18,7 +18,7 @@ def loadCorpus():
         # en_US_wordlist from Yi, Xin.
         textFile = open('en_US_wordlist.combined', 'r')
         rawData = [text.strip().split(',') for text in textFile]
-        for data in rawData[1:20000]:
+        for data in rawData[1:50000]:
             word = ''
             for char in data[0].split('=')[1].lower():
                 if {char}.issubset(string.letters):

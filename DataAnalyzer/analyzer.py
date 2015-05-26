@@ -6,11 +6,6 @@ from pylab import *
 import Tkinter, tkFileDialog
 import numpy as np 
 
-# Read word list
-textFile = open('TaskText.txt', 'r')
-texts = [text.strip() for text in textFile]
-# print texts
-
 # Load data files
 tkObj = Tkinter.Tk()
 tkObj.file_opt = options = {}
@@ -44,9 +39,15 @@ if openFiles:
 
     # Parse each file
     for dataFile in openFiles:
-        print dataFile.name + ':'
+        # Read word list
+        textFileName = dataFile.name[0:len(dataFile.name)-9] + 'TaskText.txt'
+        textFile = open(textFileName, 'r')
+        texts = [text.strip() for text in textFile]
+        # print texts
 
-        # X, Y, Time, TaskNo-PointNo-FingerId, PointType
+        print 'Load from:' + textFileName + 'Data file: ' + dataFile.name
+
+        # X, Y, Time, TaskIndex_PointIndex_FingerId, PointType
         # Hint: '-' will be removed by the function numpy.genfromtxt 
         # (ref: http://docs.scipy.org/doc/numpy/user/basics.io.genfromtxt.html)
         data = np.genfromtxt(dataFile.name, dtype = None, delimiter = ',', names = True)
@@ -55,15 +56,15 @@ if openFiles:
         dataX = data['X']
         dataY = data['Y']
         dataTime = data['Time']
-        dataId = [_id.strip() for _id in data['TaskNoPointNoFingerId']]
+        dataId = [_id.strip() for _id in data['TaskIndex_PointIndex_FingerId']]
         dataType = [_type.strip() for _type in data['PointType']]
 
-        textNo = int(dataId[0].split('-')[0])
+        textNo = int(dataId[0].split('_')[0])
         textLen = len(texts)
         dataNo = 0
         dataLen = len(data)
 
-        touchTime = []
+        # touchTime = []
 
         while textNo < textLen:
             # Parse every text (sentence)
@@ -79,11 +80,12 @@ if openFiles:
             spaceYList = []
 
             # Calculate the touching time for every point
-            touchStart = -1
+            # touchStart = -1
 
             # Get all 'Touch' point and ignore 'Move' point
             while dataNo < dataLen:
-                idList = dataId[dataNo].split('-')
+                # Or '_' for latest data set
+                idList = dataId[dataNo].split('_')
                 # print idList
                 taskNo = int(idList[0])
                 # Go to next text
@@ -96,11 +98,13 @@ if openFiles:
                     listX.append(dataX[dataNo])
                     listY.append(dataY[dataNo])
 
-                    if touchStart >= 0:
-                        touchTime.append(dataTime[dataNo-1] - touchStart)
+                    # if dataNo > 0:
+                        # touchTime.append(dataTime[dataNo] - dataTime[dataNo-1])
+                    # if touchStart >= 0:
+                        # touchTime.append(dataTime[dataNo-1] - touchStart)
                         # if dataTime[dataNo-1] - touchStart < 20:
                         #     print 'Exception: ' + dataId[dataNo-1]
-                    touchStart = dataTime[dataNo]
+                    # touchStart = dataTime[dataNo]
                 dataNo += 1
                 
             if len(currText) != len(listX):    
@@ -166,11 +170,11 @@ if openFiles:
 
             textNo += 1
 
-        figure(3)
-        plot(touchTime, label = dataFile.name)
-        print touchTime
-        print 'Touchtime: mean:%f, std:%f, median:%f, max:%f, min:%f' % (np.mean(touchTime), 
-            np.std(touchTime), np.median(touchTime), np.max(touchTime), np.min(touchTime))
+        # figure(3)
+        # plot(touchTime, label = dataFile.name)
+        # print touchTime
+        # print 'Touchtime: mean:%f, std:%f, median:%f, max:%f, min:%f' % (np.mean(touchTime), 
+        #     np.std(touchTime), np.median(touchTime), np.max(touchTime), np.min(touchTime))
 
     # plot(dataX, dataY, 'b.')
 
@@ -221,7 +225,7 @@ if openFiles:
     title('Different Text No.')
     gca().invert_yaxis()
 
-    figure(3)
-    legend()
+    # figure(3)
+    # legend()
 
     show()

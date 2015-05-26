@@ -34,9 +34,6 @@ for word in allWords:
 # print wordDic
 # print wordCnt
 
-# Load testing sentences
-texts = loadTestingSet()
-
 # Number of words sharing the same code
 sameCodeCnt = [len(wordSet) for wordSet in wordDic.values()]
 print 'Number of words sharing the same code:\n    Max:%d, Mean:%d, Median:%d' \
@@ -54,6 +51,7 @@ tkObj.file_opt = options = {}
 options['defaultextension'] = '.csv'
 
 openFiles = tkFileDialog.askopenfiles('r')
+resultStr = ''
 if openFiles:
     results = []
     # code -> number. total word number and error number.
@@ -71,9 +69,15 @@ if openFiles:
     totalPointPair = []
     
     for dataFile in openFiles:
-        print '...' + dataFile.name[-30:-4] + ':'
+        # Load testing sentences
+        textFileName = dataFile.name[0:len(dataFile.name)-9] + 'TaskText.txt'
+        texts = loadTestingSet(textFileName)
 
-        # X, Y, Time, TaskNo-PointNo-FingerId, PointType
+        fileNameAbbr = dataFile.name.split('/')[-1][15:25]
+        resultStr += '-' + fileNameAbbr
+        print '...' + fileNameAbbr + '... :'
+
+        # X, Y, Time, TaskIndex_PointIndex_FingerId, PointType
         # Hint: '-' will be removed by the function numpy.genfromtxt 
         # (ref: http://docs.scipy.org/doc/numpy/user/basics.io.genfromtxt.html)
         data = np.genfromtxt(dataFile.name, dtype = None, delimiter = ',', names = True)
@@ -82,10 +86,10 @@ if openFiles:
         dataX = data['X']
         dataY = data['Y']
         dataTime = data['Time']
-        dataId = [_id.strip() for _id in data['TaskNoPointNoFingerId']]
+        dataId = [_id.strip() for _id in data['TaskIndex_PointIndex_FingerId']]
         dataType = [_type.strip() for _type in data['PointType']]
 
-        textNo = int(dataId[0].split('-')[0])
+        textNo = int(dataId[0].split('_')[0])
         textLen = len(texts)
         dataNo = 0
         dataLen = len(data)
@@ -124,7 +128,7 @@ if openFiles:
 
             # Get all 'Touch' point and ignore 'Move' point
             while dataNo < dataLen:
-                idList = dataId[dataNo].split('-')
+                idList = dataId[dataNo].split('_')
                 # print idList
                 taskNo = int(idList[0])
                 # Go to next text
@@ -361,12 +365,20 @@ if openFiles:
     for result in results:
         print result
 
-    fileNo = 7
-
-    saveErrorPatternResults('matchingResult%d.csv' % (fileNo), totalErrorPattern, totalWordPattern, wordDic)
+    saveErrorPatternResults('matchingResult%s.csv' % (resultStr), totalErrorPattern, totalWordPattern, wordDic)
     
-    saveWordPositionResults('wordPosResult%d.csv' % (fileNo), totalWordPos, wordDic)
+    saveWordPositionResults('wordPosResult%s.csv' % (resultStr), totalWordPos, wordDic)
 
-    saveSinglePointResults('pointPosResult%d.csv' % (fileNo), totalPointPos)
+    saveSinglePointResults('pointPosResult%s.csv' % (resultStr), totalPointPos)
 
-    savePointPairResults('pointPairResult%d.csv' % (fileNo), totalPointPair)
+    savePointPairResults('pointPairResult%s.csv' % (resultStr), totalPointPair)
+
+    # fileNo = 8
+
+    # saveErrorPatternResults('matchingResult%d.csv' % (fileNo), totalErrorPattern, totalWordPattern, wordDic)
+    
+    # saveWordPositionResults('wordPosResult%d.csv' % (fileNo), totalWordPos, wordDic)
+
+    # saveSinglePointResults('pointPosResult%d.csv' % (fileNo), totalPointPos)
+
+    # savePointPairResults('pointPairResult%d.csv' % (fileNo), totalPointPair)

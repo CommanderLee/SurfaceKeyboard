@@ -10,7 +10,7 @@ def loadCorpus():
 
     if True:
         # MacKenzie
-        textFile = open('TaskText.txt', 'r')
+        textFile = open('Data/TaskText.txt', 'r')
         sentences = [text.strip().lower().split(' ') for text in textFile]
         for sentence in sentences:
             words += sentence
@@ -28,9 +28,9 @@ def loadCorpus():
     print '%d words.' % (len(words))
     return words
 
-def loadTestingSet():
+def loadTestingSet(fileName = 'Data/TaskText.txt'):
     "Load testing set"
-    textFile = open('TaskText.txt', 'r')
+    textFile = open(fileName, 'r')
     texts = [text.strip().lower() for text in textFile]
     return texts
 

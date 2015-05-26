@@ -1073,7 +1073,7 @@ namespace SurfaceKeyboard
                     {
                         foreach (GesturePoints gp in currGestures)
                         {
-                            if (gp.getStatus() == HandStatus.Type)
+                            if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Backspace)
                             {
                                 validPoints.Add(gp.getStartPoint());
                             }
@@ -1146,6 +1146,7 @@ namespace SurfaceKeyboard
                             {
                                 validPoints.Add(gp.getStartPoint());
                             }
+                            Console.WriteLine(gp.getStatus());
                         }
                     }
                     //validPoints.AddRange(currValidPoints);
@@ -1409,6 +1410,7 @@ namespace SurfaceKeyboard
                                 if (validNum > removeStart)
                                 {
                                     gp.setStatus(HandStatus.Backspace);
+                                    //Console.WriteLine("Delete.");
                                 }
                             }
                         }

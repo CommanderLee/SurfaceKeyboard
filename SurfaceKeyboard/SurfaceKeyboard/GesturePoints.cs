@@ -70,6 +70,8 @@ namespace SurfaceKeyboard
         public void setStatus(HandStatus status)
         {
             _status = status;
+            if (status == HandStatus.Backspace)
+                _startPoint.setType(HPType.Delete);
         }
 
         public HandStatus getStatus()

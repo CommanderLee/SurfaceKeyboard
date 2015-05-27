@@ -6,7 +6,7 @@ using System.Windows;
 
 namespace SurfaceKeyboard
 {
-    enum HPType { Touch, Move, Release, Calibrate, Delete };
+    enum HPType { Touch, Move, Release, Calibrate, Delete, Recover };
 
     /**
      * Elemental class for this project.

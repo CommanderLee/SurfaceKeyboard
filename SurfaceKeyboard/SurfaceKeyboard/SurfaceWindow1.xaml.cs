@@ -106,7 +106,7 @@ namespace SurfaceKeyboard
 
         bool                circleControl = true;
         // Circle bias
-        const int           circleBiasY = 25;
+        const int           circleBiasY = 50;
         
         // Size of debug circles
         const int           touchCircleSize = 20;
@@ -902,6 +902,7 @@ namespace SurfaceKeyboard
                         saveTouchPoints(x, y, newId);
                         GesturePoints newPoints = findGesturePoints(newId);
                         newPoints.setStatus(HandStatus.Type);
+                        newPoints.getStartPoint().setType(HPType.Recover);
                         drawCircle(x, y, recoverCircleBrush, recoverCircleSize);
                     }
                     

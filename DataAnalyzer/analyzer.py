@@ -90,11 +90,12 @@ if openFiles:
                 taskNo = int(idList[0])
                 # Go to next text
                 if taskNo > textNo:
+                    textNo = taskNo - 1
                     break
 
                 # pointNo = idList[1]
                 # fingerId = idList[2]
-                if dataType[dataNo] == 'Touch':
+                if dataType[dataNo] == 'Touch' or dataType[dataNo] == 'Recover':
                     listX.append(dataX[dataNo])
                     listY.append(dataY[dataNo])
 
@@ -139,11 +140,11 @@ if openFiles:
             if spaceX == -1:
                 spaceX = np.mean(spaceXList)
                 spaceY = np.mean(spaceYList)
-                print 'Space: (%d, %d)' % (spaceX, spaceY)
+                print 'Space: (%f, %f)' % (spaceX, spaceY)
             else:
                 biasX = spaceX - np.mean(spaceXList)
                 biasY = spaceY - np.mean(spaceYList)
-                print 'Bias: (%d, %d)' % (biasX, biasY)
+                print 'Bias: (%f, %f)' % (biasX, biasY)
             for letterNo in range(0, minLen):
                 xFix = listX[letterNo] + biasX
                 yFix = listY[letterNo] + biasY
@@ -162,7 +163,7 @@ if openFiles:
 
             # Plot different test set with different colors
             figure(2)
-            plot(listX, listY, colors[textNo % colorLen])
+            plot(listX, listY, colors[taskNo % colorLen])
 
             # Break when finish processing the data set
             if dataNo >= dataLen:

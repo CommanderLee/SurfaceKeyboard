@@ -144,11 +144,12 @@ if openFiles:
                 taskNo = int(idList[0])
                 # Go to next text
                 if taskNo > textNo:
+                    textNo = taskNo - 1
                     break
 
                 # pointNo = idList[1]
                 # fingerId = idList[2]
-                if dataType[dataNo] == 'Touch':
+                if dataType[dataNo] == 'Touch' or dataType[dataNo] == 'Recover':
                     listX.append(dataX[dataNo])
                     listY.append(dataY[dataNo])
 
@@ -376,13 +377,13 @@ if openFiles:
     for result in results:
         print result
 
-    saveErrorPatternResults('matchingResult%s.csv' % (resultStr), totalErrorPattern, totalWordPattern, wordDic)
+    saveErrorPatternResults('Result/matchingResult%s.csv' % (resultStr), totalErrorPattern, totalWordPattern, wordDic)
     
-    saveWordPositionResults('wordPosResult%s.csv' % (resultStr), totalWordPos, wordDic)
+    saveWordPositionResults('Result/wordPosResult%s.csv' % (resultStr), totalWordPos, wordDic)
 
-    saveSinglePointResults('pointPosResult%s.csv' % (resultStr), totalPointPos)
+    saveSinglePointResults('Result/pointPosResult%s.csv' % (resultStr), totalPointPos)
 
-    savePointPairResults('pointPairResult%s.csv' % (resultStr), totalPointPair)
+    savePointPairResults('Result/pointPairResult%s.csv' % (resultStr), totalPointPair)
 
     # fileNo = 8
 

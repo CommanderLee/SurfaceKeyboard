@@ -48,18 +48,18 @@ def parseData(dataCSV, isKbd, textList):
             timeCnt += myTime / 1000.0
             # TODO: Calculate error rate
 
-    # Hand Touch Format: X, Y, Time, TaskNo-PointNo-FingerId, PointType
+    # Hand Touch Format: X, Y, Time, TaskIndex_PointIndex_FingerId, PointType
     else:
         dataTime = dataCSV['Time']
-        dataId = [_id.strip() for _id in dataCSV['TaskNoPointNoFingerId']]
+        dataId = [_id.strip() for _id in dataCSV['TaskIndex_PointIndex_FingerId']]
         dataType = [_type.strip() for _type in dataCSV['PointType']]
 
         currChar = 0
         currTime = 0.0
         startTime = 0.0
         for [myTime, myId, myType] in zip(dataTime, dataId, dataType):
-            if myType == 'Touch':
-                idList = myId.split('-')
+            if myType == 'Touch' or myType == 'Recover':
+                idList = myId.split('_')
                 pointNo = int(idList[1])
 
                 # A new Start

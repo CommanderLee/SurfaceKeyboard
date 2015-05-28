@@ -119,7 +119,7 @@
                 
                 <Image Height="387" Width="1104"
                        Canvas.Left="100" Canvas.Top="100"
-                       Name="imgKeyboard" Stretch="None" HorizontalAlignment="Center" />
+                       Name="imgKeyboard" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Canvas>
         </Border>
                 

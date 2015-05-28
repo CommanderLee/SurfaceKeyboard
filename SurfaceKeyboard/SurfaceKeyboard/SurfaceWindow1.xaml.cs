@@ -32,11 +32,6 @@ namespace SurfaceKeyboard
         WindowUserId        userIdWindow;
         string              userId;
 
-        // The start time of the app 
-        // Now I use 'typingTime' instead
-        //bool                isStart;
-        //DateTime            startTime;
-
         // Number of deletions
         int                 deleteNum;
 
@@ -48,12 +43,6 @@ namespace SurfaceKeyboard
         // hpNo: [0, ...) normal points. Others: strings. 
         const string        hpNoCalibPnt = "CALIB";
         const string        hpNoCenterPnt = "CENTER";
-        //enum HpOthers               { Calibrate = -1, CenterPoint = -2 };
-
-        // TODO: Replace them
-        //private List<HandPoint>     currValidPoints = new List<HandPoint>();
-        //// Id -> GesturePoints Queue 
-        //Hashtable movement = new Hashtable();
 
         // Valid points: the touch point of each char.
         List<HandPoint>     validPoints = new List<HandPoint>();
@@ -555,16 +544,6 @@ namespace SurfaceKeyboard
             {
                 timeStamp = DateTime.Now.Subtract(typingStartTime).TotalMilliseconds;
             }
-            //if (!isStart)
-            //{
-            //    isStart = true;
-            //    startTime = DateTime.Now;
-            //    timeStamp = 0;
-            //}
-            //else
-            //{
-            //    timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-            //}
 
             // Save the information 
             //int hpIndex = currGestures.Count;
@@ -579,17 +558,6 @@ namespace SurfaceKeyboard
                 updateTaskTextBlk();
                 updateStatusBlock();
             }
-            //// Create elements in the hashtable
-            //if (!movement.ContainsKey(id))
-            //{
-            //    GesturePoints myPoints = new GesturePoints(touchPoint, HandStatus.Type);
-            //    movement.Add(id, myPoints);
-
-            //    // Real-time UI feedback. Note: Save it later after released.
-            //    ++hpNo;
-            //    updateTaskTextBlk();
-            //    updateStatusBlock();
-            //}
             else
             {
                 Debug.WriteLine("[Error] saveTouchPoints(): This Touchpoint ID alrealy exists: " + id);
@@ -728,31 +696,18 @@ namespace SurfaceKeyboard
                 if (GesturePoints.getGestureSwitch() && 
                     (myPoints.getStatus() == HandStatus.Wait || myPoints.getStatus() == HandStatus.Unknown))
                 {
-                    //GesturePoints myPoints = (GesturePoints)movement[id];
-                    //myPoints.Add(movePoint);
-                    //handPoints.Add(movePoint);
-
                     HandStatus gestureStatus = myPoints.updateGestureStatus();
                     // Check Distance 
                     if (gestureStatus == HandStatus.Backspace)
                     {
-                        //if (myPoints.getStatus() != HandStatus.Backspace)
-                        //{
-                        //myPoints.setStatus(HandStatus.Backspace);
-
                         // Reset the hpNo (added one when touching)
                         --hpNo;
 
                         // Delete ONE WORD
                         deleteWord();
-                        //}
                     }
                     else if (gestureStatus == HandStatus.Enter)
                     {
-                        //if (myPoints.getStatus() != HandStatus.Enter)
-                        //{
-                        //myPoints.setStatus(HandStatus.Enter);
-
                         // Reset the hpNo (added one when touching)
                         --hpNo;
 
@@ -760,13 +715,8 @@ namespace SurfaceKeyboard
                         gotoNextText();
 
                         // TODO: Output 'Enter' if applicable (in real text editor)
-                        //}
                     }
                     // Do not need to do anything when type
-                    //else if (gestureStatus == HandStatus.Type)
-                    //{
-
-                    //}
 
                     //Draw
                     if (circleControl)
@@ -825,9 +775,7 @@ namespace SurfaceKeyboard
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
                 // Push to the movement queue and check time 
-                //int hpIndex = currGestures.Count;
                 double timeStamp = DateTime.Now.Subtract(typingStartTime).TotalMilliseconds;
-                //double timeStamp = DateTime.Now.Subtract(startTime).TotalMilliseconds;
                 HandPoint releasePoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Release);
                 handPoints.Add(releasePoint);
 
@@ -847,31 +795,18 @@ namespace SurfaceKeyboard
                     if (GesturePoints.getGestureSwitch() && 
                         (myPoints.getStatus() == HandStatus.Wait || myPoints.getStatus() == HandStatus.Unknown))
                     {
-                        //GesturePoints myPoints = (GesturePoints)movement[id];
-                        //myPoints.Add(movePoint);
-                        //handPoints.Add(movePoint);
-
                         HandStatus gestureStatus = myPoints.updateGestureStatus();
                         // Check Distance 
                         if (gestureStatus == HandStatus.Backspace)
                         {
-                            //if (myPoints.getStatus() != HandStatus.Backspace)
-                            //{
-                            //myPoints.setStatus(HandStatus.Backspace);
-
                             // Reset the hpNo (added one when touching)
                             --hpNo;
 
                             // Delete ONE WORD
                             deleteWord();
-                            //}
                         }
                         else if (gestureStatus == HandStatus.Enter)
                         {
-                            //if (myPoints.getStatus() != HandStatus.Enter)
-                            //{
-                            //myPoints.setStatus(HandStatus.Enter);
-
                             // Reset the hpNo (added one when touching)
                             --hpNo;
 
@@ -879,13 +814,8 @@ namespace SurfaceKeyboard
                             gotoNextText();
 
                             // TODO: Output 'Enter' if applicable (in real text editor)
-                            //}
                         }
                         // Do not need to do anything when type
-                        //else if (gestureStatus == HandStatus.Type)
-                        //{
-
-                        //}
                     }
 
                     double movingDist = myPoints.calcMovingParam();
@@ -1080,10 +1010,7 @@ namespace SurfaceKeyboard
                             }
                         }
                     }
-                    //if (currValidPoints.Count > 0)
-                    //{
-                    //    validPoints.AddRange(currValidPoints);
-                    //}
+
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameMajor, true))
                     {
                         file.WriteLine("X, Y, Time, TaskIndex_PointIndex_FingerId, PointType");
@@ -1096,10 +1023,8 @@ namespace SurfaceKeyboard
             }
 
             // Clear the timer and storage 
-            //isStart = false;
             handPoints.Clear();
             validPoints.Clear();
-            //currValidPoints.Clear();
             currGestures.Clear();
             currTyping = "";
             isTypingStart = false;

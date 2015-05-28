@@ -61,7 +61,7 @@
                 <Button Name="GestureCtrlBtn"
                         Canvas.Left="1475" Canvas.Top="5"
                         Height="45" Width="120"
-                        Content="Gesture ON"
+                        Content="Gesture OFF"
                         FontSize="18" BorderThickness="2"
                         TouchDown="GestureCtrlBtn_TouchDown" Click="GestureCtrlBtn_Click"/>
                 

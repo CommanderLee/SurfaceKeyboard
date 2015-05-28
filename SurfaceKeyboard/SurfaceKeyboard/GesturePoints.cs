@@ -31,7 +31,7 @@ namespace SurfaceKeyboard
         int              movingDirection;
         double           movingDistance;
 
-        private static bool     gestureSwitch = true;
+        private static bool     gestureSwitch = false;
         public static bool      getGestureSwitch() { return gestureSwitch; }
         public static void      reverseGestureSwitch() { gestureSwitch = !gestureSwitch; }
 
@@ -55,11 +55,6 @@ namespace SurfaceKeyboard
 
         public void Add(HandPoint handPoint)
         {
-            //if (_startTime < 0)
-            //{
-            //    _startTime = handPoint.getTime();
-            //}
-
             while (_queue.Count > 0 && handPoint.getTime() - _queue.Peek().getTime() > GESTURE_TIME_MAX)
             {
                 _queue.Dequeue();

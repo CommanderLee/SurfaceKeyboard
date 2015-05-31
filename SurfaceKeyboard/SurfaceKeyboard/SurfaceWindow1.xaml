@@ -54,13 +54,13 @@
                 <Button Name="SwitchBtn"
                         Canvas.Left="1350" Canvas.Top="5"
                         Height="85" Width="120"
-                        Content="PhysicalKeyboard"
-                        FontSize="12" BorderThickness="2"
+                        Content="PhysicalKbd"
+                        FontSize="15" BorderThickness="2"
                         TouchDown="SwitchBtn_TouchDown" Click="SwitchBtn_Click"/>
                 
                 <Button Name="GestureCtrlBtn"
                         Canvas.Left="1475" Canvas.Top="5"
-                        Height="85" Width="120"
+                        Height="40" Width="120"
                         Content="Gesture OFF"
                         FontSize="18" BorderThickness="2"
                         TouchDown="GestureCtrlBtn_TouchDown" Click="GestureCtrlBtn_Click"/>
@@ -73,12 +73,19 @@
                         TouchDown="KeyboardBtn_TouchDown" Click="KeyboardBtn_Click" />
 
                 <Button Name="CalibBtn"
-                        Canvas.Left="1475" Canvas.Top="95" 
+                        Canvas.Left="1475" Canvas.Top="50" 
                         Content="Calibration"
-                        Height="85"  Width="120"
+                        Height="40"  Width="120"
                         FontSize="20" BorderThickness="2" 
                         TouchDown="CalibBtn_TouchDown" Click="CalibBtn_Click" />
-                
+
+                <Button Name="CircleBtn"
+                        Canvas.Left="1475" Canvas.Top="95" 
+                        Content="Circle OFF"
+                        Height="85"  Width="120"
+                        FontSize="20" BorderThickness="2" 
+                        TouchDown="CircleBtn_TouchDown" Click="CircleBtn_Click"/>
+
             </Canvas>    
         </Border>
 

@@ -93,7 +93,7 @@ namespace SurfaceKeyboard
         DateTime            typingStartTime;
         double              typingTime;
 
-        bool                circleControl = true;
+        bool                circleControl = false;
         // Circle bias
         const int           circleBiasY = 50;
         
@@ -1049,10 +1049,7 @@ namespace SurfaceKeyboard
             hpIndex = -1;
             isTypingStart = false;
 
-            if (circleControl)
-            {
-                clearCircles();
-            }
+            clearCircles();
 
             switch (currDevice)
             {
@@ -1129,7 +1126,7 @@ namespace SurfaceKeyboard
 
             currTyping = "";
             isTypingStart = false;
-
+            clearCircles();
             updateStatusBlock();
             updateTaskTextBlk();
         }
@@ -1408,6 +1405,33 @@ namespace SurfaceKeyboard
                 reverseGestureSwitch();
 
             clearKbdFocus(GestureCtrlBtn);
+        }
+
+        private void switchCircle()
+        {
+            if (circleControl)
+            {
+                CircleBtn.Content = "Circle OFF";
+            }
+            else
+            {
+                CircleBtn.Content = "Circle ON";
+            }
+            circleControl = !circleControl;
+        }
+
+        private void CircleBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            switchCircle();
+            clearKbdFocus(CircleBtn);
+        }
+
+        private void CircleBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (currDevice != InputDevice.Hand)
+                switchCircle();
+
+            clearKbdFocus(CircleBtn);
         }
 
 

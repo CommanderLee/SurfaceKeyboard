@@ -7,8 +7,8 @@
     >
     <DockPanel LastChildFill="True"
                Width="1600"
-               Height="800">
-        <Border Height="280"
+               Height="900">
+        <Border Height="330"
                 Background="DarkGreen"
                 BorderBrush="WhiteSmoke"
                 BorderThickness="2"
@@ -31,10 +31,10 @@
 
                 <Button Name="NextBtn"
                 Width="1590"
-                Height="90"
+                Height="140"
                 Canvas.Left="3"
                 Canvas.Top="185"
-                FontSize="40"
+                FontSize="70"
                 BorderThickness="2"
                 TouchDown="NextBtn_TouchDown"
                 Click="NextBtn_Click"
@@ -53,55 +53,85 @@
 
                 <Button Name="SwitchBtn"
                         Canvas.Left="1350" Canvas.Top="5"
-                        Height="45" Width="120"
-                        Content="PhysicalKeyboard"
-                        FontSize="12" BorderThickness="2"
+                        Height="85" Width="120"
+                        Content="PhysicalKbd"
+                        FontSize="15" BorderThickness="2"
                         TouchDown="SwitchBtn_TouchDown" Click="SwitchBtn_Click"/>
                 
                 <Button Name="GestureCtrlBtn"
                         Canvas.Left="1475" Canvas.Top="5"
-                        Height="45" Width="120"
+                        Height="40" Width="120"
                         Content="Gesture OFF"
                         FontSize="18" BorderThickness="2"
                         TouchDown="GestureCtrlBtn_TouchDown" Click="GestureCtrlBtn_Click"/>
                 
                 <Button Name="KeyboardBtn" 
-                        Canvas.Left="1350" Canvas.Top="55" 
+                        Canvas.Left="1350" Canvas.Top="95" 
                         Content="Keyboard"
-                        Height="60"  Width="120" 
+                        Height="85"  Width="120" 
                         FontSize="20" BorderThickness="2" 
                         TouchDown="KeyboardBtn_TouchDown" Click="KeyboardBtn_Click" />
 
                 <Button Name="CalibBtn"
-                        Canvas.Left="1475" Canvas.Top="55" 
+                        Canvas.Left="1475" Canvas.Top="50" 
                         Content="Calibration"
-                        Height="60"  Width="120"
+                        Height="40"  Width="120"
                         FontSize="20" BorderThickness="2" 
                         TouchDown="CalibBtn_TouchDown" Click="CalibBtn_Click" />
-                
-                <Button Name="ClearBtn" 
-                        Canvas.Left="1350" Canvas.Top="120" 
-                        Content="Clear Sentence" 
-                        Height="60"  Width="245" 
-                        FontSize="30" BorderThickness="2" 
-                        TouchDown="ClearBtn_TouchDown" Click="ClearBtn_Click" />
-                
-                <Canvas Name="canvasDelete" Background="DarkGreen"
-                        Canvas.Right="3" Canvas.Top="280" Height="520" Width="270">
-                    
-                    <Button Name="DeleteBtn" 
-                            Canvas.Right="10" Canvas.Top="10" 
-                            Content="Delete Word" Height="100" Width="245" 
-                            FontSize="30" BorderThickness="2" 
-                            TouchDown="DeleteBtn_TouchDown" Click="DeleteBtn_Click" />
-                    
-                    <Button Name="BackspaceBtn" BorderThickness="2" 
-                            Canvas.Right="10" Canvas.Top="130" 
-                            Content="Backspace" FontSize="30" Height="100" Width="245" 
-                            TouchDown="BackspaceBtn_TouchDown" Click="BackspaceBtn_Click" />
-                    
-                </Canvas>
+
+                <Button Name="CircleBtn"
+                        Canvas.Left="1475" Canvas.Top="95" 
+                        Content="Circle OFF"
+                        Height="85"  Width="120"
+                        FontSize="20" BorderThickness="2" 
+                        TouchDown="CircleBtn_TouchDown" Click="CircleBtn_Click"/>
+
             </Canvas>    
+        </Border>
+
+        <Border Height="570"
+                Background="DarkGreen"
+                BorderBrush="WhiteSmoke"
+                BorderThickness="2"
+                DockPanel.Dock="Left">
+            <Canvas Name="leftMenu" Background="DarkGreen"
+                    Width="330">
+                <Button Name="ClearBtn" Content="Clear Sentence" 
+                        Height="120" Width="310" 
+                        Canvas.Right="10" Canvas.Top="10"
+                        FontSize="35" BorderThickness="2" 
+                        TouchDown="ClearBtn_TouchDown" Click="ClearBtn_Click"/>
+            </Canvas>
+        </Border>
+
+        <Border Height="570"
+                Background="DarkGreen"
+                BorderBrush="WhiteSmoke"
+                BorderThickness="2"
+                DockPanel.Dock="Right">
+            <Canvas Name="rightMenu" Background="DarkGreen"
+                    Width="330">
+
+                <Button Name="DeleteBtn" 
+                        Canvas.Left="10" Canvas.Top="10" 
+                        Content="Delete Word" Height="120" Width="310" 
+                        FontSize="35" BorderThickness="2" 
+                        TouchDown="DeleteBtn_TouchDown" Click="DeleteBtn_Click" />
+
+                <Button Name="BackspaceBtn" BorderThickness="2" 
+                        Canvas.Left="10" Canvas.Top="140" 
+                        Content="Backspace" FontSize="30" Height="120" Width="310" 
+                        TouchDown="BackspaceBtn_TouchDown" Click="BackspaceBtn_Click" />
+
+            </Canvas>
+        </Border>
+        
+        <Border Name="wristArea"
+                DockPanel.Dock="Bottom"
+                >
+            <Canvas Name="wristCanvas"
+                    Background="DarkGreen"
+                    Width="930" Height="200" />
         </Border>
         
         <Border BorderBrush="WhiteSmoke"
@@ -109,20 +139,19 @@
                 Name="InputArea">
             <Canvas Name="InputCanvas"
                     Background="SeaGreen"
-                    Width="1320"
+                    Width="940" Height="370"
                     TouchDown="InputCanvas_TouchDown"
                     TouchMove="InputCanvas_TouchMove"
                     TouchUp="InputCanvas_TouchUp"
                     MouseLeftButtonDown="InputCanvas_MouseLeftButtonDown"
                     MouseMove="InputCanvas_MouseMove"
-                    MouseLeftButtonUp="InputCanvas_MouseLeftButtonUp" HorizontalAlignment="Left">
+                    MouseLeftButtonUp="InputCanvas_MouseLeftButtonUp" HorizontalAlignment="Center" VerticalAlignment="Top">
                 
-                <Image Height="387" Width="1104"
-                       Canvas.Left="100" Canvas.Top="100"
-                       Name="imgKeyboard" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <Image Height="256" Canvas.Left="100" Canvas.Top="100"
+                       Name="imgKeyboard" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" Width="730" />
             </Canvas>
         </Border>
-                
+
     </DockPanel>
 
 </s:SurfaceWindow>

@@ -833,7 +833,10 @@ namespace SurfaceKeyboard
                         GesturePoints newPoints = findGesturePoints(newId);
                         newPoints.setStatus(HandStatus.Type);
                         newPoints.getStartPoint().setType(HPType.Recover);
-                        drawCircle(x, y, recoverCircleBrush, recoverCircleSize);
+                        if (circleControl)
+                        {
+                            drawCircle(x, y, recoverCircleBrush, recoverCircleSize);
+                        }
                     }
                     
                     myPoints.checkTyping();
@@ -1044,54 +1047,58 @@ namespace SurfaceKeyboard
         /// </summary>
         private void gotoNextText()
         {
-            taskIndex++;
-            hpNo = 0;
-            hpIndex = -1;
-            isTypingStart = false;
-
-            clearCircles();
-
-            switch (currDevice)
+            string currText = taskTexts[taskIndex % taskSize];
+            if (hpNo >= currText.Length)
             {
-                case InputDevice.PhyKbd:
-                    phyStrings.Add(currTyping + "," + typingTime + "," + deleteNum);
-                    currTyping = "";
-                    isTypingStart = false;
-                    break;
+                taskIndex++;
+                hpNo = 0;
+                hpIndex = -1;
+                isTypingStart = false;
 
-                case InputDevice.Hand:
-                case InputDevice.Mouse:
-                    if (currGestures.Count > 0)
-                    {
-                        foreach (GesturePoints gp in currGestures)
+                clearCircles();
+
+                switch (currDevice)
+                {
+                    case InputDevice.PhyKbd:
+                        phyStrings.Add(currTyping + "," + typingTime + "," + deleteNum);
+                        currTyping = "";
+                        isTypingStart = false;
+                        break;
+
+                    case InputDevice.Hand:
+                    case InputDevice.Mouse:
+                        if (currGestures.Count > 0)
                         {
-                            if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Backspace)
+                            foreach (GesturePoints gp in currGestures)
                             {
-                                validPoints.Add(gp.getStartPoint());
+                                if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Backspace)
+                                {
+                                    validPoints.Add(gp.getStartPoint());
+                                }
+                                Console.WriteLine(gp.getStatus());
                             }
-                            Console.WriteLine(gp.getStatus());
                         }
-                    }
-                    //validPoints.AddRange(currValidPoints);
-                    currGestures.Clear();
-                    //currValidPoints.Clear();
-                    calibPoints.Clear();
+                        //validPoints.AddRange(currValidPoints);
+                        currGestures.Clear();
+                        //currValidPoints.Clear();
+                        calibPoints.Clear();
 
-                    // Clear the status if the calibration mode is ON 
-                    if (calibStatus != CalibStatus.Off)
-                    {
-                        calibStatus = CalibStatus.Preparing;
-                    }
-                    break;
-            }
+                        // Clear the status if the calibration mode is ON 
+                        if (calibStatus != CalibStatus.Off)
+                        {
+                            calibStatus = CalibStatus.Preparing;
+                        }
+                        break;
+                }
 
-            deleteNum = 0;
-            updateStatusBlock();
-            updateTaskTextBlk();
+                deleteNum = 0;
+                updateStatusBlock();
+                updateTaskTextBlk();
 
-            if (taskIndex == taskTexts.Length)
-            {
-                MessageBox.Show("Congratulations! You have finished the [" + currDevice + "] test.");
+                if (taskIndex == taskTexts.Length)
+                {
+                    MessageBox.Show("Congratulations! You have finished the [" + currDevice + "] test.");
+                }
             }
         }
 

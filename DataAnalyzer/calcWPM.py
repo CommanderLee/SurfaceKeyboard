@@ -8,24 +8,25 @@ import numpy as np
 
 def loadFiles():
     "Load data files of different conditions"
-    dataFileName = ''
-    textFileName = ''
+    dataFileNames = []
+    textFileNames = []
 
     tkObj = Tkinter.Tk()
     tkObj.file_opt = options = {}
-    options['title'] = 'Select Data File and TaskText File'
     openFiles = tkFileDialog.askopenfiles('r')
 
     if openFiles:
         for openFile in openFiles:
             # fileName = os.path.basename(dataFile.name).split('.')[0]
-            fileExt = os.path.splitext(openFile.name)[1]
-            if fileExt == '.csv':
-                dataFileName = openFile.name
-            elif fileExt == '.txt':
-                textFileName = openFile.name
+            dataFileNames.append(openFile.name)
+            textFileNames.append(openFile.name[0:len(openFile.name)-9] + 'TaskText.txt')
+            # fileExt = os.path.splitext(openFile.name)[1]
+            # if fileExt == '.csv':
+            #     dataFileName = openFile.name
+            # elif fileExt == '.txt':
+            #     textFileName = openFile.name
         
-        return [dataFileName, textFileName]
+        return [dataFileNames, textFileNames]
     
     else:
         print 'Error: Cannot Load Files.'
@@ -88,18 +89,20 @@ def parseData(dataCSV, isKbd, textList):
 
 # Main Procedure
 if __name__ == '__main__':
-    [dataFileName, textFileName] = loadFiles()
-    print 'Load files: %s' % ([dataFileName, textFileName])
+    [dataFileNames, textFileNames] = loadFiles()
+    for (dataFileName, textFileName) in zip(dataFileNames, textFileNames):
 
-    # Read data file and text file
-    dataCSV = np.genfromtxt(dataFileName, dtype = None, delimiter = ',', names = True)
-    rawText = open(textFileName, 'r')
-    textList = [text.strip() for text in rawText]
-    
-    # If this is the physical keyboard data file
-    isKbd = True
-    if (string.find(os.path.basename(dataFileName).split('.')[0], 'PhyKbd') == -1):
-        isKbd = False
-    WPM = parseData(dataCSV, isKbd, textList)
+        print 'Load files: %s' % ([dataFileName, textFileName])
 
-    print 'WPM: %f' % (WPM)
+        # Read data file and text file
+        dataCSV = np.genfromtxt(dataFileName, dtype = None, delimiter = ',', names = True)
+        rawText = open(textFileName, 'r')
+        textList = [text.strip() for text in rawText]
+        
+        # If this is the physical keyboard data file
+        isKbd = True
+        if (string.find(os.path.basename(dataFileName).split('.')[0], 'PhyKbd') == -1):
+            isKbd = False
+        WPM = parseData(dataCSV, isKbd, textList)
+
+        print 'WPM: %f \n' % (WPM)

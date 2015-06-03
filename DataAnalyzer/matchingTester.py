@@ -14,33 +14,34 @@ from filesHelper import *
 
 # Main
 
-# Parse the corpus
-allWords = loadCorpus()
 wordDic = {}
 wordCnt = {}
 
-if False:
-    for word in allWords:
-        # print word + ' : ' + encode(word)
-        code = encode(word)
-        if {code}.issubset(wordDic.keys()):
-            wordDic[code].add(word)
-        else:
-            wordDic[code] = set()
-            wordDic[code].add(word)
-            
-        if {word}.issubset(wordCnt.keys()):
-            wordCnt[word] += 1
-        else:
-            wordCnt[word] = 1
+# if True:
+#     # Parse the corpus
+#     allWords = loadCorpus()
 
-    corpusFile = file('corpus.pkl', 'wb')
-    pickle.dump(wordDic, corpusFile, True)
-    pickle.dump(wordCnt, corpusFile, True)
-else:
-    corpusFile = file('corpus.pkl', 'rb')
-    wordDic = pickle.load(corpusFile)
-    wordCnt = pickle.load(corpusFile)
+#     for word in allWords:
+#         # print word + ' : ' + encode(word)
+#         code = encode(word)
+#         if {code}.issubset(wordDic.keys()):
+#             wordDic[code].add(word)
+#         else:
+#             wordDic[code] = set()
+#             wordDic[code].add(word)
+            
+#         if {word}.issubset(wordCnt.keys()):
+#             wordCnt[word] += 1
+#         else:
+#             wordCnt[word] = 1
+
+#     corpusFile = file('corpus.pkl', 'wb')
+#     pickle.dump(wordDic, corpusFile, True)
+#     pickle.dump(wordCnt, corpusFile, True)
+# else:
+corpusFile = file('corpus_full_size.pkl', 'rb')
+wordDic = pickle.load(corpusFile)
+wordCnt = pickle.load(corpusFile)
 
 # print wordDic
 # print wordCnt
@@ -157,10 +158,19 @@ if openFiles:
                 
             if len(currText) != len(listX):    
                 print "Warning: %d letters, %d touch points." % (len(currText), len(listX))
+                if len(currText) > 2 * len(listX):
+                    # Break when finish processing the data set
+                    if dataNo >= dataLen:
+                        break
+                    else:
+                        textNo += 1        
+                        continue
 
             listNo = 0
             for word in currText.split(' '):
                 wordLen = len(word)
+                if listNo + wordLen > len(listX):
+                    break
                 
                 for i in range(0, wordLen):
                     # Save single points

@@ -4,7 +4,7 @@
 import string
 from keyboardLayoutHelper import encode
 
-def loadCorpus():
+def loadCorpus(corpusNum):
     "Load words as corpus"
     words = []
 
@@ -18,7 +18,9 @@ def loadCorpus():
         # en_US_wordlist from Yi, Xin.
         textFile = open('en_US_wordlist.combined', 'r')
         rawData = [text.strip().split(',') for text in textFile]
-        for data in rawData[1:50000]:
+        if corpusNum > len(rawData) or corpusNum < 0:
+            corpusNum = len(rawData)
+        for data in rawData[1:corpusNum]:
             word = ''
             for char in data[0].split('=')[1].lower():
                 if {char}.issubset(string.letters):

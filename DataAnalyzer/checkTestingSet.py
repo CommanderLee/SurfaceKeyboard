@@ -105,7 +105,7 @@ def saveSelectedText(fileName, textNum, textContent, textTotalValue, textOneHand
         randNum = rd.randint(randLower, randUpper)
         mixedTextList[i], mixedTextList[randNum] = mixedTextList[randNum], mixedTextList[i]
 
-    writeText = open(fileName + '_Mixed.txt', 'w')
+    writeText = open(fileName + '_Mixed_%d.txt' % (textNum), 'w')
     for text in mixedTextList[:textNum]:
         writeText.write(text + '\n')
     print 'Mixed version: '
@@ -148,4 +148,4 @@ for textNo in range(testingSetSize):
         if handCode[rowNo] == handCode[colNo]:
             textOneHandValue[textNo] += 1.0 / numMat[rowNo][colNo]
 
-saveSelectedText('TaskText', 30, texts, textTotalValue, textOneHandValue)
+saveSelectedText('TaskText', 50, texts, textTotalValue, textOneHandValue)

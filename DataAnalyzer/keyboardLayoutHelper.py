@@ -2,6 +2,8 @@
 # Zhen Li, Tsinghua University.
 import matplotlib.pyplot as plt
 from pylab import *
+import Tkinter, tkFileDialog
+
 from constants import *
 
 def calcKeyboardLayout():
@@ -106,6 +108,7 @@ def calcUserCodes(pntListX, midX, rangeX):
     return codes
     
 if __name__ == '__main__':
+    
     [posX, posY] = calcKeyboardLayout()
     print posX
     print posY

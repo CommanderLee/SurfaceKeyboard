@@ -9,6 +9,7 @@
 *.result
 *.pyc
 *.combined
+*.jrp
 
 # User-specific files
 *.suo

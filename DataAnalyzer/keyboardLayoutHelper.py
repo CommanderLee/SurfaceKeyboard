@@ -5,6 +5,9 @@ from pylab import *
 from matplotlib.patches import Ellipse, Rectangle
 import Tkinter, tkFileDialog
 import random as rd
+import numpy as np
+import math
+import pickle
 
 from constants import *
 
@@ -49,6 +52,34 @@ def loadKeyboardLayout(fName):
         plt.text(pX, pY, ch.strip('\''), 
             verticalalignment = 'center', horizontalalignment = 'center', 
             color = 'k', fontsize = 15)
+
+    # Print Left-Right Hand Margin
+    xTY = (posX[ord('t')-ord('a')+1] + posX[ord('y')-ord('a')+1]) / 2
+    yTY = (posY[ord('t')-ord('a')+1] + posY[ord('y')-ord('a')+1]) / 2
+    xBN = (posX[ord('b')-ord('a')+1] + posX[ord('n')-ord('a')+1]) / 2
+    yBN = (posY[ord('b')-ord('a')+1] + posY[ord('n')-ord('a')+1]) / 2
+
+    paramA = (yBN - yTY) / (xBN - xTY)
+    paramB = yBN - paramA * xBN
+
+    print '(%f,%f) - (%f,%f) -> y = %f*x + %f' % (xTY, yTY, xBN, yBN, paramA, paramB)
+
+    # Check a-z:
+    print 'Check model'
+    for (pX, pY, ch) in zip(posX, posY, letters):
+        char = ch.strip('\'')
+        if char != '-':
+            y = paramA * pX + paramB
+            code = '2'
+            if y <= pY:
+                code = '0'
+            else:
+                code = '1'
+
+            if code == handCode[ord(char)-ord('a')+1]:
+                print '    Correct: %s, %s, %f' % (char, code, y - pY)
+            else:
+                print 'Wrong: %s, %s, %f' % (char, code, y - pY)
 
     # ax.set_xlim(400, 1500)
     # ax.set_ylim(400, 1500)
@@ -171,33 +202,54 @@ def encode(word):
         code += handCode[ord(char) - ord('a') + 1]
     return code
 
-def calcUserCodes(pntListX, midX, rangeX):
+# def calcUserCodes(pntListX, midX, rangeX):
+def calcUserCodes(pntListX, pntListY):
     "Calculate the user codes using recursion"
+
     codes = []
     if len(pntListX) == 1:
         suffixCodes = ['']
     else:
-        suffixCodes = calcUserCodes(pntListX[1:], midX, rangeX)
+        # suffixCodes = calcUserCodes(pntListX[1:], midX, rangeX)
+        suffixCodes = calcUserCodes(pntListX[1:], pntListY[1:])
+
     # Using a experimental constant. TODO: Using a probability model
-    relativePos = (pntListX[0] - midX) / rangeX
-    if abs(relativePos) < 0.05:
+    y = paramA * pntListX[0] + paramB
+    if y < pntListY[0] - 100:
+        # Left
         for suffix in suffixCodes:
             codes.append('0' + suffix)
+    elif y > pntListY[0] + 100:
+        # Right
+        for suffix in suffixCodes:
             codes.append('1' + suffix)
-    elif pntListX[0] < midX:
-        for suffix in suffixCodes:
-            codes.append('0' + suffix)
     else:
+        # Middle, Try both
         for suffix in suffixCodes:
+            codes.append('0' + suffix)
             codes.append('1' + suffix)
+
+    # relativePos = (pntListX[0] - midX) / rangeX
+    # if abs(relativePos) < 0.05:
+    #     for suffix in suffixCodes:
+    #         codes.append('0' + suffix)
+    #         codes.append('1' + suffix)
+    # elif pntListX[0] < midX:
+    #     for suffix in suffixCodes:
+    #         codes.append('0' + suffix)
+    # else:
+    #     for suffix in suffixCodes:
+    #         codes.append('1' + suffix)
     return codes
     
 if __name__ == '__main__':
+    # Process Point File
     tkObj = Tkinter.Tk()
     tkObj.file_opt = options = {}
     pointFile = tkFileDialog.askopenfile('r')
 
     if pointFile:
+        # '-', 'a', ... 'z'
         [userX, userY] = loadKeyboardLayout(pointFile.name)
         print 'Number: %d' % (len(userX[1:]))
         print 'userPosX = [' + ', '.join([str(i) for i in userX[1:]]) + ']'
@@ -205,6 +257,7 @@ if __name__ == '__main__':
 
     print '--------------\n'
 
+    # 'a', 'b', ... 'z'
     [posX, posY] = calcKeyboardLayout()
     print 'Number: %d' % (len(posX))
     print 'letterPosX = [' + ', '.join([str(i) for i in posX]) + ']'
@@ -222,6 +275,53 @@ if __name__ == '__main__':
 
     # [pntIdL, pntIdR, vecL, vecR] = calcWordVec('dog')
     # print [pntIdL, pntIdR, vecL, vecR]
+
+    # Process Point-Pair File
+    tkObj = Tkinter.Tk()
+    tkObj.file_opt = options = {}
+    pairFile = tkFileDialog.askopenfile('r')
+    if pairFile:
+        dataCSV = np.genfromtxt(pairFile.name, dtype = None, delimiter = ',', names = True)
+        charPair = dataCSV['charPair']
+        vecX = dataCSV['meanvecX']
+        vecY = dataCSV['meanvecY']
+        vecLen = dataCSV['meanvecLen']
+        rad1 = dataCSV['meanradpipi']
+        rad2 = dataCSV['meanrad02pi']
+
+        vecParams = {}
+        for (cP, vX, vY, vL, r1, r2) in zip(charPair, vecX, vecY, vecLen, rad1, rad2):
+            vecParams[cP.strip('\'')] = (vX, vY, vL, r1, r2)
+
+        for i in range(26):
+            charI = chr(ord('a') + i)
+            for j in range(26):
+                charJ = chr(ord('a') + j)
+                charIJ = charI + charJ
+                if not {charIJ}.issubset(vecParams.keys()):
+                    print 'Add: ' + charIJ
+                    if charI == charJ:
+                        vecParams[charIJ] = (0, 0, 0, 0, 0)
+                    else:
+                        vX = userX[j+1] - userX[i+1]
+                        vY = userY[j+1] - userY[i+1]
+                        vL = math.sqrt(math.pow(vX, 2) + math.pow(vY, 2))
+                        r1 = 0
+                        r2 = 0
+
+                        if vL != 0:
+                            if vY > 0:
+                                r1 = math.acos(vX / vL)
+                                r2 = r1
+                            else:
+                                r1 = -math.acos(vX / vL)
+                                r2 = math.pi + math.acos(-vX / vL)
+
+                        vecParams[charIJ] = (vX, vY, vL, r1, r2)
+
+        vecParamsFile = file('vecParams.pkl', 'wb')
+        pickle.dump(vecParams, vecParamsFile, True)
+        print vecParams
 
 
 

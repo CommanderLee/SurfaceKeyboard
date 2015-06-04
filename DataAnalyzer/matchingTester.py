@@ -81,6 +81,9 @@ if openFiles:
 
     # (characterPair, pattern, vectorX, vectorY, userName)
     totalPointPair = []
+
+    vecParamsFile = file('vecParams.pkl', 'rb')
+    vecParams = pickle.load(vecParamsFile)
     
     for dataFile in openFiles:
         # Load testing sentences
@@ -214,7 +217,8 @@ if openFiles:
                     
 
                 # Calculate user codes
-                userCodes = calcUserCodes(listX[listNo:listNo+wordLen], midX, rangeX)
+                # userCodes = calcUserCodes(listX[listNo:listNo+wordLen], midX, rangeX)
+                userCodes = calcUserCodes(listX[listNo:listNo+wordLen], listY[listNo:listNo+wordLen])
                 
                 # Save the correct code
                 code = encode(word)
@@ -398,7 +402,7 @@ if openFiles:
     #     print result
 
     print 'Save to files...'
-    resultStr = '-16users'
+    resultStr = '-16users-v1.1'
 
     saveErrorPatternResults('Result/matchingResult%s.csv' % (resultStr), totalErrorPattern, totalWordPattern, wordDic)
     print 'Matching Result Done.'

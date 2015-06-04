@@ -397,16 +397,22 @@ if openFiles:
     # for result in results:
     #     print result
 
-    # resultStr = '-16users'
+    print 'Save to files...'
+    resultStr = '-16users'
 
     saveErrorPatternResults('Result/matchingResult%s.csv' % (resultStr), totalErrorPattern, totalWordPattern, wordDic)
-    
+    print 'Matching Result Done.'
+
     saveWordPositionResults('Result/wordPosResult%s.csv' % (resultStr), totalWordPos, wordDic)
+    print 'Word Position Result Done.'
 
     saveSinglePointResults('Result/pointPosResult%s.csv' % (resultStr), totalPointPos)
+    print 'Point Position Result Done.'
 
-    savePointPairResults('Result/pointPairResult%s.csv' % (resultStr), totalPointPair, True)
+    savePointPairResults('Result/pointPairResult%s.csv' % (resultStr), totalPointPair)
+    print 'Point Pair Result Done.'
 
+    print 'All files saved.'
     # fileNo = 8
 
     # saveErrorPatternResults('matchingResult%d.csv' % (fileNo), totalErrorPattern, totalWordPattern, wordDic)

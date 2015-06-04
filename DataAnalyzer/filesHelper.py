@@ -78,17 +78,58 @@ def saveWordPositionResults(fileName, wordPos, wordDic):
 
 def saveSinglePointResults(fileName, pointPos):
     "Save the position of single points"
-    writeFile = open(fileName, 'w')
-    writeFile.write('targetChar,absoluteX,absoluteY,relativeX,relativeY,leftUpX,leftUpY,standardX,standardY\n')
-    # Space is replaced by '-'
-    # pointPos[i] = (character, absoluteX/Y, relativeX/Y, left-up-X/Y, standardX/Y)
-    for pointInfo in pointPos:
-        writeFile.write(str(pointInfo).strip('()') + '\n')
+    
+    # (char, absX, absY, absX-startX, absY-startY, startX, startY, letterPosX[charNo], letterPosY[charNo]))
+    char = [pPos[0] for pPos in pointPos]
+    absX = [pPos[1] for pPos in pointPos]
+    absY = [pPos[2] for pPos in pointPos]
+    validMarkQ = np.ones(len(char), int)
 
-def savePointPairResults(fileName, pointPair, analyze):
+    totalArray = np.array(zip(char, absX, absY, validMarkQ), 
+        dtype=[('char', 'S5'), ('absX', float), ('absY', float), ('validMarkQ', int)])
+    totalArray.sort(order='char')
+
+    char = totalArray['char']
+    absX = totalArray['absX']
+    absY = totalArray['absY']
+    lastChar = 0
+
+    for i in range(len(char)):
+        if (i < len(char)-1 and char[i] != char[i+1]) or i == len(char)-1:
+            # Check range: [lastChar, i]
+            if i - lastChar > 10 and char[i] != '-':
+                xQ1 = np.percentile(absX[lastChar:i+1], 25)
+                xQ3 = np.percentile(absX[lastChar:i+1], 75)
+                xIQR = xQ3 - xQ1
+                xLower = xQ1 - 1.5 * xIQR
+                xUpper = xQ3 + 1.5 * xIQR
+
+                yQ1 = np.percentile(absY[lastChar:i+1], 25)
+                yQ3 = np.percentile(absY[lastChar:i+1], 75)
+                yIQR = yQ3 - yQ1
+                yLower = yQ1 - 1.5 * yIQR
+                yUpper = yQ3 + 1.5 * yIQR
+
+                for j in range(lastChar, i+1):
+                    if absX[j] < xLower or absX[j] > xUpper or absY[j] < yLower or absY[j] > yUpper:
+                        totalArray['validMarkQ'][j] = 0
+
+            lastChar = i + 1
+
+    writeFile = open(fileName, 'w')
+    writeFile.write('char, absX, absY, validMarkQ\n')
+    for array in totalArray:
+        writeFile.write(str(array).strip('()') + '\n')
+    # writeFile.write('targetChar,absoluteX,absoluteY,relativeX,relativeY,leftUpX,leftUpY,standardX,standardY\n')
+    # # Space is replaced by '-'
+    # # pointPos[i] = (character, absoluteX/Y, relativeX/Y, left-up-X/Y, standardX/Y)
+    # for pointInfo in pointPos:
+    #     writeFile.write(str(pointInfo).strip('()') + '\n')
+
+def savePointPairResults(fileName, pointPair):
     "Save the coordinates of the point pair vectors"
 
-    if analyze:
+    if True:
         charPair = [pPair[0] for pPair in pointPair]
         pattern = [pPair[1] for pPair in pointPair]
         vecX = np.array([pPair[2] for pPair in pointPair])

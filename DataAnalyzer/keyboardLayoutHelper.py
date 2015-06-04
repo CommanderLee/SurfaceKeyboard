@@ -2,7 +2,7 @@
 # Zhen Li, Tsinghua University.
 import matplotlib.pyplot as plt
 from pylab import *
-from matplotlib.patches import Ellipse
+from matplotlib.patches import Ellipse, Rectangle
 import Tkinter, tkFileDialog
 import random as rd
 
@@ -28,7 +28,7 @@ def loadKeyboardLayout(fName):
 
     ells = [Ellipse(xy=(posX[i], posY[i]), width=stdX[i]*2, height=stdY[i]*2) for i in range(len(posX))]
 
-    fig = figure()
+    fig = figure(0)
     # ax = fig.add_subplot(111, aspect='equal')
     ax = gca()
     for i in range(len(ells)):
@@ -36,7 +36,7 @@ def loadKeyboardLayout(fName):
         ax.add_artist(ells[i])
         ells[i].set_facecolor(colors[i % colorLen])
         # e.set_clip_box(ax.bbox)
-        ells[i].set_alpha(0.5)
+        ells[i].set_alpha(0.7)
         # e.set_facecolor(rand(3))
 
     # plt.figure()
@@ -50,11 +50,11 @@ def loadKeyboardLayout(fName):
             verticalalignment = 'center', horizontalalignment = 'center', 
             color = 'k', fontsize = 15)
 
-    ax.set_xlim(400, 1500)
-    ax.set_ylim(400, 1500)
-    ax.invert_yaxis()
+    # ax.set_xlim(400, 1500)
+    # ax.set_ylim(400, 1500)
+    # ax.invert_yaxis()
 
-    show()
+    # show()
 
     # posXInt = [int(i) for i in posX]
     # posYInt = [int(j) for j in posY]
@@ -66,38 +66,57 @@ def calcKeyboardLayout():
     letterRow = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm']
     # Data from Surface 2.0 standard keyboard.
 
+    kbdImgTopLeft = [617.5, 500.4]
+
     # Coordinate for 'Q','P'x, 'Space'y
-    startX = 98.0
-    startY = 59.0
-    endX = 543.0
-    endY = 247.0
+    # startX = 98.0
+    # startY = 59.0
+    # endX = 543.0
+    # endY = 247.0
 
     # TODO: How to do normalization?
     # rangeX = endX - startX
     # rangeY = endY - startY
 
     # Coordinate for 'Q', 'A', 'Z'
-    qX1, qY1 = 98.0, 59.0
-    qX2, qY2 = 138.0, 103.0
-    aX1, aY1 = 120.0, 109.0
-    aX2, aY2 = 160.0, 152.0
-    zX1, zY1 = 143.0, 157.0
-    zX2, zY2 = 183.0, 200.0
-    gapX = 45
+    qX1, qY1 = 89, 52
+    qX2, qY2 = 126, 92
+    aX1, aY1 = 108, 97
+    aX2, aY2 = 145, 137
+    zX1, zY1 = 129, 140
+    zX2, zY2 = 166, 180
+    gapX = 41
 
-    y = [(qY1 + qY2) / 2, (aY1 + aY2) / 2, (zY1 + zY2) / 2]
-    y = [(yi - startY) for yi in y]
+    # Spacebar
+    spaceX1, spaceY1 = 149, 184
+    spaceX2, spaceY2 = 348, 223
+
+    y = [kbdImgTopLeft[1] + (qY1 + qY2) / 2, 
+    kbdImgTopLeft[1] + (aY1 + aY2) / 2, 
+    kbdImgTopLeft[1] + (zY1 + zY2) / 2]
+    # y = [(yi - startY) for yi in y]
 
     x = [[], [], []]
-    x[0] = [((qX1 + qX2) / 2 + i * gapX - startX) for i in range(0, 10)]
-    x[1] = [((aX1 + aX2) / 2 + i * gapX - startX) for i in range(0, 9)]
-    x[2] = [((zX1 + zX2) / 2 + i * gapX - startX) for i in range(0, 7)]
+    x[0] = [((qX1 + qX2) / 2 + i * gapX + kbdImgTopLeft[0]) for i in range(0, 10)]
+    x[1] = [((aX1 + aX2) / 2 + i * gapX + kbdImgTopLeft[0]) for i in range(0, 9)]
+    x[2] = [((zX1 + zX2) / 2 + i * gapX + kbdImgTopLeft[0]) for i in range(0, 7)]
 
     # Position of each letter in normalized layout
     posX = range(0, 26)
     posY = range(0, 26)
 
-    figure(0)
+    keySizeX = 39.0
+    keySizeY = 42.0
+
+    fig = figure(0)
+    ax = gca()
+
+    rec = Rectangle(xy=(spaceX1 + kbdImgTopLeft[0], spaceY1 + kbdImgTopLeft[1]), 
+        width=spaceX2 - spaceX1, height=spaceY2 - spaceY1)
+    ax.add_artist(rec)
+    rec.set_facecolor('r')
+    rec.set_alpha(0.3)
+
     for row in range(0, 3):
         colNum = len(x[row])
         for col in range(0, colNum):
@@ -106,10 +125,22 @@ def calcKeyboardLayout():
             posX[currNo] = x[row][col]
             posY[currNo] = y[row]
 
-            plot(x[row][col], y[row], 'ro', markersize = 40)
+            # plot(x[row][col], y[row], 'ro', markersize = 40)
+            rec = Rectangle(xy=(x[row][col] - keySizeX/2, y[row] - keySizeY/2), 
+                width=keySizeX, height=keySizeY)
+            ax.add_artist(rec)
+            rec.set_facecolor('r')
+            rec.set_alpha(0.3)
+
             plt.text(x[row][col], y[row], currLetter,
                 verticalalignment = 'center', horizontalalignment = 'center',
-                color = 'b', fontsize = 15)
+                color = 'b', fontsize = 10)
+    
+    # ax.set_xlim(400, 1500)
+    # ax.set_ylim(400, 1500)
+    # ax.invert_yaxis()
+
+    # plt.show()
     return [posX, posY]
 
 def calcWordVec(word):
@@ -167,12 +198,24 @@ if __name__ == '__main__':
     pointFile = tkFileDialog.askopenfile('r')
 
     if pointFile:
-        [posX, posY] = loadKeyboardLayout(pointFile.name)
-    else:
-        [posX, posY] = calcKeyboardLayout()
+        [userX, userY] = loadKeyboardLayout(pointFile.name)
+        print 'Number: %d' % (len(userX[1:]))
+        print 'userPosX = [' + ', '.join([str(i) for i in userX[1:]]) + ']'
+        print 'userPosY = [' + ', '.join([str(i) for i in userY[1:]]) + ']'
+
+    print '--------------\n'
+
+    [posX, posY] = calcKeyboardLayout()
+    print 'Number: %d' % (len(posX))
     print 'letterPosX = [' + ', '.join([str(i) for i in posX]) + ']'
     print 'letterPosY = [' + ', '.join([str(i) for i in posY]) + ']'
 
+    ax = gca()
+    ax.set_xlim(400, 1500)
+    ax.set_ylim(400, 1500)
+    ax.invert_yaxis()
+
+    plt.show()
     # plt.title('Surface Keyboard Layout')
     # gca().invert_yaxis()
     # plt.show()

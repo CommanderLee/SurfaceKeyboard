@@ -14,6 +14,8 @@ from filesHelper import *
 
 # Main
 
+printResult = False
+
 wordDic = {}
 wordCnt = {}
 
@@ -77,7 +79,7 @@ if openFiles:
     # pointPos[i] = (character, absoluteX/Y, relativeX/Y, left-up-X/Y, standardX/Y)
     totalPointPos = []
 
-    # (characterPair, pattern, vectorX, vectorY)
+    # (characterPair, pattern, vectorX, vectorY, userName)
     totalPointPair = []
     
     for dataFile in openFiles:
@@ -157,7 +159,8 @@ if openFiles:
                 dataNo += 1
                 
             if len(currText) != len(listX):    
-                print "Warning: %d letters, %d touch points." % (len(currText), len(listX))
+                if printResult:
+                    print "Warning: %d letters, %d touch points." % (len(currText), len(listX))
                 if len(currText) > 2 * len(listX):
                     # Break when finish processing the data set
                     if dataNo >= dataLen:
@@ -187,14 +190,14 @@ if openFiles:
                         pattern = handCode[ord(word[i-1]) - ord('a') + 1] + handCode[ord(word[i]) - ord('a') + 1]
                         vecX = listX[i + listNo] - listX[i - 1 + listNo]
                         vecY = listY[i + listNo] - listY[i - 1 + listNo]
-                        totalPointPair.append((charPair, pattern, vecX, vecY))
+                        totalPointPair.append((charPair, pattern, vecX, vecY, fileNameAbbr))
                     elif listNo > 0:
                         # point pair <space, word[0]>
                         charPair = '-' + word[i]
                         pattern = '2' + handCode[ord(word[i]) - ord('a') + 1]
                         vecX = listX[i + listNo] - listX[i - 1 + listNo]
                         vecY = listY[i + listNo] - listY[i - 1 + listNo]
-                        totalPointPair.append((charPair, pattern, vecX, vecY))
+                        totalPointPair.append((charPair, pattern, vecX, vecY, fileNameAbbr))
 
                     if i == wordLen - 1 and i + 1 + listNo < len(listX):
                         # point pair <word[len-1], space>
@@ -202,7 +205,7 @@ if openFiles:
                         pattern = handCode[ord(word[i]) - ord('a') + 1] + '2'
                         vecX = listX[i + 1 + listNo] - listX[i + listNo]
                         vecY = listY[i + 1 + listNo] - listY[i + listNo]
-                        totalPointPair.append((charPair, pattern, vecX, vecY))
+                        totalPointPair.append((charPair, pattern, vecX, vecY, fileNameAbbr))
 
                         # Save spacebar(replaced by '-') point information
                         absX = listX[wordLen + listNo]
@@ -317,8 +320,9 @@ if openFiles:
                                 if i <= 2:
                                     almostCorrNum += 1
 
-                                    print 'Almost Correct: ' + word
-                                    print '    %r' % (wordProbArray.tolist()[:3])
+                                    if printResult:
+                                        print 'Almost Correct: ' + word
+                                        print '    %r' % (wordProbArray.tolist()[:3])
                                 # Error
                                 else:
                                     wordErrNum += 1
@@ -329,8 +333,9 @@ if openFiles:
                                     else:
                                         errorPattern[code] = 1
 
-                                    print 'Word Error: ' + word
-                                    print '    %r' % (wordProbArray.tolist())  
+                                    if printResult:
+                                        print 'Word Error: ' + word
+                                        print '    %r' % (wordProbArray.tolist())  
                                 break
                 else:
                     # Code error
@@ -342,8 +347,9 @@ if openFiles:
                     else:
                         errorPattern[code] = 1
 
-                    print 'Code Error. word:%s, correct:%s, user:' % (word, code)
-                    print userCodes
+                    if printResult:
+                        print 'Code Error. word:%s, correct:%s, user:' % (word, code)
+                        print userCodes
 
                 # Jump: word length + SPACE
                 listNo += wordLen + 1
@@ -365,7 +371,8 @@ if openFiles:
 
         errorPatternList = [(code, -float(errorPattern[code]) / wordPattern[code]) for code in errorPattern.keys()]
         result += 'Error Word Pattern: %r \n' % (errorPatternList)
-        print result
+        if printResult:
+            print result
         results.append(result)
 
         # Save to file
@@ -384,8 +391,11 @@ if openFiles:
                 totalErrorPattern[c] = n
 
     print '------Accuracy Rate------'
-    for result in results:
-        print result
+    for (dataFile, result) in zip(openFiles, results):
+        print dataFile.name
+        print result + '\n'
+    # for result in results:
+    #     print result
 
     saveErrorPatternResults('Result/matchingResult%s.csv' % (resultStr), totalErrorPattern, totalWordPattern, wordDic)
     
@@ -393,7 +403,7 @@ if openFiles:
 
     saveSinglePointResults('Result/pointPosResult%s.csv' % (resultStr), totalPointPos)
 
-    savePointPairResults('Result/pointPairResult%s.csv' % (resultStr), totalPointPair)
+    savePointPairResults('Result/pointPairResult%s.csv' % (resultStr), totalPointPair, True)
 
     # fileNo = 8
 

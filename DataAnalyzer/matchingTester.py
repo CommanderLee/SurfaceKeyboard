@@ -397,6 +397,8 @@ if openFiles:
     # for result in results:
     #     print result
 
+    # resultStr = '-16users'
+
     saveErrorPatternResults('Result/matchingResult%s.csv' % (resultStr), totalErrorPattern, totalWordPattern, wordDic)
     
     saveWordPositionResults('Result/wordPosResult%s.csv' % (resultStr), totalWordPos, wordDic)

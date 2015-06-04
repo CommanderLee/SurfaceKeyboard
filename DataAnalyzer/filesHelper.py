@@ -152,20 +152,55 @@ def savePointPairResults(fileName, pointPair, analyze):
                     RatioVecLen[i] = vecLen[i] / (KbdVecLen[i] + 1)
                     DistRad[i] = min(abs(rad1[i] - KbdRad1[i]), abs(rad2[i] - KbdRad2[i]))
 
+        validMarkQ = np.ones(len(charPair), int)
+
         totalArray = np.array(zip(charPair, pattern, userName, vecX, vecY, vecLen, rad1, rad2,
             KbdVecX, KbdVecY, KbdVecLen, KbdRad1, KbdRad2, 
-            RatioVecX, RatioVecY, RatioVecLen, DistRad), 
+            RatioVecX, RatioVecY, RatioVecLen, DistRad, validMarkQ), 
             dtype=[('charPair', 'S5'), ('pattern', 'S5'), ('userName', 'S15'), ('vecX', float), ('vecY', float), ('vecLen', float), ('rad1', float), ('rad2', float), 
             ('KbdVecX', float), ('KbdVecY', float), ('KbdVecLen', float), ('KbdRad1', float), ('KbdRad2', float), 
-            ('RatioVecX', float), ('RatioVecY', float), ('RatioVecLen', float), ('DistRad', float)])
+            ('RatioVecX', float), ('RatioVecY', float), ('RatioVecLen', float), ('DistRad', float), ('validMarkQ', int)])
         totalArray.sort(order='charPair')
 
+        # Mark the invalid points
+        lastChar = 0
+        charPair = totalArray['charPair']
+        vecX = totalArray['vecX']
+        vecY = totalArray['vecY']
+        vecLen = totalArray['vecLen']
+        for i in range(len(charPair)):
+            if (i < len(charPair)-1 and charPair[i] != charPair[i+1]) or i == len(charPair)-1:
+                # Check range: [lastChar, i]
+                if i - lastChar > 10:
+                    xQ1 = np.percentile(vecX[lastChar:i+1], 25)
+                    xQ3 = np.percentile(vecX[lastChar:i+1], 75)
+                    xIQR = xQ3 - xQ1
+                    xLower = xQ1 - 1.5 * xIQR
+                    xUpper = xQ3 + 1.5 * xIQR
+
+                    yQ1 = np.percentile(vecY[lastChar:i+1], 25)
+                    yQ3 = np.percentile(vecY[lastChar:i+1], 75)
+                    yIQR = yQ3 - yQ1
+                    yLower = yQ1 - 1.5 * yIQR
+                    yUpper = yQ3 + 1.5 * yIQR
+                    
+                    lenQ1 = np.percentile(vecLen[lastChar:i+1], 25)
+                    lenQ3 = np.percentile(vecLen[lastChar:i+1], 75)
+                    lenIQR = lenQ3 - lenQ1
+                    lenLower = lenQ1 - 1.5 * lenIQR
+                    lenUpper = lenQ3 + 1.5 * lenIQR
+
+                    for j in range(lastChar, i+1):
+                        if vecX[j] < xLower or vecX[j] > xUpper or vecY[j] < yLower or vecY[j] > yUpper or vecLen[j] < lenLower or vecLen[j] > lenUpper:
+                            totalArray['validMarkQ'][j] = 0
+
+                lastChar = i + 1
 
         # textStructArray = np.array(textStruct, dtype = [('text', 'S50'), ('totalValue', float), ('oneHandValue', float)])
         # print len(pointPair), len(charPair), charPair[3]
         
     writeFile = open(fileName, 'w')
-    writeFile.write('charPair, pattern, userName, vecX, vecY, vecLen, rad(-pi~pi), rad(0~2pi), KbdVecX, KbdVecY, KbdVecLen, KbdRad1, KbdRad2, RatioVecX, RatioVecY, RatioVecLen, DistRad\n')
+    writeFile.write('charPair, pattern, userName, vecX, vecY, vecLen, rad(-pi~pi), rad(0~2pi), KbdVecX, KbdVecY, KbdVecLen, KbdRad1, KbdRad2, RatioVecX, RatioVecY, RatioVecLen, DistRad, validMarkQ\n')
     for array in totalArray:
         writeFile.write(str(array).strip('()') + '\n')
 

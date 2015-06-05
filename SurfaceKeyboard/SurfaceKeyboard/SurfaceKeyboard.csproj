@@ -60,6 +60,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="VectorParameter.cs" />
     <Compile Include="WindowUserId.xaml.cs">
       <DependentUpon>WindowUserId.xaml</DependentUpon>
     </Compile>
@@ -110,7 +111,6 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
-    <None Include="Resources\en_US_wordlist.combined" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\hand_calibration_off.png" />

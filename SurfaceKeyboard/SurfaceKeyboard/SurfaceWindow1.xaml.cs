@@ -1452,25 +1452,46 @@ namespace SurfaceKeyboard
             if (testControl)
             {
                 // Convert currGesture -> double array X/Y
+                int maxListLen = 20;
+                int counter = 0;
                 List<double> listX, listY;
                 listX = new List<double>();
                 listY = new List<double>();
                 foreach (GesturePoints gp in currGestures)
                 {
-                    if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Wait)
+                    if (counter >= maxListLen)
+                    {
+                        break;
+                    }
+                    else if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Wait)
                     {
                         listX.Add(gp.getStartPoint().getX());
                         listY.Add(gp.getStartPoint().getY());
+                        ++counter;
                     }
                 }
 
                 List<KeyValuePair<string, double>> probWords = wordPredictor.predict(listX.ToArray(), listY.ToArray());
 
-                int hintLen = Math.Min(5, probWords.Count);
+                int maxHintLen = 5;
+                counter = 0;
                 string hint = "";
-                for (var i = 0; i < hintLen; ++i)
+                for (var i = 0; i < probWords.Count; ++i)
                 {
-                    hint += probWords[i] + " ;   ";
+                    if (counter >= maxHintLen)
+                    {
+                        break;
+                    }
+                    else if (i > 0 && probWords[i - 1].Key == probWords[i].Key)
+                    {
+                        // same word
+                        continue;
+                    }
+                    else
+                    {
+                        hint += probWords[i].Key + " ;   ";
+                        ++counter;
+                    }
                 }
                 TextHintBlk.Text = hint;
             }
@@ -1486,8 +1507,7 @@ namespace SurfaceKeyboard
             {
                 if (!wordPredictor.loadStatus)
                 {
-                    wordPredictor.loadCorpus();
-                    wordPredictor.loadStatus = true;
+                    wordPredictor.initialize();
 
                     // Debug:
                     //double[] x = new double[] {1,2,3};

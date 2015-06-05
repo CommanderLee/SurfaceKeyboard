@@ -113,6 +113,9 @@ namespace SurfaceKeyboard
 
         List<Ellipse>       circleList = new List<Ellipse>();
 
+        bool                testControl = false;
+        WordPredictor       wordPredictor;
+
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -186,6 +189,8 @@ namespace SurfaceKeyboard
             userId = userIdWindow.getUserId();
 
             updateWindowTitle();
+
+            wordPredictor = new WordPredictor();
         }
 
         /// <summary>
@@ -1441,16 +1446,36 @@ namespace SurfaceKeyboard
             clearKbdFocus(CircleBtn);
         }
 
+        private void switchTest()
+        {
+            if (testControl)
+            {
+                TestBtn.Content = "Test OFF";
+            }
+            else
+            {
+                if (!wordPredictor.loadStatus)
+                {
+                    wordPredictor.loadCorpus();
+                }
+                TestBtn.Content = "Test ON";
+            }
+            testControl = !testControl;
+        }
+
         private void TestBtn_TouchDown(object sender, TouchEventArgs e)
         {
-
+            switchTest();
+            clearKbdFocus(TestBtn);
         }
 
         private void TestBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (currDevice != InputDevice.Hand)
+                switchTest();
 
+            clearKbdFocus(TestBtn);
         }
-
 
     }
 }

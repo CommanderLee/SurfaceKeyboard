@@ -25,9 +25,17 @@
                    Canvas.Left="230"
                    Canvas.Top="0"
                    Width="1120"
-                   Height="180"
+                   Height="120"
                    FontFamily="Courier New"
                    FontSize="38" />
+
+                <TextBlock Name="TextHintBlk" 
+                   Canvas.Left="230"
+                   Canvas.Top="120"
+                   Width="1120"
+                   Height="60"
+                   FontFamily="Courier New"
+                   FontSize="30" />
 
                 <Button Name="NextBtn"
                 Width="1590"
@@ -82,9 +90,16 @@
                 <Button Name="CircleBtn"
                         Canvas.Left="1475" Canvas.Top="95" 
                         Content="Circle OFF"
-                        Height="85"  Width="120"
+                        Height="40"  Width="120"
                         FontSize="20" BorderThickness="2" 
                         TouchDown="CircleBtn_TouchDown" Click="CircleBtn_Click"/>
+
+                <Button Name="TestBtn"
+                        Canvas.Left="1475" Canvas.Top="140" 
+                        Content="Test OFF"
+                        Height="40"  Width="120"
+                        FontSize="20" BorderThickness="2" 
+                        TouchDown="TestBtn_TouchDown" Click="TestBtn_Click"/>
 
             </Canvas>    
         </Border>

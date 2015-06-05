@@ -1441,6 +1441,16 @@ namespace SurfaceKeyboard
             clearKbdFocus(CircleBtn);
         }
 
+        private void TestBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+
+        }
+
+        private void TestBtn_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
 
     }
 }

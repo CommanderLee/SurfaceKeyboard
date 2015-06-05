@@ -562,6 +562,7 @@ namespace SurfaceKeyboard
                 ++hpNo;
                 updateTaskTextBlk();
                 updateStatusBlock();
+                updateHint();
             }
             else
             {
@@ -1446,6 +1447,35 @@ namespace SurfaceKeyboard
             clearKbdFocus(CircleBtn);
         }
 
+        private void updateHint()
+        {
+            if (testControl)
+            {
+                // Convert currGesture -> double array X/Y
+                List<double> listX, listY;
+                listX = new List<double>();
+                listY = new List<double>();
+                foreach (GesturePoints gp in currGestures)
+                {
+                    if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Wait)
+                    {
+                        listX.Add(gp.getStartPoint().getX());
+                        listY.Add(gp.getStartPoint().getY());
+                    }
+                }
+
+                List<KeyValuePair<string, double>> probWords = wordPredictor.predict(listX.ToArray(), listY.ToArray());
+
+                int hintLen = Math.Min(5, probWords.Count);
+                string hint = "";
+                for (var i = 0; i < hintLen; ++i)
+                {
+                    hint += probWords[i] + " ;   ";
+                }
+                TextHintBlk.Text = hint;
+            }
+        }
+
         private void switchTest()
         {
             if (testControl)
@@ -1457,6 +1487,12 @@ namespace SurfaceKeyboard
                 if (!wordPredictor.loadStatus)
                 {
                     wordPredictor.loadCorpus();
+                    wordPredictor.loadStatus = true;
+
+                    // Debug:
+                    //double[] x = new double[] {1,2,3};
+                    //double[] y = new double[] {4,5,6};
+                    //List<string> probWords = wordPredictor.predict(x, y);
                 }
                 TestBtn.Content = "Test ON";
             }

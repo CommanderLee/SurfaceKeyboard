@@ -174,25 +174,43 @@ def calcKeyboardLayout():
     # plt.show()
     return [posX, posY]
 
-def calcWordVec(word):
+def calcWordVec(word, vecParams):
     "Calculate word vector & points within each hand"
-    # Return one point as well. (also in vec list, but it is not a vector)
+    
     pntIdL, pntIdR = [], []
     vecL, vecR = [], []
 
-    for char in word:
+    for i in range(len(word)):
+        char = word[i]
         charNo = ord(char) - ord('a')
         if handCode[charNo + 1] == '0':
             if len(pntIdL) > 0:
-                vecL.append((letterPosX[charNo] - letterPosX[pntIdL[-1]], letterPosY[charNo] - letterPosY[pntIdL[-1]]))
-            pntIdL.append(charNo)
+                charPair = word[pntIdL[-1]] + char
+                vecL.append(vecParams[charPair])
+            pntIdL.append(i)
         else:
             if len(pntIdR) > 0:
-                vecR.append((letterPosX[charNo] - letterPosX[pntIdR[-1]], letterPosY[charNo] - letterPosY[pntIdR[-1]]))
-            pntIdR.append(charNo)
+                charPair = word[pntIdR[-1]] + char
+                vecR.append(vecParams[charPair])
+            pntIdR.append(i)
 
-    pntL = [(letterPosX[i], letterPosY[i]) for i in pntIdL]
-    pntR = [(letterPosX[i], letterPosY[i]) for i in pntIdR]
+    # for char in word:
+    #     charNo = ord(char) - ord('a')
+    #     if handCode[charNo + 1] == '0':
+    #         if len(pntIdL) > 0:
+    #             vecL.append((letterPosX[charNo] - letterPosX[pntIdL[-1]], letterPosY[charNo] - letterPosY[pntIdL[-1]]))
+    #         pntIdL.append(charNo)
+    #     else:
+    #         if len(pntIdR) > 0:
+    #             vecR.append((letterPosX[charNo] - letterPosX[pntIdR[-1]], letterPosY[charNo] - letterPosY[pntIdR[-1]]))
+    #         pntIdR.append(charNo)
+
+    # pntL = [(userPosX[ord(word[i])-ord('a')], userPosY[ord(word[i])-ord('a')]) for i in pntIdL]
+    # pntR = [(userPosX[ord(word[i])-ord('a')], userPosY[ord(word[i])-ord('a')]) for i in pntIdR]
+    pntL = [(letterPosX[ord(word[i])-ord('a')], letterPosY[ord(word[i])-ord('a')]) for i in pntIdL]
+    pntR = [(letterPosX[ord(word[i])-ord('a')], letterPosY[ord(word[i])-ord('a')]) for i in pntIdR]
+    # pntL = [(letterPosX[i], letterPosY[i]) for i in pntIdL]
+    # pntR = [(letterPosX[i], letterPosY[i]) for i in pntIdR]
     return [pntL, pntR, vecL, vecR]
 
 def encode(word):

@@ -13,9 +13,14 @@ paramA = 2.903950
 paramB = -2051.836766
 
 # Key-Size
-keySizeX = 39
-keySizeY = 42
+keySizeX = 39.0
+keySizeY = 42.0
 keySizeLen = 57.3149195236284
+
+# Keyboard-Size
+kbdSizeX = 407.0
+kbdSizeY = 175.0
+kbdSizeLen = 443.02821580572044
 
 # Pre-processing: Encode the words. 0:left, 1:right, 2:spacebar.
 # spacebar a b c d e f g

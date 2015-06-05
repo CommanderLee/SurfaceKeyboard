@@ -190,10 +190,27 @@ if openFiles:
                     if i > 0:
                         # point pair <word[i-1], word[i]>
                         charPair = word[i-1:i+1]
-                        pattern = handCode[ord(word[i-1]) - ord('a') + 1] + handCode[ord(word[i]) - ord('a') + 1]
+                        code1 = handCode[ord(word[i-1]) - ord('a') + 1]
+                        code2 = handCode[ord(word[i]) - ord('a') + 1]
+                        pattern = code1 + code2
                         vecX = listX[i + listNo] - listX[i - 1 + listNo]
                         vecY = listY[i + listNo] - listY[i - 1 + listNo]
                         totalPointPair.append((charPair, pattern, vecX, vecY, fileNameAbbr))
+
+                        # Add one-hand vectors. e.g. 0110101, add 0-0, 0-0 as well. 
+                        if code1 != code2:
+                            lastSameId = -1
+                            for j in range(i-2, -1, -1):
+                                # search i-2 -> 0
+                                code0 = handCode[ord(word[j]) - ord('a') + 1]
+                                if code0 == code2:
+                                    lastSameId = j
+                                    break
+                            if lastSameId >= 0:
+                                pattern = code0 + code2
+                                vecX = listX[i + listNo] - listX[lastSameId + listNo]
+                                vecY = listY[i + listNo] - listY[lastSameId + listNo]
+                                totalPointPair.append((word[lastSameId]+word[i], pattern, vecX, vecY, fileNameAbbr))
                     elif listNo > 0:
                         # point pair <space, word[0]>
                         charPair = '-' + word[i]
@@ -222,7 +239,7 @@ if openFiles:
                 
                 # Save the correct code
                 code = encode(word)
-                if {code}.issubset(wordPattern):
+                if {code}.issubset(wordPattern.keys()):
                     wordPattern[code] += 1
                 else:
                     wordPattern[code] = 1
@@ -239,11 +256,38 @@ if openFiles:
                             for i in range(wordLen):
                                 if userCode[i] == '0':
                                     if len(myPntIdL) > 0:
-                                        myVecL.append((listX[listNo + i] - listX[myPntIdL[-1]], listY[listNo + i] - listY[myPntIdL[-1]]))
+                                        vecX = listX[listNo + i] - listX[myPntIdL[-1]]
+                                        vecY = listY[listNo + i] - listY[myPntIdL[-1]]
+                                        vecLen = math.sqrt(math.pow(vecX, 2) + math.pow(vecY, 2))
+                                        rad1 = 0.0
+                                        rad2 = 0.0
+                                        if vecLen > 0:
+                                            if vecY > 0:
+                                                rad1 = math.acos(vecX / vecLen)
+                                                rad2 = rad1
+                                            else:
+                                                rad1 = -math.acos(vecX / vecLen)
+                                                rad2 = math.pi + math.acos(-vecX / vecLen)
+                                        myVecL.append((vecX, vecY, vecLen, rad1, rad2))
+                                        # print (vecX, vecY, vecLen, rad1, rad2)
+
                                     myPntIdL.append(listNo + i)
                                 else:
                                     if len(myPntIdR) > 0:
-                                        myVecR.append((listX[listNo + i] - listX[myPntIdR[-1]], listY[listNo + i] - listY[myPntIdR[-1]]))
+                                        vecX = listX[listNo + i] - listX[myPntIdR[-1]]
+                                        vecY = listY[listNo + i] - listY[myPntIdR[-1]]
+                                        vecLen = math.sqrt(math.pow(vecX, 2) + math.pow(vecY, 2))
+                                        rad1 = 0.0
+                                        rad2 = 0.0
+                                        if vecLen > 0:
+                                            if vecY > 0:
+                                                rad1 = math.acos(vecX / vecLen)
+                                                rad2 = rad1
+                                            else:
+                                                rad1 = -math.acos(vecX / vecLen)
+                                                rad2 = math.pi + math.acos(-vecX / vecLen)
+                                        myVecR.append((vecX, vecY, vecLen, rad1, rad2))
+                                        
                                     myPntIdR.append(listNo + i)
 
                             myPntL = [(listX[i], listY[i]) for i in myPntIdL]
@@ -255,59 +299,122 @@ if openFiles:
                             # Test each candidates
                             for candWord in selWords:
                                 # Get vector of possible word.
-                                [pntL, pntR, vecL, vecR] = calcWordVec(candWord)
-                                distance = 0
-                                if len(myVecL) > 0:
-                                    sub = np.array(myVecL) - np.array(vecL)
-                                    subLen = [math.sqrt(si.dot(si)) for si in sub]
-                                    distance += np.sum(subLen)
-                                    # print '    %s  (1)  %f' % (candWord, np.sum(subLen))
-                                elif len(myPntL) > 0:
+                                [pntL, pntR, vecL, vecR] = calcWordVec(candWord, vecParams)
+                                distance = 0.0
+
+                                for i in range(len(myVecL)):
+                                    (mVecX, mVecY, mVecLen, mRad1, mRad2) = myVecL[i]
+                                    (vecX, vecY, vecLen, rad1, rad2) = vecL[i]
+                                    # print (vecX, vecY, vecLen, rad1, rad2)
+
+                                    distX = abs(mVecX - vecX)
+                                    distY = abs(mVecY - vecY)
+
+                                    distLen = abs(mVecLen - vecLen)
+                                    distRad = min(abs(mRad1-rad1), abs(mRad2-rad2))
+
+                                    distance += 2.5 * distLen / kbdSizeLen + distRad / math.pi + distX / kbdSizeX + distY / kbdSizeY
+                                    # distance += math.pow(distLen / kbdSizeLen, 2) + math.pow(distRad / math.pi, 2)
+                                    # print '1:%f' % (distLen / kbdSizeLen + distRad / math.pi)
+
+                                if len(myPntL) == 1:
                                     # Only one point on the Left
-                                    # sub = []
+                                    (mPosX, mPosY) = myPntL[0]
+                                    (posX, posY) = pntL[0]
+
                                     if len(myPntR) > 0:
-                                        # More than one point on the Right
-                                        sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
-                                        # If word is long enough, then no need to add this left point distance. That is, len -> inf, Dist -> 0.
-                                        distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 5.0)
-                                    # else: 
-                                    # TODO: Use a better model, instead of a intuitive one.
-                                    relativeMyPnt = np.array(myPntL[0]) - np.array((startX, startY))
-                                    relativePnt = np.array((pntL[0][0]/445*rangeX, pntL[0][1]/188*rangeY))
-                                    sub = relativeMyPnt - relativePnt
-                                    # if candWord == word:
-                                    #     print 'Correct', math.sqrt(sub.dot(sub)), myPntL[0], relativeMyPnt, pntL[0], relativePnt
-                                    # else:
-                                    #     print 'Wrong', math.sqrt(sub.dot(sub)), myPntL[0], relativeMyPnt, pntL[0], relativePnt
-                                    distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 10.0)
-                                
-                                if len(myVecR) > 0:
-                                    sub = np.array(myVecR) - np.array(vecR)
-                                    subLen = [math.sqrt(si.dot(si)) for si in sub]
-                                    distance += np.sum(subLen)
-                                    # print '    %s  (3)  %f' % (candWord, np.sum(subLen))
-                                elif len(myPntR) > 0:
+                                        mVx = myPntR[0][0] - mPosX
+                                        mVy = myPntR[0][1] - mPosY
+                                        vX = pntR[0][0] - posX
+                                        vY = pntR[0][1] - posY
+                                        distance += (abs(mVx - vX) / kbdSizeLen + abs(mVy - vY) / kbdSizeLen) * math.exp(-wordLen / 10.0)
+
+                                    distance += (abs(mPosX-posX) / kbdSizeLen + abs(mPosY-posY) / kbdSizeLen) * math.exp(-wordLen / 10.0)
+                                    # distance += math.pow(abs(mPosX-posX) / kbdSizeLen, 2) + math.pow(abs(mPosY-posY) / kbdSizeLen, 2)
+                                    # print '2:%f' % (abs(mPosX-posX) / kbdSizeLen + abs(mPosY-posY) / kbdSizeLen)
+
+                                for i in range(len(myVecR)):
+                                    (mVecX, mVecY, mVecLen, mRad1, mRad2) = myVecR[i]
+                                    (vecX, vecY, vecLen, rad1, rad2) = vecR[i]
+
+                                    distX = abs(mVecX - vecX)
+                                    distY = abs(mVecY - vecY)
+
+                                    distLen = abs(mVecLen - vecLen)
+                                    distRad = min(abs(mRad1-rad1), abs(mRad2-rad2))
+
+                                    distance += 2.5 * distLen / kbdSizeLen + distRad / math.pi + distX / kbdSizeX + distY / kbdSizeY
+                                    # distance += math.pow(distLen / kbdSizeLen, 2) + math.pow(distRad / math.pi, 2)
+                                    # print '3:%f' % (distLen / kbdSizeLen + distRad / math.pi)
+
+                                if len(myPntR) == 1:
                                     # Only one point on the Right
-                                    # sub = []
+                                    (mPosX, mPosY) = myPntR[0]
+                                    (posX, posY) = pntR[0]
+
                                     if len(myPntL) > 0:
-                                        # More than one point on the Left
-                                        sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
-                                        # If word is long enough, then no need to add this right point distance. That is, len -> inf, Dist -> 0.
-                                        distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 5.0)
-                                    # else: 
-                                    relativeMyPnt = np.array(myPntR[0]) - np.array((startX, startY))
-                                    relativePnt = np.array((pntR[0][0]/445*rangeX, pntR[0][1]/188*rangeY))
-                                    sub = relativeMyPnt - relativePnt
-                                    distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 10.0)
+                                        mVx = myPntL[0][0] - mPosX
+                                        mVy = myPntL[0][1] - mPosY
+                                        vX = pntL[0][0] - posX
+                                        vY = pntL[0][1] - posY
+                                        distance += (abs(mVx - vX) / kbdSizeLen + abs(mVy - vY) / kbdSizeLen) * math.exp(-wordLen / 10.0)
+
+                                    distance += (abs(mPosX-posX) / kbdSizeLen + abs(mPosY-posY) / kbdSizeLen) * math.exp(-wordLen / 10.0)
+                                    # distance += math.pow(abs(mPosX-posX) / kbdSizeLen, 2) + math.pow(abs(mPosY-posY) / kbdSizeLen, 2)
+                                    # print '4:%f' % (abs(mPosX-posX) / kbdSizeLen + abs(mPosY-posY) / kbdSizeLen)
+
+                                # if len(myVecL) > 0:
+                                #     sub = np.array(myVecL) - np.array(vecL)
+                                #     subLen = [math.sqrt(si.dot(si)) for si in sub]
+                                #     distance += np.sum(subLen)
+                                #     # print '    %s  (1)  %f' % (candWord, np.sum(subLen))
+                                # elif len(myPntL) > 0:
+                                #     # Only one point on the Left
+                                #     # sub = []
+                                #     if len(myPntR) > 0:
+                                #         # More than one point on the Right
+                                #         sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
+                                #         # If word is long enough, then no need to add this left point distance. That is, len -> inf, Dist -> 0.
+                                #         distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 5.0)
+                                #     # else: 
+                                #     # TODO: Use a better model, instead of a intuitive one.
+                                #     relativeMyPnt = np.array(myPntL[0]) - np.array((startX, startY))
+                                #     relativePnt = np.array((pntL[0][0]/445*rangeX, pntL[0][1]/188*rangeY))
+                                #     sub = relativeMyPnt - relativePnt
+                                #     # if candWord == word:
+                                #     #     print 'Correct', math.sqrt(sub.dot(sub)), myPntL[0], relativeMyPnt, pntL[0], relativePnt
+                                #     # else:
+                                #     #     print 'Wrong', math.sqrt(sub.dot(sub)), myPntL[0], relativeMyPnt, pntL[0], relativePnt
+                                #     distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 10.0)
+                                
+                                # if len(myVecR) > 0:
+                                #     sub = np.array(myVecR) - np.array(vecR)
+                                #     subLen = [math.sqrt(si.dot(si)) for si in sub]
+                                #     distance += np.sum(subLen)
+                                #     # print '    %s  (3)  %f' % (candWord, np.sum(subLen))
+                                # elif len(myPntR) > 0:
+                                #     # Only one point on the Right
+                                #     # sub = []
+                                #     if len(myPntL) > 0:
+                                #         # More than one point on the Left
+                                #         sub = (np.array(myPntR[0]) - np.array(myPntL[0])) - (np.array(pntR[0]) - np.array(pntL[0]))
+                                #         # If word is long enough, then no need to add this right point distance. That is, len -> inf, Dist -> 0.
+                                #         distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 5.0)
+                                #     # else: 
+                                #     relativeMyPnt = np.array(myPntR[0]) - np.array((startX, startY))
+                                #     relativePnt = np.array((pntR[0][0]/445*rangeX, pntR[0][1]/188*rangeY))
+                                #     sub = relativeMyPnt - relativePnt
+                                #     distance += math.sqrt(sub.dot(sub)) * math.exp(-wordLen / 10.0)
                                 
                                 # Compare each of the possible word.
                                 # Try: if vecList=[], (only one point), calculate the probability of that point
+                                # print '    %f' % (distance)
                                 wordProb.append((candWord, distance))
 
                     # At least one possible answer.
                     assert len(wordProb) > 0
 
-                    wordProbArray = np.array(wordProb, dtype = [('word', 'S20'), ('dist', int)])
+                    wordProbArray = np.array(wordProb, dtype = [('word', 'S20'), ('dist', float)])
                     wordProbArray.sort(order = 'dist')
                     # print wordProbArray
 
@@ -402,7 +509,7 @@ if openFiles:
     #     print result
 
     print 'Save to files...'
-    resultStr = '-16users-v1.1'
+    resultStr = '-16users-v2.3'
 
     saveErrorPatternResults('Result/matchingResult%s.csv' % (resultStr), totalErrorPattern, totalWordPattern, wordDic)
     print 'Matching Result Done.'

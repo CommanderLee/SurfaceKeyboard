@@ -1305,10 +1305,26 @@ namespace SurfaceKeyboard
             // Delete at least one character 
             if (removeStart >= 0)
             {
-                for (; removeStart > 0; --removeStart)
+                if (testControl)
                 {
-                    if (currText[removeStart - 1] == ' ')
-                        break;
+                    if (removeStart >= currSentence.Length)
+                        removeStart = currSentence.Length;
+                    else
+                    {
+                        for (; removeStart > 0; --removeStart)
+                        {
+                            if (currSentence[removeStart - 1] == ' ')
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    for (; removeStart > 0; --removeStart)
+                    {
+                        if (currText[removeStart - 1] == ' ')
+                            break;
+                    }
                 }
 
                 switch (currDevice)
@@ -1337,10 +1353,24 @@ namespace SurfaceKeyboard
 
                 hpNo = removeStart;
                 ++deleteNum;
-            }
 
-            updateStatusBlock();
-            updateTaskTextBlk();
+                if (testControl)
+                {
+                    currWord = "";
+                    // Delete word and affect currSentence. If not, only affect currWord.
+                    if (hpNo < currSentence.Length)
+                    {
+                        currSentence = currSentence.Substring(0, hpNo);
+                    }
+                    updateHint();
+                }
+                updateStatusBlock();
+                updateTaskTextBlk();
+            }
+            else
+            {
+                clearSentence();
+            }
         }
 
         private void DeleteBtn_TouchDown(object sender, TouchEventArgs e)
@@ -1395,18 +1425,30 @@ namespace SurfaceKeyboard
 
                 hpNo = removeStart;
                 ++deleteNum;
-            }
 
-            if (testControl)
-            {
-                currSentence = currText.Substring(0, hpNo);
-                string[] wordsSplit = currSentence.Split(' ');
-                currWord = wordsSplit.Last();
-                currSentence = currSentence.Substring(0, currSentence.Length - currWord.Length);
-                updateHint();
+                if (testControl)
+                {
+                    // Doesnot affect currSentence if hpNo >= currSentenceLen. 
+                    if (hpNo < currSentence.Length)
+                    {
+                        // Affect a char of currSentence
+                        for (; removeStart > 0; --removeStart)
+                        {
+                            if (currSentence[removeStart - 1] == ' ')
+                                break;
+                        }
+                        currSentence = currSentence.Substring(0, removeStart);
+                    }
+                    currWord = "";
+                    updateHint();
+                }
+                updateStatusBlock();
+                updateTaskTextBlk();
             }
-            updateStatusBlock();
-            updateTaskTextBlk();
+            else
+            {
+                clearSentence();
+            }
         }
 
         private void BackspaceBtn_TouchDown(object sender, TouchEventArgs e)
@@ -1504,7 +1546,7 @@ namespace SurfaceKeyboard
             }
 
             // Process space
-            if (testControl && isSpacebar)
+            if (testControl && isSpacebar && currWord != "")
             {
                 currSentence += currWord + " ";
                 currWord = "";
@@ -1573,6 +1615,7 @@ namespace SurfaceKeyboard
                             if (counter == 0)
                             {
                                 currWord = tempWord;
+                                Console.WriteLine("Default Word: " + currWord);
                             }
                             textHints[counter].Text = tempWord + ";  ";
                             ++counter;

@@ -116,6 +116,11 @@ namespace SurfaceKeyboard
         bool                testControl = false;
         WordPredictor       wordPredictor;
         string              currWord, currSentence;
+
+        // currSelect: highlight current selection. from [0, MAX)
+        int                 currSelect;
+        SolidColorBrush     selectColor = Brushes.DarkBlue;
+        SolidColorBrush     otherColor = Brushes.DarkGreen;
         TextBlock[]         textHints;
         const int           MAX_HINT_NUMBER = 5;
 
@@ -509,7 +514,12 @@ namespace SurfaceKeyboard
 
             if (findPoints != null)
             {
-                findPoints.Add(touchPoint);
+                int movementLevel = findPoints.Add(touchPoint);
+                if (testControl && movementLevel != 0)
+                {
+                    updateSelection(movementLevel);
+                    findPoints.setStatus(HandStatus.Select);
+                }
             }
             else
             {
@@ -822,60 +832,68 @@ namespace SurfaceKeyboard
                 if (myPoints != null)
                 //if (movement.ContainsKey(id))
                 {
-                    // If the status is unknown, try to check its status
-                    if (GesturePoints.getGestureSwitch() && 
-                        (myPoints.getStatus() == HandStatus.Wait || myPoints.getStatus() == HandStatus.Unknown))
+                    if (myPoints.getStatus() == HandStatus.Select)
                     {
-                        HandStatus gestureStatus = myPoints.updateGestureStatus();
-                        // Check Distance 
-                        if (gestureStatus == HandStatus.Backspace)
-                        {
-                            // Reset the hpNo (added one when touching)
-                            --hpNo;
-
-                            // Delete ONE WORD
-                            deleteWord();
-                        }
-                        else if (gestureStatus == HandStatus.Enter)
-                        {
-                            // Reset the hpNo (added one when touching)
-                            --hpNo;
-
-                            // Show the next task 
-                            gotoNextText();
-
-                            // TODO: Output 'Enter' if applicable (in real text editor)
-                        }
-                        // Do not need to do anything when type
-                    }
-
-                    double movingDist = myPoints.calcMovingParam();
-                    Console.WriteLine("Move " + movingDist + " when release.");
-                    // Try to fix a system error of the Surface 2.0 Platform
-                    // When you touch 2 close points, say pA and pB, in a short time, 
-                    // they will be recognized as: pA down -> a short move -> pB up.
-                    if (myPoints.getStatus() == HandStatus.Wait && movingDist > TYPING_DIST_THRE)
-                    {
-                        // Recover the missing point
-                        int newId = id * 10;
-                        Console.WriteLine("Recover missing point:" + x + "," + y + "," + newId);
-                        ++hpIndex;
-                        saveTouchPoints(x, y, newId);
-                        GesturePoints newPoints = findGesturePoints(newId);
-                        newPoints.setStatus(HandStatus.Type);
-                        newPoints.getStartPoint().setType(HPType.Recover);
-                        if (circleControl)
-                        {
-                            drawCircle(x, y, recoverCircleBrush, recoverCircleSize);
-                        }
-                    }
-                    
-                    myPoints.checkTyping();
-                    if (myPoints.getStatus() == HandStatus.Unknown)
-                    {
+                        // Reset the hpNo (added one when touching)
                         --hpNo;
-                        updateStatusBlock();
-                        updateTaskTextBlk();
+                    }
+                    else
+                    {
+                        // If the status is unknown, try to check its status
+                        if (GesturePoints.getGestureSwitch() &&
+                            (myPoints.getStatus() == HandStatus.Wait || myPoints.getStatus() == HandStatus.Unknown))
+                        {
+                            HandStatus gestureStatus = myPoints.updateGestureStatus();
+                            // Check Distance 
+                            if (gestureStatus == HandStatus.Backspace)
+                            {
+                                // Reset the hpNo (added one when touching)
+                                --hpNo;
+
+                                // Delete ONE WORD
+                                deleteWord();
+                            }
+                            else if (gestureStatus == HandStatus.Enter)
+                            {
+                                // Reset the hpNo (added one when touching)
+                                --hpNo;
+
+                                // Show the next task 
+                                gotoNextText();
+
+                                // TODO: Output 'Enter' if applicable (in real text editor)
+                            }
+                            // Do not need to do anything when type
+                        }
+
+                        double movingDist = myPoints.calcMovingParam();
+                        Console.WriteLine("Move " + movingDist + " when release.");
+                        // Try to fix a system error of the Surface 2.0 Platform
+                        // When you touch 2 close points, say pA and pB, in a short time, 
+                        // they will be recognized as: pA down -> a short move -> pB up.
+                        if (myPoints.getStatus() == HandStatus.Wait && movingDist > TYPING_DIST_THRE)
+                        {
+                            // Recover the missing point
+                            int newId = id * 10;
+                            Console.WriteLine("Recover missing point:" + x + "," + y + "," + newId);
+                            ++hpIndex;
+                            saveTouchPoints(x, y, newId);
+                            GesturePoints newPoints = findGesturePoints(newId);
+                            newPoints.setStatus(HandStatus.Type);
+                            newPoints.getStartPoint().setType(HPType.Recover);
+                            if (circleControl)
+                            {
+                                drawCircle(x, y, recoverCircleBrush, recoverCircleSize);
+                            }
+                        }
+
+                        myPoints.checkTyping();
+                        if (myPoints.getStatus() == HandStatus.Unknown)
+                        {
+                            --hpNo;
+                            updateStatusBlock();
+                            updateTaskTextBlk();
+                        }
                     }
                 }
                 else
@@ -1559,6 +1577,41 @@ namespace SurfaceKeyboard
             clearKbdFocus(CircleBtn);
         }
 
+        private void updateSelection(int movementLevel)
+        {
+            // Find existing one:
+            if (movementLevel > 0)
+            {
+                // Move to right
+                int maxI = Math.Min(MAX_HINT_NUMBER - 1, currSelect + movementLevel);
+                for (var i = currSelect; i <= maxI; ++i)
+                {
+                    if (textHints[i].Text == "")
+                    {
+                        // Exceed.
+                        break;
+                    }
+                    else
+                    {
+                        textHints[currSelect].Background = otherColor;
+                        currSelect = i;
+                        textHints[currSelect].Background = selectColor;
+                    }
+                }
+            }
+            else
+            {
+                // Move to left. Note: movementLevel < 0.
+                int minI = Math.Max(0, currSelect + movementLevel);
+                textHints[currSelect].Background = otherColor;
+                currSelect = minI;
+                textHints[currSelect].Background = selectColor;
+            }
+            currWord = textHints[currSelect].Text;
+            updateHint();
+            updateTaskTextBlk();
+        }
+
         private bool checkSpace(double x, double y)
         {
             bool isSpacebar = false;
@@ -1635,13 +1688,17 @@ namespace SurfaceKeyboard
                         else
                         {
                             // Update default prediction:
-                            if (counter == 0)
+                            if (counter == currSelect)
                             {
                                 currWord = tempWord;
+                                textHints[counter].Background = selectColor;
                                 Console.WriteLine("Default Word: " + currWord);
                             }
+                            else
+                            {
+                                textHints[counter].Background = otherColor;
+                            }
                             textHints[counter].Text = tempWord;
-                            textHints[counter].Background = Brushes.DarkBlue;
                             ++counter;
                         }
                     }

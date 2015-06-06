@@ -32,39 +32,39 @@
                 <TextBlock Name="TextHintBlk0" 
                    Canvas.Left="230"
                    Canvas.Top="120"
-                   Width="224"
+                   Width="220"
                    Height="60"
                    FontFamily="Courier New"
                    FontSize="25" />
 
                 <TextBlock Name="TextHintBlk1" 
-                   Canvas.Left="454"
+                   Canvas.Left="455"
                    Canvas.Top="120"
-                   Width="224"
+                   Width="220"
                    Height="60"
                    FontFamily="Courier New"
                    FontSize="25" />
 
                 <TextBlock Name="TextHintBlk2" 
-                   Canvas.Left="678"
+                   Canvas.Left="680"
                    Canvas.Top="120"
-                   Width="224"
+                   Width="220"
                    Height="60"
                    FontFamily="Courier New"
                    FontSize="25" />
 
                 <TextBlock Name="TextHintBlk3" 
-                   Canvas.Left="902"
+                   Canvas.Left="905"
                    Canvas.Top="120"
-                   Width="224"
+                   Width="220"
                    Height="60"
                    FontFamily="Courier New"
                    FontSize="25" />
 
                 <TextBlock Name="TextHintBlk4" 
-                   Canvas.Left="1126"
+                   Canvas.Left="1130"
                    Canvas.Top="120"
-                   Width="224"
+                   Width="220"
                    Height="60"
                    FontFamily="Courier New"
                    FontSize="25" />

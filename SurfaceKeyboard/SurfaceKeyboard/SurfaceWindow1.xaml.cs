@@ -120,8 +120,8 @@ namespace SurfaceKeyboard
         const int           MAX_HINT_NUMBER = 5;
 
         const int           SPACE_TOP = 690;
-        const int           SPACE_LEFT = 770;
-        const int           SPACE_RIGHT = 1060;
+        const int           SPACE_LEFT = 760;
+        const int           SPACE_RIGHT = 1110;
 
         /// <summary>
         /// Default constructor.
@@ -989,6 +989,7 @@ namespace SurfaceKeyboard
             string fTextName = fTime + fTag + "_TaskText.txt";
             string fNameAll = fTime + fTag + ".csv";
             string fNameMajor = fTime + fTag + "_major.csv";
+            string fNameTest = fTime + fTag + "_test.csv";
 
             StatusTextBlk.Text = fPath + fNameAll;
 
@@ -1023,6 +1024,26 @@ namespace SurfaceKeyboard
 
                 case InputDevice.Hand:
                 case InputDevice.Mouse:
+                    if (testControl)
+                    {
+                        // Save another file, similar to the Physical Keyboard Test
+                        if (currWord.Length > 0)
+                        {
+                            currSentence += currWord;
+                            phyStrings.Add(currSentence + "," + handPoints.Last().getTime() + "," + deleteNum);
+                        }
+
+                        // Save raw input strings into file 
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameTest, true))
+                        {
+                            file.WriteLine("RawInput,TypingTime,DeleteNumber");
+                            foreach (string str in phyStrings)
+                            {
+                                file.WriteLine(str);
+                            }
+                        }
+                    }
+
                     // Save raw input points into file 
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameAll, true))
                     {
@@ -1119,6 +1140,8 @@ namespace SurfaceKeyboard
                             currSentence += currWord;
                             
                             // Save to file/string
+                            phyStrings.Add(currSentence + "," + handPoints.Last().getTime() + "," + deleteNum);
+
                             Console.WriteLine("Save: " + currSentence);
                         }
                         currSentence = "";
@@ -1617,20 +1640,21 @@ namespace SurfaceKeyboard
                                 currWord = tempWord;
                                 Console.WriteLine("Default Word: " + currWord);
                             }
-                            textHints[counter].Text = tempWord + ";  ";
+                            textHints[counter].Text = tempWord;
+                            textHints[counter].Background = Brushes.DarkBlue;
                             ++counter;
                         }
                     }
                     for (var c = counter; c < MAX_HINT_NUMBER; ++c)
                     {
-                        textHints[c].Text = ";  ";
+                        textHints[c].Text = "";
                     }
                 }
                 else
                 {
                     foreach (TextBlock tb in textHints)
                     {
-                        tb.Text = ";  ";
+                        tb.Text = "";
                     }
                 }
             }

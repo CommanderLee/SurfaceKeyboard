@@ -519,6 +519,10 @@ namespace SurfaceKeyboard
                 {
                     updateSelection(movementLevel);
                     findPoints.setStatus(HandStatus.Select);
+                    //--hpNo;
+
+                    // Give feedback when moving fingers
+                    updateHint();
                 }
             }
             else

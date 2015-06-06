@@ -1114,6 +1114,16 @@ namespace SurfaceKeyboard
                         //currValidPoints.Clear();
                         calibPoints.Clear();
 
+                        if (testControl)
+                        {
+                            currSentence += currWord;
+                            
+                            // Save to file/string
+                            Console.WriteLine("Save: " + currSentence);
+                        }
+                        currSentence = "";
+                        currWord = "";
+
                         // Clear the status if the calibration mode is ON 
                         if (calibStatus != CalibStatus.Off)
                         {
@@ -1387,6 +1397,14 @@ namespace SurfaceKeyboard
                 ++deleteNum;
             }
 
+            if (testControl)
+            {
+                currSentence = currText.Substring(0, hpNo);
+                string[] wordsSplit = currSentence.Split(' ');
+                currWord = wordsSplit.Last();
+                currSentence = currSentence.Substring(0, currSentence.Length - currWord.Length);
+                updateHint();
+            }
             updateStatusBlock();
             updateTaskTextBlk();
         }
@@ -1534,29 +1552,29 @@ namespace SurfaceKeyboard
                     List<KeyValuePair<string, double>> probWords = wordPredictor.predict(listX.ToArray(), listY.ToArray());
                     //Console.WriteLine("    " + probWords + " probable words.");
 
-                    // Update default prediction:
-                    if (probWords.Count > 0)
-                    {
-                        currWord = probWords[0].Key;
-                    }
-
                     // Show hint in the TextHintBlock
                     counter = 0;
 
                     for (var i = 0; i < probWords.Count; ++i)
                     {
+                        string tempWord = probWords[i].Key;
                         if (counter >= MAX_HINT_NUMBER)
                         {
                             break;
                         }
-                        else if (i > 0 && probWords[i - 1].Key == probWords[i].Key)
+                        else if (tempWord.Contains('\'') || (i > 0 && probWords[i - 1].Key == tempWord))
                         {
-                            // same word
+                            // ignore same word or strange word(I'm Jack's .etc.)
                             continue;
                         }
                         else
                         {
-                            textHints[counter].Text = probWords[i].Key + ";  ";
+                            // Update default prediction:
+                            if (counter == 0)
+                            {
+                                currWord = tempWord;
+                            }
+                            textHints[counter].Text = tempWord + ";  ";
                             ++counter;
                         }
                     }

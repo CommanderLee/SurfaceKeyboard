@@ -29,13 +29,45 @@
                    FontFamily="Courier New"
                    FontSize="38" />
 
-                <TextBlock Name="TextHintBlk" 
+                <TextBlock Name="TextHintBlk0" 
                    Canvas.Left="230"
                    Canvas.Top="120"
-                   Width="1120"
+                   Width="224"
                    Height="60"
                    FontFamily="Courier New"
-                   FontSize="30" />
+                   FontSize="25" />
+
+                <TextBlock Name="TextHintBlk1" 
+                   Canvas.Left="454"
+                   Canvas.Top="120"
+                   Width="224"
+                   Height="60"
+                   FontFamily="Courier New"
+                   FontSize="25" />
+
+                <TextBlock Name="TextHintBlk2" 
+                   Canvas.Left="678"
+                   Canvas.Top="120"
+                   Width="224"
+                   Height="60"
+                   FontFamily="Courier New"
+                   FontSize="25" />
+
+                <TextBlock Name="TextHintBlk3" 
+                   Canvas.Left="902"
+                   Canvas.Top="120"
+                   Width="224"
+                   Height="60"
+                   FontFamily="Courier New"
+                   FontSize="25" />
+
+                <TextBlock Name="TextHintBlk4" 
+                   Canvas.Left="1126"
+                   Canvas.Top="120"
+                   Width="224"
+                   Height="60"
+                   FontFamily="Courier New"
+                   FontSize="25" />
 
                 <Button Name="NextBtn"
                 Width="1590"

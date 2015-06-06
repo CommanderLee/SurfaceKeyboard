@@ -95,7 +95,7 @@ namespace SurfaceKeyboard
 
         bool                circleControl = false;
         // Circle bias
-        const int           circleBiasY = 50;
+        const int           circleBiasY = 55;
         
         // Size of debug circles
         const int           touchCircleSize = 20;
@@ -115,6 +115,13 @@ namespace SurfaceKeyboard
 
         bool                testControl = false;
         WordPredictor       wordPredictor;
+        string              currWord, currSentence;
+        TextBlock[]         textHints;
+        const int           MAX_HINT_NUMBER = 5;
+
+        const int           SPACE_TOP = 690;
+        const int           SPACE_LEFT = 770;
+        const int           SPACE_RIGHT = 1060;
 
         /// <summary>
         /// Default constructor.
@@ -191,6 +198,9 @@ namespace SurfaceKeyboard
             updateWindowTitle();
 
             wordPredictor = new WordPredictor();
+            currWord = "";
+            currSentence = "";
+            textHints = new TextBlock[] { TextHintBlk0, TextHintBlk1, TextHintBlk2, TextHintBlk3, TextHintBlk4 };
         }
 
         /// <summary>
@@ -301,18 +311,30 @@ namespace SurfaceKeyboard
 
             // Show asterisk feedback for the user 
             Regex rgx = new Regex(@"[^\s]");
-            string typeText = rgx.Replace(currText, "*");
+            string asteriskText = rgx.Replace(currText, "*");
 
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
-                if (hpNo >= 0 && hpNo <= typeText.Length)
-                    typeText = typeText.Substring(0, hpNo) + "_";
-                TaskTextBlk.Text = currText + "\n" + typeText;
+                if (testControl)
+                {
+                    // Show prediction sentence
+                    string typeText = currSentence + currWord;
+                    if (typeText.Length > currText.Length)
+                        typeText = typeText.Substring(0, currText.Length);
+                    TaskTextBlk.Text = currText + "\n" + typeText;
+                }
+                else
+                {
+                    // Show asterisk feedback
+                    if (hpNo >= 0 && hpNo <= asteriskText.Length)
+                        asteriskText = asteriskText.Substring(0, hpNo) + "_";
+                    TaskTextBlk.Text = currText + "\n" + asteriskText;
+                }
             }
             else
             {
                 // Use asterisk while calibrating 
-                TaskTextBlk.Text = typeText;
+                TaskTextBlk.Text = asteriskText;
             }
         }
 
@@ -560,9 +582,12 @@ namespace SurfaceKeyboard
             {
                 // Real-time UI feedback. Note: Change its status later after released.
                 ++hpNo;
+
+                checkSpace(x, y);
+                updateHint();
+
                 updateTaskTextBlk();
                 updateStatusBlock();
-                updateHint();
             }
             else
             {
@@ -1137,9 +1162,13 @@ namespace SurfaceKeyboard
                 calibStatus = CalibStatus.Preparing;
             }
 
+            currWord = "";
+            currSentence = "";
+
             currTyping = "";
             isTypingStart = false;
             clearCircles();
+            updateHint();
             updateStatusBlock();
             updateTaskTextBlk();
         }
@@ -1447,6 +1476,25 @@ namespace SurfaceKeyboard
             clearKbdFocus(CircleBtn);
         }
 
+        private bool checkSpace(double x, double y)
+        {
+            bool isSpacebar = false;
+            if (x > SPACE_LEFT && x < SPACE_RIGHT && y > SPACE_TOP)
+            {
+                isSpacebar = true;
+                Console.WriteLine("Space.");
+            }
+
+            // Process space
+            if (testControl && isSpacebar)
+            {
+                currSentence += currWord + " ";
+                currWord = "";
+            }
+
+            return isSpacebar;
+        }
+
         private void updateHint()
         {
             if (testControl)
@@ -1457,43 +1505,73 @@ namespace SurfaceKeyboard
                 List<double> listX, listY;
                 listX = new List<double>();
                 listY = new List<double>();
+
+                //Console.WriteLine("UpdateHint: Search from " + currGestures.Count + " points.");
+                //Console.WriteLine("    currSentence:" + currSentence + "; currWord:" + currWord);
+
+                // counter: [0...currSentenceLen-1][currSLen...currSLen+MaxListLen]
                 foreach (GesturePoints gp in currGestures)
                 {
-                    if (counter >= maxListLen)
+                    if (counter >= maxListLen + currSentence.Length)
                     {
                         break;
                     }
                     else if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Wait)
                     {
-                        listX.Add(gp.getStartPoint().getX());
-                        listY.Add(gp.getStartPoint().getY());
+                        if (counter >= currSentence.Length)
+                        {
+                            listX.Add(gp.getStartPoint().getX());
+                            listY.Add(gp.getStartPoint().getY());
+                        }
                         ++counter;
                     }
                 }
 
-                List<KeyValuePair<string, double>> probWords = wordPredictor.predict(listX.ToArray(), listY.ToArray());
+                //Console.WriteLine("    " + listX.Count + " valid touch points.");
 
-                int maxHintLen = 5;
-                counter = 0;
-                string hint = "";
-                for (var i = 0; i < probWords.Count; ++i)
+                if (listX.Count > 0)
                 {
-                    if (counter >= maxHintLen)
+                    List<KeyValuePair<string, double>> probWords = wordPredictor.predict(listX.ToArray(), listY.ToArray());
+                    //Console.WriteLine("    " + probWords + " probable words.");
+
+                    // Update default prediction:
+                    if (probWords.Count > 0)
                     {
-                        break;
+                        currWord = probWords[0].Key;
                     }
-                    else if (i > 0 && probWords[i - 1].Key == probWords[i].Key)
+
+                    // Show hint in the TextHintBlock
+                    counter = 0;
+
+                    for (var i = 0; i < probWords.Count; ++i)
                     {
-                        // same word
-                        continue;
+                        if (counter >= MAX_HINT_NUMBER)
+                        {
+                            break;
+                        }
+                        else if (i > 0 && probWords[i - 1].Key == probWords[i].Key)
+                        {
+                            // same word
+                            continue;
+                        }
+                        else
+                        {
+                            textHints[counter].Text = probWords[i].Key + ";  ";
+                            ++counter;
+                        }
                     }
-                    else
+                    for (var c = counter; c < MAX_HINT_NUMBER; ++c)
                     {
-                        hint += probWords[i].Key + " ;   ";
-                        ++counter;
+                        textHints[c].Text = ";  ";
                     }
                 }
-                TextHintBlk.Text = hint;
+                else
+                {
+                    foreach (TextBlock tb in textHints)
+                    {
+                        tb.Text = ";  ";
+                    }
+                }
             }
         }
 

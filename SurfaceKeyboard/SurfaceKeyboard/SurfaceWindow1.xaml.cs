@@ -1156,7 +1156,8 @@ namespace SurfaceKeyboard
                         if (testControl)
                         {
                             currSentence += currWord;
-                            
+                            resetSelection();
+                            updateHint();
                             // Save to file/string
                             phyStrings.Add(currSentence + "," + handPoints.Last().getTime() + "," + deleteNum);
 
@@ -1215,6 +1216,7 @@ namespace SurfaceKeyboard
 
             currWord = "";
             currSentence = "";
+            resetSelection();
 
             currTyping = "";
             isTypingStart = false;
@@ -1577,6 +1579,13 @@ namespace SurfaceKeyboard
             clearKbdFocus(CircleBtn);
         }
 
+        private void resetSelection(int target = 0)
+        {
+            textHints[currSelect].Background = otherColor;
+            currSelect = target;
+            textHints[currSelect].Background = selectColor;
+        }
+
         private void updateSelection(int movementLevel)
         {
             // Find existing one:
@@ -1603,9 +1612,7 @@ namespace SurfaceKeyboard
             {
                 // Move to left. Note: movementLevel < 0.
                 int minI = Math.Max(0, currSelect + movementLevel);
-                textHints[currSelect].Background = otherColor;
-                currSelect = minI;
-                textHints[currSelect].Background = selectColor;
+                resetSelection(minI);
             }
             currWord = textHints[currSelect].Text;
             updateHint();
@@ -1626,6 +1633,7 @@ namespace SurfaceKeyboard
             {
                 currSentence += currWord + " ";
                 currWord = "";
+                resetSelection();
             }
 
             return isSpacebar;

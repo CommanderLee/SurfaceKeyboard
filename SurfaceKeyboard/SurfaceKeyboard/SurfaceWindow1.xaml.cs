@@ -517,8 +517,8 @@ namespace SurfaceKeyboard
                 int movementLevel = findPoints.Add(touchPoint);
                 if (testControl && movementLevel != 0)
                 {
+                    findPoints.setStatus(HandStatus.Select); 
                     updateSelection(movementLevel);
-                    findPoints.setStatus(HandStatus.Select);
                     //--hpNo;
 
                     // Give feedback when moving fingers
@@ -1618,9 +1618,12 @@ namespace SurfaceKeyboard
                 int minI = Math.Max(0, currSelect + movementLevel);
                 resetSelection(minI);
             }
-            currWord = textHints[currSelect].Text;
+            
             updateHint();
+            currWord = textHints[currSelect].Text;
             updateTaskTextBlk();
+            //Console.WriteLine("Update: " + movementLevel);
+            //Console.WriteLine("Change to: " + currWord + "(" + TaskTextBlk.Text + ")");
         }
 
         private bool checkSpace(double x, double y)

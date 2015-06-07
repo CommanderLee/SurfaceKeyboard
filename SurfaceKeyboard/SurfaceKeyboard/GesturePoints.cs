@@ -25,6 +25,7 @@ namespace SurfaceKeyboard
 
         // Distance threshold for selecting gesture
         const double     SELECT_WORD_THRE = 50;
+        const double     SELECT_AREA_BOTTOM = 550;
 
         Queue<HandPoint> _queue;
         HandStatus       _status;
@@ -69,7 +70,7 @@ namespace SurfaceKeyboard
             double moveX = 0, moveY = 0;
             int movementLevel = 0;
 
-            if (_queue.Count > 0)
+            if (_queue.Count > 0 && handPoint.getY() < SELECT_AREA_BOTTOM)
             {
                 moveX = handPoint.getX() - _queue.Last().getX();
                 moveY = handPoint.getY() - _queue.Last().getY();

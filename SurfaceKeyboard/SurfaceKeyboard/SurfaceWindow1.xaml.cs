@@ -114,6 +114,7 @@ namespace SurfaceKeyboard
         List<Ellipse>       circleList = new List<Ellipse>();
 
         bool                testControl = false;
+        bool                isSpacebar = false;
         WordPredictor       wordPredictor;
         string              currWord, currSentence;
 
@@ -326,7 +327,7 @@ namespace SurfaceKeyboard
                     string typeText = currSentence + currWord;
                     if (typeText.Length > currText.Length)
                         typeText = typeText.Substring(0, currText.Length);
-                    TaskTextBlk.Text = currText + "\n" + typeText;
+                    TaskTextBlk.Text = currText + "\n" + typeText + "_";
                 }
                 else
                 {
@@ -597,9 +598,17 @@ namespace SurfaceKeyboard
                 // Real-time UI feedback. Note: Change its status later after released.
                 ++hpNo;
 
-                checkSpace(x, y);
-                updateHint();
-
+                if (checkSpace(x, y))
+                {
+                    // Disable this space point
+                    GesturePoints thisPoints = findGesturePoints(id);
+                    thisPoints.setStatus(HandStatus.Spacebar);
+                    Console.WriteLine("Set status to Spacebar.");
+                }
+                else
+                {
+                    updateHint();
+                }
                 updateTaskTextBlk();
                 updateStatusBlock();
             }
@@ -1081,7 +1090,7 @@ namespace SurfaceKeyboard
                     {
                         foreach (GesturePoints gp in currGestures)
                         {
-                            if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Backspace)
+                            if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Backspace || gp.getStatus() == HandStatus.Spacebar)
                             {
                                 validPoints.Add(gp.getStartPoint());
                             }
@@ -1128,6 +1137,7 @@ namespace SurfaceKeyboard
                 hpNo = 0;
                 hpIndex = -1;
                 isTypingStart = false;
+                isSpacebar = false;
 
                 clearCircles();
 
@@ -1145,7 +1155,7 @@ namespace SurfaceKeyboard
                         {
                             foreach (GesturePoints gp in currGestures)
                             {
-                                if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Backspace)
+                                if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Backspace || gp.getStatus() == HandStatus.Spacebar)
                                 {
                                     validPoints.Add(gp.getStartPoint());
                                 }
@@ -1224,6 +1234,7 @@ namespace SurfaceKeyboard
 
             currTyping = "";
             isTypingStart = false;
+            isSpacebar = false;
             clearCircles();
             updateHint();
             updateStatusBlock();
@@ -1349,6 +1360,8 @@ namespace SurfaceKeyboard
             string currText = taskTexts[taskIndex % taskSize];
             int removeStart = Math.Min(currText.Length, hpNo) - 1;
 
+            isSpacebar = false;
+
             // Delete at least one character 
             if (removeStart >= 0)
             {
@@ -1441,7 +1454,7 @@ namespace SurfaceKeyboard
         {
             string currText = taskTexts[taskIndex % taskSize];
             int removeStart = Math.Min(currText.Length, hpNo) - 1;
-
+            isSpacebar = false;
             // Delete at least one character 
             if (removeStart >= 0)
             {
@@ -1628,22 +1641,32 @@ namespace SurfaceKeyboard
 
         private bool checkSpace(double x, double y)
         {
-            bool isSpacebar = false;
+            bool thisIsSpacebar = false;
             if (x > SPACE_LEFT && x < SPACE_RIGHT && y > SPACE_TOP)
             {
-                isSpacebar = true;
+                thisIsSpacebar = true;
                 Console.WriteLine("Space.");
             }
 
-            // Process space
-            if (testControl && isSpacebar && currWord != "")
-            {
-                currSentence += currWord + " ";
-                currWord = "";
-                resetSelection();
-            }
+            // Process space: last char is space
+            if (testControl)
+            {   
+                // This char is space
+                if (thisIsSpacebar)
+                {
+                    currWord += " ";
+                }
 
-            return isSpacebar;
+                // Last char is space
+                if (isSpacebar)
+                {
+                    currSentence += currWord;
+                    currWord = "";
+                    resetSelection();
+                }
+            }
+            isSpacebar = thisIsSpacebar;
+            return thisIsSpacebar;
         }
 
         private void updateHint()
@@ -1657,8 +1680,8 @@ namespace SurfaceKeyboard
                 listX = new List<double>();
                 listY = new List<double>();
 
-                //Console.WriteLine("UpdateHint: Search from " + currGestures.Count + " points.");
-                //Console.WriteLine("    currSentence:" + currSentence + "; currWord:" + currWord);
+                Console.WriteLine("UpdateHint: Search from " + currGestures.Count + " points.");
+                Console.WriteLine("    currSentence:" + currSentence + "; currWord:" + currWord);
 
                 // counter: [0...currSentenceLen-1][currSLen...currSLen+MaxListLen]
                 foreach (GesturePoints gp in currGestures)
@@ -1667,9 +1690,9 @@ namespace SurfaceKeyboard
                     {
                         break;
                     }
-                    else if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Wait)
+                    else if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Wait || gp.getStatus() == HandStatus.Spacebar)
                     {
-                        if (counter >= currSentence.Length)
+                        if (counter >= currSentence.Length && (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Wait))
                         {
                             listX.Add(gp.getStartPoint().getX());
                             listY.Add(gp.getStartPoint().getY());

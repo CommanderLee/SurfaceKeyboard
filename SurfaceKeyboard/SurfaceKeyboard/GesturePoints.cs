@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SurfaceKeyboard
 {
-    enum HandStatus { Away, Backspace, Enter, Select, Type, Rest, Wait, Unknown };
+    enum HandStatus { Away, Backspace, Enter, Select, Type, Spacebar, Wait, Unknown };
 
     /// <summary>
     /// A queue of consecutive data points.

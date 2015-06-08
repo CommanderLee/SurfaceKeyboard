@@ -1768,5 +1768,67 @@ namespace SurfaceKeyboard
             clearKbdFocus(TestBtn);
         }
 
+        private void clickOnTextHint(int num)
+        {
+            if (testControl)
+            {
+                resetSelection(num);
+                currWord = textHints[num].Text;
+                updateTaskTextBlk();
+            }
+        }
+
+        private void TextHintBlk0_TouchDown(object sender, TouchEventArgs e)
+        {
+            clickOnTextHint(0);
+        }
+
+        private void TextHintBlk0_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            clickOnTextHint(0);
+        }
+
+        private void TextHintBlk1_TouchDown(object sender, TouchEventArgs e)
+        {
+            clickOnTextHint(1);
+        }
+
+        private void TextHintBlk1_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            clickOnTextHint(1);
+        }
+
+        private void TextHintBlk2_TouchDown(object sender, TouchEventArgs e)
+        {
+            clickOnTextHint(2);
+        }
+
+        private void TextHintBlk2_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            clickOnTextHint(2);
+        }
+
+        private void TextHintBlk3_TouchDown(object sender, TouchEventArgs e)
+        {
+            clickOnTextHint(3);
+        }
+
+        private void TextHintBlk3_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            clickOnTextHint(3);
+        }
+
+        private void TextHintBlk4_TouchDown(object sender, TouchEventArgs e)
+        {
+            clickOnTextHint(4);
+        }
+
+        private void TextHintBlk4_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            clickOnTextHint(4);
+        }
+
+
+
     }
 }

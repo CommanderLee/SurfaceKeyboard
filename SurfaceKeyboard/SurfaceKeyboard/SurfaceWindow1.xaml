@@ -35,7 +35,7 @@
                    Width="220"
                    Height="60"
                    FontFamily="Courier New"
-                   FontSize="25" />
+                   FontSize="25" TouchDown="TextHintBlk0_TouchDown" MouseLeftButtonDown="TextHintBlk0_MouseLeftButtonDown" />
 
                 <TextBlock Name="TextHintBlk1" 
                    Canvas.Left="455"
@@ -43,7 +43,7 @@
                    Width="220"
                    Height="60"
                    FontFamily="Courier New"
-                   FontSize="25" />
+                   FontSize="25" TouchDown="TextHintBlk1_TouchDown" MouseLeftButtonDown="TextHintBlk1_MouseLeftButtonDown"/>
 
                 <TextBlock Name="TextHintBlk2" 
                    Canvas.Left="680"
@@ -51,7 +51,7 @@
                    Width="220"
                    Height="60"
                    FontFamily="Courier New"
-                   FontSize="25" />
+                   FontSize="25" TouchDown="TextHintBlk2_TouchDown" MouseLeftButtonDown="TextHintBlk2_MouseLeftButtonDown"/>
 
                 <TextBlock Name="TextHintBlk3" 
                    Canvas.Left="905"
@@ -59,7 +59,7 @@
                    Width="220"
                    Height="60"
                    FontFamily="Courier New"
-                   FontSize="25" />
+                   FontSize="25" TouchDown="TextHintBlk3_TouchDown" MouseLeftButtonDown="TextHintBlk3_MouseLeftButtonDown"/>
 
                 <TextBlock Name="TextHintBlk4" 
                    Canvas.Left="1130"
@@ -67,7 +67,7 @@
                    Width="220"
                    Height="60"
                    FontFamily="Courier New"
-                   FontSize="25" />
+                   FontSize="25" TouchDown="TextHintBlk4_TouchDown" MouseLeftButtonDown="TextHintBlk4_MouseLeftButtonDown"/>
 
                 <Button Name="NextBtn"
                 Width="1590"

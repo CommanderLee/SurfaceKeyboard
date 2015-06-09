@@ -60,6 +60,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="PointParameter.cs" />
     <Compile Include="VectorParameter.cs" />
     <Compile Include="WindowUserId.xaml.cs">
       <DependentUpon>WindowUserId.xaml</DependentUpon>

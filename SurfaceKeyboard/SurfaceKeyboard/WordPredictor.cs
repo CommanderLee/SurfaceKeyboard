@@ -8,12 +8,17 @@ using Newtonsoft.Json;
 
 namespace SurfaceKeyboard
 {
+    enum PredictionMode { RelativeMode, AbsoluteMode };
+
     class WordPredictor
     {
         public bool                                 loadStatus;
         public Dictionary<string, int>              freqDict;
         public Dictionary<string, List<string>>     codeSet;
         public Dictionary<string, VectorParameter>  vecParams;
+        public Dictionary<char, PointParameter>     pntParams;
+
+        private double                              freqMax, freqMin, freqAvg;
 
         // Pre-processing: Encode the words. 0:left, 1:right, 2:spacebar.
         // spacebar a b c d e f g
@@ -30,14 +35,19 @@ namespace SurfaceKeyboard
             660.4, 660.4, 572.4, 572.4, 572.4, 572.4, 617.4, 572.4, 572.4, 660.4, 572.4, 660.4, 572.4, 660.4};
         
         // Generated from ('16users_kbd_pos.csv')
-        static double[] userPosX = new double[] { 718.57701378, 909.28646996, 833.47336852, 813.78691024, 798.0410731, 853.90674048, 891.43037533, 
-            936.84420906, 1005.498639, 970.26316325, 1017.0088152, 1057.8388884, 992.81661424, 953.96573418, 1046.8064112, 1091.973913, 
-            709.51111111, 840.63848851, 767.88189101, 880.79090006, 962.8251284, 875.36052006, 755.24576271, 789.71264368, 926.77008268, 
-            747.06666667 };
-        static double[] userPosY = new double[] { 608.76643043, 652.66137654, 649.99647352, 607.69583868, 567.42299606, 611.19359811, 610.85930762, 
-            613.12794869, 566.97748005, 618.57894951, 605.59700376, 604.27777744, 652.05537706, 654.45690642, 565.00218248, 565.54347746, 
-            574.67778049, 571.56836324, 609.71508114, 574.24703991, 571.10992157, 652.48759038, 570.5338952, 651.43678021, 571.14670341, 
-            648.51999837 };
+        //static double[] userPosX = new double[] { 718.57701378, 909.28646996, 833.47336852, 813.78691024, 798.0410731, 853.90674048, 891.43037533, 
+        //    936.84420906, 1005.498639, 970.26316325, 1017.0088152, 1057.8388884, 992.81661424, 953.96573418, 1046.8064112, 1091.973913, 
+        //    709.51111111, 840.63848851, 767.88189101, 880.79090006, 962.8251284, 875.36052006, 755.24576271, 789.71264368, 926.77008268, 
+        //    747.06666667 };
+        //static double[] userPosY = new double[] { 608.76643043, 652.66137654, 649.99647352, 607.69583868, 567.42299606, 611.19359811, 610.85930762, 
+        //    613.12794869, 566.97748005, 618.57894951, 605.59700376, 604.27777744, 652.05537706, 654.45690642, 565.00218248, 565.54347746, 
+        //    574.67778049, 571.56836324, 609.71508114, 574.24703991, 571.10992157, 652.48759038, 570.5338952, 651.43678021, 571.14670341, 
+        //    648.51999837 };
+        //double[] userPosX, userPosY;
+        //double[] userStdX, userStdY;
+        //double[] userVarX, userVarY;
+        //double[] userCovXY, userCorrXY;
+
 
 
         // y = ax + b. To split two hands
@@ -61,11 +71,13 @@ namespace SurfaceKeyboard
             freqDict = new Dictionary<string, int>();
             codeSet = new Dictionary<string, List<string>>();
             vecParams = new Dictionary<string, VectorParameter>();
+            pntParams = new Dictionary<char, PointParameter>();
         }
 
         public void initialize()
         {
             loadCorpus();
+            loadKeyboardPoints();
             loadKeyboardVectors();
 
             loadStatus = true;
@@ -147,7 +159,12 @@ namespace SurfaceKeyboard
                             {
                                 codeSet[code] = new List<string>();
                             }
-                            codeSet[code].Add(word);
+
+                            if (!codeSet[code].Contains(word))
+                            {
+                                codeSet[code].Add(word);
+                                Console.WriteLine("New Word: " + word + "; Code: " + code + ";Num: " + codeSet[code].Count);
+                            }
                         }
                     }
                 }
@@ -175,6 +192,10 @@ namespace SurfaceKeyboard
 
                 Console.WriteLine("Corpus JSON Object Load");
             }
+            freqMax = freqDict.Values.Max();
+            freqMin = freqDict.Values.Min();
+            freqAvg = freqDict.Values.ToList().Average();
+            Console.WriteLine("[" + freqMin + "-" + freqMax + "]" + "Avg:" + freqAvg);
         }
 
         private void loadKeyboardVectors()
@@ -207,7 +228,9 @@ namespace SurfaceKeyboard
                 {
                     for (var j = 0; j < 26; ++j)
                     {
-                        string charPair = ((char)((int)'a' + i)).ToString() + ((char)((int)'a' + j)).ToString();
+                        char charA = (char)((int)'a' + i);
+                        char charB = (char)((int)'a' + j);
+                        string charPair = charA.ToString() + charB.ToString();
                         if (!vecParams.ContainsKey(charPair))
                         {
                             Console.WriteLine("Add: " + charPair);
@@ -217,8 +240,8 @@ namespace SurfaceKeyboard
                             }
                             else
                             {
-                                double vecX = userPosX[j] - userPosX[i];
-                                double vecY = userPosY[j] - userPosY[i];
+                                double vecX = pntParams[charB].userPosX - pntParams[charA].userPosX;
+                                double vecY = pntParams[charB].userPosY - pntParams[charA].userPosY;
 
                                 vecParams[charPair] = new VectorParameter(vecX, vecY);
                             }
@@ -238,6 +261,52 @@ namespace SurfaceKeyboard
                 vecParams = JsonConvert.DeserializeObject<Dictionary<string, VectorParameter>>(jsonVecParams);
 
                 Console.WriteLine("KbdVec JSON Object Load");
+            }
+        }
+
+        private void loadKeyboardPoints()
+        {
+            string jsonKbdPntName = "Resources/kbdPnt.json";
+            if (!File.Exists(jsonKbdPntName))
+            {
+                // Load from csv file
+                string fName = "Resources/pointPosResult-16users-v2.5-merged.txt";
+                string[] lines = File.ReadAllLines(fName);
+
+                for (var i = 1; i < lines.Length; ++i)
+                {
+                    string[] wordParams = lines[i].Split(',');
+                    if (wordParams.Length == 11)
+                    {
+                        char uChar = wordParams[0][1];
+                        double posX = Convert.ToDouble(wordParams[2]);
+                        double posY = Convert.ToDouble(wordParams[3]);
+                        double stdX = Convert.ToDouble(wordParams[4]);
+                        double stdY = Convert.ToDouble(wordParams[5]);
+                        double varX = Convert.ToDouble(wordParams[6]);
+                        double varY = Convert.ToDouble(wordParams[7]);
+                        double covXY = Convert.ToDouble(wordParams[9]);
+                        double corrXY = Convert.ToDouble(wordParams[10]);
+
+
+                        pntParams[uChar] = new PointParameter(posX, posY, stdX, stdY,
+                            varX, varY, covXY, corrXY);
+
+                    }
+                }
+
+                string jsonPntParams = JsonConvert.SerializeObject(pntParams, Formatting.Indented);
+                File.WriteAllText(jsonKbdPntName, jsonPntParams);
+
+                Console.WriteLine("KbdPnt JSON Object Saved.");
+            }
+            else
+            {
+                // Read from JSON file
+                string jsonPntParams = File.ReadAllText(jsonKbdPntName);
+                pntParams = JsonConvert.DeserializeObject<Dictionary<char, PointParameter>>(jsonPntParams);
+
+                Console.WriteLine("KbdPnt JSON Object Load");
             }
         }
 
@@ -289,166 +358,181 @@ namespace SurfaceKeyboard
             return codes;
         }
 
-        private static int MyCompare(KeyValuePair<string, double> kvp1, KeyValuePair<string, double> kvp2)
+        private static int MyCompareUp(KeyValuePair<string, double> kvp1, KeyValuePair<string, double> kvp2)
         {
             return kvp1.Value.CompareTo(kvp2.Value);
         }
 
-        public List<KeyValuePair<string, double>> predict(double[] pntListX, double[] pntListY)
+        private static int MyCompareDownn(KeyValuePair<string, double> kvp1, KeyValuePair<string, double> kvp2)
+        {
+            return kvp2.Value.CompareTo(kvp1.Value);
+        }
+
+        public List<KeyValuePair<string, double>> predict(double[] pntListX, double[] pntListY, PredictionMode predMode)
         {
             // Get user codes
             List<KeyValuePair<string, double>> probWords = new List<KeyValuePair<string,double>>();
 
-            List<string> userCodes = calcUserCodes(pntListX, pntListY);
-            Console.WriteLine(userCodes[0]);
-
-            //List<int> myPntIdL = new List<int>();
-            //List<int> myPntIdR = new List<int>();
-            List<Point> myPntL = new List<Point>();
-            List<Point> myPntR = new List<Point>();
-            List<VectorParameter> myVecL = new List<VectorParameter>();
-            List<VectorParameter> myVecR = new List<VectorParameter>();
-
-            List<Point> candWordPntL = new List<Point>();
-            List<Point> candWordPntR = new List<Point>();
-            List<VectorParameter> candWordVecL = new List<VectorParameter>();
-            List<VectorParameter> candWordVecR = new List<VectorParameter>();
-
-            foreach (string userCode in userCodes)
+            if (predMode == PredictionMode.RelativeMode)
             {
-                if (codeSet.ContainsKey(userCode))
+                List<string> userCodes = calcUserCodes(pntListX, pntListY);
+                Console.WriteLine(userCodes[0]);
+
+                //List<int> myPntIdL = new List<int>();
+                //List<int> myPntIdR = new List<int>();
+                List<Point> myPntL = new List<Point>();
+                List<Point> myPntR = new List<Point>();
+                List<VectorParameter> myVecL = new List<VectorParameter>();
+                List<VectorParameter> myVecR = new List<VectorParameter>();
+
+                List<Point> candWordPntL = new List<Point>();
+                List<Point> candWordPntR = new List<Point>();
+                List<VectorParameter> candWordVecL = new List<VectorParameter>();
+                List<VectorParameter> candWordVecR = new List<VectorParameter>();
+
+                foreach (string userCode in userCodes)
                 {
-                    //myPntIdL.Clear();
-                    //myPntIdR.Clear();
-                    myPntL.Clear();
-                    myPntR.Clear();
-                    myVecL.Clear();
-                    myVecR.Clear();
-
-                    // Generate vectors for this code
-                    for (var i = 0; i < userCode.Length; ++i)
+                    if (codeSet.ContainsKey(userCode))
                     {
-                        if (userCode[i] == '0')
+                        //myPntIdL.Clear();
+                        //myPntIdR.Clear();
+                        myPntL.Clear();
+                        myPntR.Clear();
+                        myVecL.Clear();
+                        myVecR.Clear();
+
+                        // Generate vectors for this code
+                        for (var i = 0; i < userCode.Length; ++i)
                         {
-                            if (myPntL.Count > 0)
+                            if (userCode[i] == '0')
                             {
-                                double vecX = pntListX[i] - myPntL.Last().x;
-                                double vecY = pntListY[i] - myPntL.Last().y;
-
-                                myVecL.Add(new VectorParameter(vecX, vecY));
-                            }
-                            myPntL.Add(new Point(pntListX[i], pntListY[i]));
-                        }
-                        else
-                        {
-                            if (myPntR.Count > 0)
-                            {
-                                double vecX = pntListX[i] - myPntR.Last().x;
-                                double vecY = pntListY[i] - myPntR.Last().y;
-
-                                myVecR.Add(new VectorParameter(vecX, vecY));
-                            }
-                            myPntR.Add(new Point(pntListX[i], pntListY[i]));
-                        }
-                    }
-
-                    // Check each candidate words
-
-                    List<string> selWords = codeSet[userCode];
-                    foreach (string candWord in selWords)
-                    {
-                        candWordPntL.Clear();
-                        candWordPntR.Clear();
-                        candWordVecL.Clear();
-                        candWordVecR.Clear();
-
-                        char lastLeft = ' ', lastRight = ' ';
-
-                        for (var i = 0; i < candWord.Length; ++i)
-                        {
-                            char currChar = candWord[i];
-                            if (currChar >= 'a' && currChar <= 'z')
-                            {
-                                int currCharNo = currChar - 'a';
-                                if (handCode[currCharNo + 1][0] == '0')
+                                if (myPntL.Count > 0)
                                 {
-                                    // Left
-                                    if (candWordPntL.Count > 0)
-                                    {
-                                        candWordVecL.Add(vecParams[lastLeft.ToString() + currChar.ToString()]);
-                                    }
-                                    lastLeft = currChar;
-                                    candWordPntL.Add(new Point(letterPosX[currCharNo], letterPosY[currCharNo]));
+                                    double vecX = pntListX[i] - myPntL.Last().x;
+                                    double vecY = pntListY[i] - myPntL.Last().y;
+
+                                    myVecL.Add(new VectorParameter(vecX, vecY));
                                 }
-                                else
+                                myPntL.Add(new Point(pntListX[i], pntListY[i]));
+                            }
+                            else
+                            {
+                                if (myPntR.Count > 0)
                                 {
-                                    // Right
-                                    if (candWordPntR.Count > 0)
+                                    double vecX = pntListX[i] - myPntR.Last().x;
+                                    double vecY = pntListY[i] - myPntR.Last().y;
+
+                                    myVecR.Add(new VectorParameter(vecX, vecY));
+                                }
+                                myPntR.Add(new Point(pntListX[i], pntListY[i]));
+                            }
+                        }
+
+                        // Check each candidate words
+
+                        List<string> selWords = codeSet[userCode];
+                        foreach (string candWord in selWords)
+                        {
+                            candWordPntL.Clear();
+                            candWordPntR.Clear();
+                            candWordVecL.Clear();
+                            candWordVecR.Clear();
+
+                            char lastLeft = ' ', lastRight = ' ';
+
+                            for (var i = 0; i < candWord.Length; ++i)
+                            {
+                                char currChar = candWord[i];
+                                if (currChar >= 'a' && currChar <= 'z')
+                                {
+                                    int currCharNo = currChar - 'a';
+                                    if (handCode[currCharNo + 1][0] == '0')
                                     {
-                                        candWordVecR.Add(vecParams[lastRight.ToString() + currChar.ToString()]);
+                                        // Left
+                                        if (candWordPntL.Count > 0)
+                                        {
+                                            candWordVecL.Add(vecParams[lastLeft.ToString() + currChar.ToString()]);
+                                        }
+                                        lastLeft = currChar;
+                                        candWordPntL.Add(new Point(letterPosX[currCharNo], letterPosY[currCharNo]));
                                     }
-                                    lastRight = currChar;
-                                    candWordPntR.Add(new Point(letterPosX[currCharNo], letterPosY[currCharNo]));
+                                    else
+                                    {
+                                        // Right
+                                        if (candWordPntR.Count > 0)
+                                        {
+                                            candWordVecR.Add(vecParams[lastRight.ToString() + currChar.ToString()]);
+                                        }
+                                        lastRight = currChar;
+                                        candWordPntR.Add(new Point(letterPosX[currCharNo], letterPosY[currCharNo]));
+                                    }
                                 }
                             }
-                        }
 
-                        // Calculate distance
-                        double distance = 0.0;
+                            // Calculate distance
+                            double distance = 0.0;
 
-                        for (var i = 0; i < myVecL.Count; ++i)
-                        {
-                            VectorParameter mVec = myVecL[i];
-                            VectorParameter cwVec = candWordVecL[i];
-                            distance += mVec.getDistance(cwVec);
-                        }
-
-                        if (myPntL.Count == 1)
-                        {
-                            VectorParameter pseudoMVec = new VectorParameter(myPntL[0].x, myPntL[0].y, 0, 0, 0);
-                            VectorParameter pseudoCWVec = new VectorParameter(candWordPntL[0].x, candWordPntL[0].y, 0, 0, 0);
-                            distance += pseudoMVec.getDistance(pseudoCWVec) * Math.Exp(-candWord.Length / 10.0);
-
-                            if (myPntR.Count > 0)
+                            for (var i = 0; i < myVecL.Count; ++i)
                             {
-                                VectorParameter mVec = new VectorParameter(myPntR[0].x - myPntL[0].x, myPntR[0].y - myPntL[0].y);
-                                VectorParameter cwVec = new VectorParameter(candWordPntR[0].x - candWordPntL[0].x,
-                                    candWordPntR[0].y - candWordPntL[0].y);
-                                distance += mVec.getDistance(cwVec) * Math.Exp(-candWord.Length / 10.0);
+                                VectorParameter mVec = myVecL[i];
+                                VectorParameter cwVec = candWordVecL[i];
+                                distance += mVec.getDistance(cwVec);
                             }
-                        }
 
-                        for (var i = 0; i < myVecR.Count; ++i)
-                        {
-                            VectorParameter mVec = myVecR[i];
-                            VectorParameter cwVec = candWordVecR[i];
-                            distance += mVec.getDistance(cwVec);
-                        }
-
-                        if (myPntR.Count == 1)
-                        {
-                            VectorParameter pseudoMVec = new VectorParameter(myPntR[0].x, myPntR[0].y, 0, 0, 0);
-                            VectorParameter pseudoCWVec = new VectorParameter(candWordPntR[0].x, candWordPntR[0].y, 0, 0, 0);
-                            distance += pseudoMVec.getDistance(pseudoCWVec) * Math.Exp(-candWord.Length / 10.0);
-
-                            if (myPntL.Count > 0)
+                            if (myPntL.Count == 1)
                             {
-                                VectorParameter mVec = new VectorParameter(myPntL[0].x - myPntR[0].x, myPntL[0].y - myPntR[0].y);
-                                VectorParameter cwVec = new VectorParameter(candWordPntL[0].x - candWordPntR[0].x,
-                                    candWordPntL[0].y - candWordPntR[0].y);
-                                distance += mVec.getDistance(cwVec) * Math.Exp(-candWord.Length / 10.0);
+                                VectorParameter pseudoMVec = new VectorParameter(myPntL[0].x, myPntL[0].y, 0, 0, 0);
+                                VectorParameter pseudoCWVec = new VectorParameter(candWordPntL[0].x, candWordPntL[0].y, 0, 0, 0);
+                                distance += pseudoMVec.getDistance(pseudoCWVec) * Math.Exp(-candWord.Length / 10.0);
+
+                                if (myPntR.Count > 0)
+                                {
+                                    VectorParameter mVec = new VectorParameter(myPntR[0].x - myPntL[0].x, myPntR[0].y - myPntL[0].y);
+                                    VectorParameter cwVec = new VectorParameter(candWordPntR[0].x - candWordPntL[0].x,
+                                        candWordPntR[0].y - candWordPntL[0].y);
+                                    distance += mVec.getDistance(cwVec) * Math.Exp(-candWord.Length / 10.0);
+                                }
                             }
+
+                            for (var i = 0; i < myVecR.Count; ++i)
+                            {
+                                VectorParameter mVec = myVecR[i];
+                                VectorParameter cwVec = candWordVecR[i];
+                                distance += mVec.getDistance(cwVec);
+                            }
+
+                            if (myPntR.Count == 1)
+                            {
+                                VectorParameter pseudoMVec = new VectorParameter(myPntR[0].x, myPntR[0].y, 0, 0, 0);
+                                VectorParameter pseudoCWVec = new VectorParameter(candWordPntR[0].x, candWordPntR[0].y, 0, 0, 0);
+                                distance += pseudoMVec.getDistance(pseudoCWVec) * Math.Exp(-candWord.Length / 10.0);
+
+                                if (myPntL.Count > 0)
+                                {
+                                    VectorParameter mVec = new VectorParameter(myPntL[0].x - myPntR[0].x, myPntL[0].y - myPntR[0].y);
+                                    VectorParameter cwVec = new VectorParameter(candWordPntL[0].x - candWordPntR[0].x,
+                                        candWordPntL[0].y - candWordPntR[0].y);
+                                    distance += mVec.getDistance(cwVec) * Math.Exp(-candWord.Length / 10.0);
+                                }
+                            }
+
+                            // distance *= freqDict[candWord]; // / Math.Max(1, 2 - distance / freqAvg);
+
+                            probWords.Add(new KeyValuePair<string, double>(candWord, distance));
+
                         }
-
-                        probWords.Add(new KeyValuePair<string, double>(candWord, distance));
-
                     }
                 }
+                // Smaller distance is better. Sort Up.
+                probWords.Sort(MyCompareUp);
             }
-
-            probWords.Sort(MyCompare);
-
-            //probWords.Add("Hello World!");
+            else
+            {
+                probWords.Add(new KeyValuePair<string,double>("Hello world", -1));
+                // Bigger probability is better. Sort Down.
+                probWords.Sort(MyCompareDownn);
+            }
+            
             return probWords;
         }
     }

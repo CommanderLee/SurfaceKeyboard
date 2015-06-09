@@ -108,9 +108,16 @@
                 <Button Name="KeyboardBtn" 
                         Canvas.Left="1350" Canvas.Top="95" 
                         Content="Keyboard"
-                        Height="85"  Width="120" 
+                        Height="40"  Width="120" 
                         FontSize="20" BorderThickness="2" 
                         TouchDown="KeyboardBtn_TouchDown" Click="KeyboardBtn_Click" />
+                
+                <Button Name="PredictBtn" 
+                        Canvas.Left="1350" Canvas.Top="140" 
+                        Content="Absolute"
+                        Height="40"  Width="120" 
+                        FontSize="20" BorderThickness="2" 
+                        TouchDown="PredictBtn_TouchDown" Click="PredictBtn_Click" />
 
                 <Button Name="CalibBtn"
                         Canvas.Left="1475" Canvas.Top="50" 

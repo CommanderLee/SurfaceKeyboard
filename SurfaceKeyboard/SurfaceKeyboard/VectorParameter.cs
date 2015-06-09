@@ -61,7 +61,19 @@ namespace SurfaceKeyboard
             double distX = Math.Abs(vecX - vP.vecX);
             double distY = Math.Abs(vecY - vP.vecY);
             double distLen = Math.Abs(vecLen - vP.vecLen);
-            double distRad = Math.Min(Math.Abs(rad1 - vP.rad1), Math.Abs(rad2 - vP.rad2));
+
+            // Ignore this item if two character is too close
+            double distRad = 0.0;
+            if (vP.vecLen >= keySizeLen)
+            {
+                distRad = Math.Min(Math.Abs(rad1 - vP.rad1), Math.Abs(rad2 - vP.rad2));
+            }
+            else
+            {
+                distX *= 2;
+                distY *= 2;
+                distLen *= 2;
+            }
 
             double dist = distLen / kbdSizeLen + distRad / Math.PI + distX / kbdSizeX + distY / kbdSizeY;
             return dist;

@@ -115,7 +115,10 @@ namespace SurfaceKeyboard
 
         bool                testControl = false;
         bool                isSpacebar = false;
+        
         WordPredictor       wordPredictor;
+        PredictionMode      predictMode;
+
         string              currWord, currSentence;
 
         // currSelect: highlight current selection. from [0, MAX)
@@ -204,6 +207,7 @@ namespace SurfaceKeyboard
             updateWindowTitle();
 
             wordPredictor = new WordPredictor();
+            predictMode = PredictionMode.AbsoluteMode;
             currWord = "";
             currSentence = "";
             textHints = new TextBlock[] { TextHintBlk0, TextHintBlk1, TextHintBlk2, TextHintBlk3, TextHintBlk4 };
@@ -327,13 +331,13 @@ namespace SurfaceKeyboard
                     string typeText = currSentence + currWord;
                     if (typeText.Length > currText.Length)
                         typeText = typeText.Substring(0, currText.Length);
-                    TaskTextBlk.Text = currText + "\n" + typeText + "_";
+                    TaskTextBlk.Text = currText + "\n" + typeText + "|";
                 }
                 else
                 {
                     // Show asterisk feedback
                     if (hpNo >= 0 && hpNo <= asteriskText.Length)
-                        asteriskText = asteriskText.Substring(0, hpNo) + "_";
+                        asteriskText = asteriskText.Substring(0, hpNo) + "|";
                     TaskTextBlk.Text = currText + "\n" + asteriskText;
                 }
             }
@@ -1705,15 +1709,17 @@ namespace SurfaceKeyboard
 
                 if (listX.Count > 0)
                 {
-                    List<KeyValuePair<string, double>> probWords = wordPredictor.predict(listX.ToArray(), listY.ToArray());
+                    List<KeyValuePair<string, double>> probWords = wordPredictor.predict(listX.ToArray(), listY.ToArray(), predictMode);
                     //Console.WriteLine("    " + probWords + " probable words.");
 
                     // Show hint in the TextHintBlock
                     counter = 0;
 
+                    Console.WriteLine("Candidates:");
                     for (var i = 0; i < probWords.Count; ++i)
                     {
                         string tempWord = probWords[i].Key;
+                        Console.WriteLine("    :" + tempWord + ", " + probWords[i].Value);
                         if (counter >= MAX_HINT_NUMBER)
                         {
                             break;
@@ -1791,6 +1797,34 @@ namespace SurfaceKeyboard
             clearKbdFocus(TestBtn);
         }
 
+        private void switchPredictMode()
+        {
+            if (predictMode == PredictionMode.AbsoluteMode)
+            {
+                PredictBtn.Content = "Relative";
+                predictMode = PredictionMode.RelativeMode;
+            }
+            else
+            {
+                PredictBtn.Content = "Absolute";
+                predictMode = PredictionMode.AbsoluteMode;
+            }
+        }
+
+        private void PredictBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            switchPredictMode();
+            clearKbdFocus(PredictBtn);
+        }
+
+        private void PredictBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (currDevice != InputDevice.Hand)
+                switchPredictMode();
+
+            clearKbdFocus(PredictBtn);
+        }
+
         private void clickOnTextHint(int num)
         {
             if (testControl)
@@ -1850,8 +1884,6 @@ namespace SurfaceKeyboard
         {
             clickOnTextHint(4);
         }
-
-
 
     }
 }

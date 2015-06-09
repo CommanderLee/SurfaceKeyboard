@@ -83,10 +83,11 @@ def saveSinglePointResults(fileName, pointPos):
     char = [pPos[0] for pPos in pointPos]
     absX = [pPos[1] for pPos in pointPos]
     absY = [pPos[2] for pPos in pointPos]
+    userName = [pPos[3].split('_')[0] for pPos in pointPos]
     validMarkQ = np.ones(len(char), int)
 
-    totalArray = np.array(zip(char, absX, absY, validMarkQ), 
-        dtype=[('char', 'S5'), ('absX', float), ('absY', float), ('validMarkQ', int)])
+    totalArray = np.array(zip(char, userName, absX, absY, validMarkQ), 
+        dtype=[('char', 'S5'), ('userName', 'S5'), ('absX', float), ('absY', float), ('validMarkQ', int)])
     totalArray.sort(order='char')
 
     char = totalArray['char']
@@ -117,7 +118,7 @@ def saveSinglePointResults(fileName, pointPos):
             lastChar = i + 1
 
     writeFile = open(fileName, 'w')
-    writeFile.write('char, absX, absY, validMarkQ\n')
+    writeFile.write('char, userName, absX, absY, validMarkQ\n')
     for array in totalArray:
         writeFile.write(str(array).strip('()') + '\n')
     # writeFile.write('targetChar,absoluteX,absoluteY,relativeX,relativeY,leftUpX,leftUpY,standardX,standardY\n')

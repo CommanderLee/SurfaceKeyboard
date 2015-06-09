@@ -1724,11 +1724,11 @@ namespace SurfaceKeyboard
                         {
                             break;
                         }
-                        else if (tempWord.Contains('\'') || (i > 0 && probWords[i - 1].Key == tempWord))
-                        {
-                            // ignore same word or strange word(I'm Jack's .etc.)
-                            continue;
-                        }
+                        //else if (tempWord.Contains('\'') || (i > 0 && probWords[i - 1].Key == tempWord))
+                        //{
+                        //    // ignore same word or strange word(I'm Jack's .etc.)
+                        //    continue;
+                        //}
                         else
                         {
                             // Update default prediction:

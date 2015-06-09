@@ -15,8 +15,14 @@ namespace SurfaceKeyboard
         public bool                                 loadStatus;
         public Dictionary<string, int>              freqDict;
         public Dictionary<string, List<string>>     codeSet;
+        //public Dictionary<int, List<string>> lenSet;
+        public Trie                                 trieFreq;
+        private double[]                            currPntX, currPntY;
+
         public Dictionary<string, VectorParameter>  vecParams;
         public Dictionary<char, PointParameter>     pntParams;
+
+        private int                                 wordGramLen = 5;
 
         private double                              freqMax, freqMin, freqAvg;
 
@@ -70,6 +76,10 @@ namespace SurfaceKeyboard
             loadStatus = false;
             freqDict = new Dictionary<string, int>();
             codeSet = new Dictionary<string, List<string>>();
+            //lenSet = new Dictionary<int, List<string>>();
+            // Root of the trie struct
+            trieFreq = new Trie('$');
+
             vecParams = new Dictionary<string, VectorParameter>();
             pntParams = new Dictionary<char, PointParameter>();
         }
@@ -101,7 +111,8 @@ namespace SurfaceKeyboard
         {
             string jsonWordFreqName = "Resources/wordFreq.json";
             string jsonCodeSetName = "Resources/codeSet.json";
-            if (!File.Exists(jsonWordFreqName) || !File.Exists(jsonCodeSetName))
+            string jsonLenSetName = "Resources/lenSet.json";
+            if (!File.Exists(jsonWordFreqName) || !File.Exists(jsonCodeSetName) || !File.Exists(jsonLenSetName))
             {
                 // Load from txt fileL: 160000 word corpus.
                 string fName = "Resources/en_US_wordlist.combined";
@@ -114,14 +125,25 @@ namespace SurfaceKeyboard
                     {
                         string word = wordParams[0].ToLower().Split('=')[1];
                         int freq = Convert.ToInt32(wordParams[3].Split('=')[1]);
+                        
+                        // Only keep alphabets
+                        string tmpWord = "";
+                        foreach (char c in word)
+                        {
+                            if (c >= 'a' && c <= 'z')
+                            {
+                                tmpWord += c.ToString();
+                            }
+                        }
+                        word = tmpWord;
 
                         if (freqDict.ContainsKey(word))
                         {
-                            freqDict[word] += freq;
+                            freqDict[word] += freq + 1;
                         }
                         else
                         {
-                            freqDict[word] = freq;
+                            freqDict[word] = freq + 1;
                         }
 
                         string code = encodeWord(word);
@@ -129,7 +151,20 @@ namespace SurfaceKeyboard
                         {
                             codeSet[code] = new List<string>();
                         }
-                        codeSet[code].Add(word);
+                        if (!codeSet[code].Contains(word))
+                        {
+                            codeSet[code].Add(word);
+                        }
+
+                        //int len = word.Length;
+                        //if (!lenSet.ContainsKey(len))
+                        //{
+                        //    lenSet[len] = new List<string>();
+                        //}
+                        //if (!lenSet[len].Contains(word))
+                        //{
+                        //    lenSet[len].Add(word);
+                        //}
                     }
                 }
 
@@ -165,6 +200,18 @@ namespace SurfaceKeyboard
                                 codeSet[code].Add(word);
                                 Console.WriteLine("New Word: " + word + "; Code: " + code + ";Num: " + codeSet[code].Count);
                             }
+
+                            //int len = word.Length;
+                            //if (!lenSet.ContainsKey(len))
+                            //{
+                            //    lenSet[len] = new List<string>();
+                            //}
+
+                            //if (!lenSet[len].Contains(word))
+                            //{
+                            //    lenSet[len].Add(word);
+                            //    Console.WriteLine("New Word: " + word + "; Len: " + len + ";Num: " + lenSet[len].Count);
+                            //}
                         }
                     }
                 }
@@ -176,6 +223,9 @@ namespace SurfaceKeyboard
                 string jsonCode = JsonConvert.SerializeObject(codeSet, Formatting.Indented);
                 //Console.WriteLine(jsonCode);
                 File.WriteAllText(jsonCodeSetName, jsonCode);
+
+                //string jsonLen = JsonConvert.SerializeObject(lenSet, Formatting.Indented);
+                //File.WriteAllText(jsonLenSetName, jsonLen);
 
                 Console.WriteLine("Corpus JSON Object Saved.");
             }
@@ -190,12 +240,33 @@ namespace SurfaceKeyboard
                 codeSet = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(jsonCode);
                 //Console.WriteLine(codeSet);
 
+                //string jsonLen = File.ReadAllText(jsonLenSetName);
+                //lenSet = JsonConvert.DeserializeObject<Dictionary<int, List<string>>>(jsonLen);
+
                 Console.WriteLine("Corpus JSON Object Load");
             }
             freqMax = freqDict.Values.Max();
             freqMin = freqDict.Values.Min();
             freqAvg = freqDict.Values.ToList().Average();
             Console.WriteLine("[" + freqMin + "-" + freqMax + "]" + "Avg:" + freqAvg);
+
+            // Load Trie from word-freq dictionary
+            foreach (KeyValuePair<string, int> kvPair in freqDict)
+            {
+                string word = kvPair.Key;
+                int freq = kvPair.Value;
+                if (word.Length < wordGramLen)
+                {
+                    trieFreq.addChild(word, freq);
+                }
+                else
+                {
+                    for (var i = 0; i + wordGramLen <= word.Length; ++i)
+                    {
+                        trieFreq.addChild(word.Substring(i, wordGramLen), freq);
+                    }
+                }
+            }
         }
 
         private void loadKeyboardVectors()
@@ -528,12 +599,88 @@ namespace SurfaceKeyboard
             }
             else
             {
-                probWords.Add(new KeyValuePair<string,double>("Hello world", -1));
+                //List<string> selWords = lenSet[pntListX.Count()];
+                //foreach (string canWord in selWords)
+
+                currPntX = pntListX;
+                currPntY = pntListY;
+                probWords = dfs(1.0, 0, "");
+
                 // Bigger probability is better. Sort Down.
                 probWords.Sort(MyCompareDownn);
             }
             
             return probWords;
+        }
+
+        private static int MyCompareProb(KeyValuePair<char, double> kvp1, KeyValuePair<char, double> kvp2)
+        {
+            return kvp2.Value.CompareTo(kvp1.Value);
+        }
+
+        /// <summary>
+        /// Depth First Search. Find possible letter sequences
+        /// </summary>
+        /// <param name="prob"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        private List<KeyValuePair<string, double>> dfs(double prob, int index, string seq)
+        {
+            List<KeyValuePair<string, double>> ret = new List<KeyValuePair<string, double>>();
+
+            // Get candidates
+            List<KeyValuePair<char, double>> tmpProbPair = new List<KeyValuePair<char, double>>();
+
+            for (var i = 0; i < 26; ++i)
+            {
+                char c = (char)('a' + i);
+                PointParameter pp = pntParams[c];
+                string tmpSeq = seq + c.ToString();
+
+                // Goal: argmax P(letter seq) * P(point pos | letter seq)
+                // P(letter seq) = P(L1) * P(L2 | L1) * ... * P(Ln | Ln-k..Ln-1)
+                // Calculate P(point pos | letter seq) = P1 * P2 * ... * Pn
+                double currProb = biVarGaussianDistribution(currPntX[index], currPntY[index],
+                    pp.userPosX, pp.userPosY, pp.userStdX, pp.userStdY, pp.userCorrXY);
+                int startIndex = Math.Max(0, index - wordGramLen + 1);
+                if (index - startIndex >= 1)
+                {
+                    currProb *= (double)(trieFreq.findChild(tmpSeq.Substring(startIndex, index - startIndex + 1))) /
+                        trieFreq.findChild(tmpSeq.Substring(startIndex, index - startIndex));
+                }
+
+                tmpProbPair.Add(new KeyValuePair<char, double>(c, currProb));
+            }
+
+            tmpProbPair.Sort(MyCompareProb);
+
+            if (index == currPntX.Length - 1)
+            {
+                // End.
+                for (var i = 0; i < 5; ++i)
+                {
+                    ret.Add(new KeyValuePair<string, double>(seq + tmpProbPair[i].Key.ToString(), prob * tmpProbPair[i].Value));
+                }
+            }
+            else
+            {
+                // End.
+                for (var i = 0; i < 5; ++i)
+                {
+                    ret.AddRange(dfs(prob * tmpProbPair[i].Value, index + 1, seq + tmpProbPair[i].Key.ToString()));
+                }
+            }
+
+            return ret;
+        }
+
+        private double biVarGaussianDistribution(double x, double y, double muX, double muY,
+            double sigmaX, double sigmaY, double rho)
+        {
+            return 1 / (2 * Math.PI * sigmaX * sigmaY * Math.Sqrt(1 - rho*rho)) 
+                * Math.Exp(- 1 / (2 * (1 - rho*rho)) * (Math.Pow(x - muX, 2) / Math.Pow(sigmaX, 2) 
+                - 2 * rho * (x - muX) * (y - muY) / (sigmaX * sigmaY) 
+                + Math.Pow(y - muY, 2) / Math.Pow(sigmaY, 2)));
         }
     }
 }

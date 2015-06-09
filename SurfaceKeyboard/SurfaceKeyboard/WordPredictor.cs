@@ -15,7 +15,7 @@ namespace SurfaceKeyboard
         public bool                                 loadStatus;
         public Dictionary<string, int>              freqDict;
         public Dictionary<string, List<string>>     codeSet;
-        //public Dictionary<int, List<string>> lenSet;
+
         public Trie                                 trieFreq;
         private double[]                            currPntX, currPntY;
 
@@ -25,6 +25,11 @@ namespace SurfaceKeyboard
         private int                                 wordGramLen = 5;
 
         private double                              freqMax, freqMin, freqAvg;
+
+        List<KeyValuePair<string, double>>          probWords;
+        private int                                 searchNum = 10;
+        // Set up with a large length
+        private int                                 lastSentenceLen = 100;
 
         // Pre-processing: Encode the words. 0:left, 1:right, 2:spacebar.
         // spacebar a b c d e f g
@@ -40,22 +45,6 @@ namespace SurfaceKeyboard
         static double[] letterPosY = new double[] { 617.4, 660.4, 660.4, 617.4, 572.4, 617.4, 617.4, 617.4, 572.4, 617.4, 617.4, 617.4, 
             660.4, 660.4, 572.4, 572.4, 572.4, 572.4, 617.4, 572.4, 572.4, 660.4, 572.4, 660.4, 572.4, 660.4};
         
-        // Generated from ('16users_kbd_pos.csv')
-        //static double[] userPosX = new double[] { 718.57701378, 909.28646996, 833.47336852, 813.78691024, 798.0410731, 853.90674048, 891.43037533, 
-        //    936.84420906, 1005.498639, 970.26316325, 1017.0088152, 1057.8388884, 992.81661424, 953.96573418, 1046.8064112, 1091.973913, 
-        //    709.51111111, 840.63848851, 767.88189101, 880.79090006, 962.8251284, 875.36052006, 755.24576271, 789.71264368, 926.77008268, 
-        //    747.06666667 };
-        //static double[] userPosY = new double[] { 608.76643043, 652.66137654, 649.99647352, 607.69583868, 567.42299606, 611.19359811, 610.85930762, 
-        //    613.12794869, 566.97748005, 618.57894951, 605.59700376, 604.27777744, 652.05537706, 654.45690642, 565.00218248, 565.54347746, 
-        //    574.67778049, 571.56836324, 609.71508114, 574.24703991, 571.10992157, 652.48759038, 570.5338952, 651.43678021, 571.14670341, 
-        //    648.51999837 };
-        //double[] userPosX, userPosY;
-        //double[] userStdX, userStdY;
-        //double[] userVarX, userVarY;
-        //double[] userCovXY, userCorrXY;
-
-
-
         // y = ax + b. To split two hands
         const double paramA = 2.903950;
         const double paramB = -2051.836766;
@@ -76,12 +65,14 @@ namespace SurfaceKeyboard
             loadStatus = false;
             freqDict = new Dictionary<string, int>();
             codeSet = new Dictionary<string, List<string>>();
-            //lenSet = new Dictionary<int, List<string>>();
+
             // Root of the trie struct
             trieFreq = new Trie('$');
 
             vecParams = new Dictionary<string, VectorParameter>();
             pntParams = new Dictionary<char, PointParameter>();
+
+            probWords = new List<KeyValuePair<string, double>>();
         }
 
         public void initialize()
@@ -111,8 +102,8 @@ namespace SurfaceKeyboard
         {
             string jsonWordFreqName = "Resources/wordFreq.json";
             string jsonCodeSetName = "Resources/codeSet.json";
-            string jsonLenSetName = "Resources/lenSet.json";
-            if (!File.Exists(jsonWordFreqName) || !File.Exists(jsonCodeSetName) || !File.Exists(jsonLenSetName))
+
+            if (!File.Exists(jsonWordFreqName) || !File.Exists(jsonCodeSetName))
             {
                 // Load from txt fileL: 160000 word corpus.
                 string fName = "Resources/en_US_wordlist.combined";
@@ -155,16 +146,6 @@ namespace SurfaceKeyboard
                         {
                             codeSet[code].Add(word);
                         }
-
-                        //int len = word.Length;
-                        //if (!lenSet.ContainsKey(len))
-                        //{
-                        //    lenSet[len] = new List<string>();
-                        //}
-                        //if (!lenSet[len].Contains(word))
-                        //{
-                        //    lenSet[len].Add(word);
-                        //}
                     }
                 }
 
@@ -200,18 +181,6 @@ namespace SurfaceKeyboard
                                 codeSet[code].Add(word);
                                 Console.WriteLine("New Word: " + word + "; Code: " + code + ";Num: " + codeSet[code].Count);
                             }
-
-                            //int len = word.Length;
-                            //if (!lenSet.ContainsKey(len))
-                            //{
-                            //    lenSet[len] = new List<string>();
-                            //}
-
-                            //if (!lenSet[len].Contains(word))
-                            //{
-                            //    lenSet[len].Add(word);
-                            //    Console.WriteLine("New Word: " + word + "; Len: " + len + ";Num: " + lenSet[len].Count);
-                            //}
                         }
                     }
                 }
@@ -223,9 +192,6 @@ namespace SurfaceKeyboard
                 string jsonCode = JsonConvert.SerializeObject(codeSet, Formatting.Indented);
                 //Console.WriteLine(jsonCode);
                 File.WriteAllText(jsonCodeSetName, jsonCode);
-
-                //string jsonLen = JsonConvert.SerializeObject(lenSet, Formatting.Indented);
-                //File.WriteAllText(jsonLenSetName, jsonLen);
 
                 Console.WriteLine("Corpus JSON Object Saved.");
             }
@@ -239,9 +205,6 @@ namespace SurfaceKeyboard
                 string jsonCode = File.ReadAllText(jsonCodeSetName);
                 codeSet = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(jsonCode);
                 //Console.WriteLine(codeSet);
-
-                //string jsonLen = File.ReadAllText(jsonLenSetName);
-                //lenSet = JsonConvert.DeserializeObject<Dictionary<int, List<string>>>(jsonLen);
 
                 Console.WriteLine("Corpus JSON Object Load");
             }
@@ -442,10 +405,12 @@ namespace SurfaceKeyboard
         public List<KeyValuePair<string, double>> predict(double[] pntListX, double[] pntListY, PredictionMode predMode)
         {
             // Get user codes
-            List<KeyValuePair<string, double>> probWords = new List<KeyValuePair<string,double>>();
+            //List<KeyValuePair<string, double>> probWords = new List<KeyValuePair<string,double>>();
 
             if (predMode == PredictionMode.RelativeMode)
             {
+                probWords.Clear();
+
                 List<string> userCodes = calcUserCodes(pntListX, pntListY);
                 Console.WriteLine(userCodes[0]);
 
@@ -599,13 +564,40 @@ namespace SurfaceKeyboard
             }
             else
             {
-                //List<string> selWords = lenSet[pntListX.Count()];
-                //foreach (string canWord in selWords)
-
                 currPntX = pntListX;
                 currPntY = pntListY;
-                probWords = dfs(1.0, 0, "");
 
+                int sentenceLen = currPntX.Length;
+                if (sentenceLen < 10)
+                    searchNum = 10;
+                else if (sentenceLen < 15)
+                    searchNum = 5;
+                else
+                    searchNum = 2;
+
+                if (currPntX.Length == lastSentenceLen + 1)
+                {
+                    // Add one point
+                    List<KeyValuePair<string, double>> newProbWords = new List<KeyValuePair<string, double>>();
+                    for (var i = 0; i < searchNum; ++i)
+                    {
+                        string seq = probWords[i].Key;
+                        double prob = probWords[i].Value;
+                        newProbWords.AddRange(dfs(prob, currPntX.Length - 1, seq));
+                    }
+                    //foreach (KeyValuePair<string, double> kvPair in probWords)
+                    //{
+                    //    newProbWords.AddRange(dfs(kvPair.Value, currPntX.Length - 1, kvPair.Key));
+                    //}
+                    probWords = newProbWords;
+                }
+                else
+                {
+                    // Start a new one
+                    probWords = dfs(10000.0, 0, "");
+                }
+
+                lastSentenceLen = currPntX.Length;
                 // Bigger probability is better. Sort Down.
                 probWords.Sort(MyCompareDownn);
             }
@@ -657,7 +649,7 @@ namespace SurfaceKeyboard
             if (index == currPntX.Length - 1)
             {
                 // End.
-                for (var i = 0; i < 5; ++i)
+                for (var i = 0; i < searchNum; ++i)
                 {
                     ret.Add(new KeyValuePair<string, double>(seq + tmpProbPair[i].Key.ToString(), prob * tmpProbPair[i].Value));
                 }
@@ -665,7 +657,7 @@ namespace SurfaceKeyboard
             else
             {
                 // End.
-                for (var i = 0; i < 5; ++i)
+                for (var i = 0; i < searchNum; ++i)
                 {
                     ret.AddRange(dfs(prob * tmpProbPair[i].Value, index + 1, seq + tmpProbPair[i].Key.ToString()));
                 }
@@ -677,10 +669,20 @@ namespace SurfaceKeyboard
         private double biVarGaussianDistribution(double x, double y, double muX, double muY,
             double sigmaX, double sigmaY, double rho)
         {
-            return 1 / (2 * Math.PI * sigmaX * sigmaY * Math.Sqrt(1 - rho*rho)) 
-                * Math.Exp(- 1 / (2 * (1 - rho*rho)) * (Math.Pow(x - muX, 2) / Math.Pow(sigmaX, 2) 
-                - 2 * rho * (x - muX) * (y - muY) / (sigmaX * sigmaY) 
-                + Math.Pow(y - muY, 2) / Math.Pow(sigmaY, 2)));
+            double sigmaXY = sigmaX * sigmaY;
+            double sigmaX2 = sigmaX * sigmaX;
+            double sigmaY2 = sigmaY * sigmaY;
+            double r = 1 - rho * rho;
+
+            return 1 / (2 * Math.PI * sigmaXY * Math.Sqrt(r)) * Math.Exp(-1 / (2 * r) * (
+                (x-muX) * (x-muX) / sigmaX2
+                - 2 * rho * (x - muX) * (y - muY) / sigmaXY
+                + (y-muY) * (y-muY) / sigmaY2 ) );
+
+            //return 1 / (2 * Math.PI * sigmaX * sigmaY * Math.Sqrt(1 - rho*rho)) 
+            //    * Math.Exp(- 1 / (2 * (1 - rho*rho)) * (Math.Pow(x - muX, 2) / Math.Pow(sigmaX, 2) 
+            //    - 2 * rho * (x - muX) * (y - muY) / (sigmaX * sigmaY) 
+            //    + Math.Pow(y - muY, 2) / Math.Pow(sigmaY, 2)));
         }
     }
 }

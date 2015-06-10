@@ -108,11 +108,14 @@ namespace SurfaceKeyboard
 
             if (!File.Exists(jsonWordFreqName) || !File.Exists(jsonCodeSetName) || !File.Exists(jsonLenSetName))
             {
-                // Load from txt fileL: 160000 word corpus.
+                int maxLen = 20000;
+
+                // Load from Android Source. txt fileL: 160000 word corpus.
                 string fName = "Resources/en_US_wordlist.combined";
                 string[] lines = File.ReadAllLines(fName);
-
-                for (var i = 1; i < lines.Length; ++i)
+                
+                int selectLen = Math.Min(maxLen, lines.Length);
+                for (var i = 1; i < selectLen; ++i)
                 {
                     string[] wordParams = lines[i].Split(',');
                     if (wordParams.Length == 4)
@@ -162,14 +165,114 @@ namespace SurfaceKeyboard
                     }
                 }
 
-                // MacKenzie
-                fName = "Resources/TaskText_All.txt";
+                // Load from ANC Written Corpus.
+                fName = "Resources/ANC-written-count.txt";
                 lines = File.ReadAllLines(fName);
+                int commonWords = 0;
+
+                selectLen = Math.Min(maxLen, lines.Length);
+                for (var i = 0; i < selectLen; ++i)
+                {
+                    string[] wordParams = lines[i].Split('\t');
+                    if (wordParams.Length == 4)
+                    {
+                        string word = wordParams[0].ToLower();
+                        int freq = Convert.ToInt32(wordParams[3]);
+
+                        // Only keep alphabets
+                        string tmpWord = "";
+                        foreach (char c in word)
+                        {
+                            if (c >= 'a' && c <= 'z')
+                            {
+                                tmpWord += c.ToString();
+                            }
+                        }
+                        word = tmpWord;
+
+                        if (freqDict.ContainsKey(word))
+                        {
+                            freqDict[word] += freq + 1;
+                            ++commonWords;
+                        }
+                        else
+                        {
+                            freqDict[word] = freq + 1;
+                        }
+
+                        string code = encodeWord(word);
+                        if (!codeSet.ContainsKey(code))
+                        {
+                            codeSet[code] = new List<string>();
+                        }
+                        if (!codeSet[code].Contains(word))
+                        {
+                            codeSet[code].Add(word);
+                        }
+
+                        int len = word.Length;
+                        if (!lenSet.ContainsKey(len))
+                        {
+                            lenSet[len] = new List<string>();
+                        }
+                        if (!lenSet[len].Contains(word))
+                        {
+                            lenSet[len].Add(word);
+                        }
+                    }
+                }
+
+                // Check Testing set
+                fName = "Resources/TaskText_Mixed_40.txt";
+                lines = File.ReadAllLines(fName);
+                string existingTexts = "";
 
                 foreach (string line in lines)
                 {
                     if (line.Length > 1)
                     {
+                        bool allExist = true;
+                        int minFreq = 1000;
+
+                        string[] words = line.ToLower().Split(' ');
+
+                        foreach (string word in words)
+                        {
+                            if (freqDict.ContainsKey(word))
+                            {
+                                if (freqDict[word] < minFreq)
+                                    minFreq = freqDict[word];
+                            }
+                            else
+                            {
+                                allExist = false;
+                            }
+                        }
+
+                        if (allExist)
+                        {
+                            Console.WriteLine("MinFreq:" + minFreq);
+                            existingTexts += line + "\n";
+                        }
+                        else
+                        {
+                            Console.WriteLine("Not Exist.");
+                        }
+                    }
+                }
+                File.WriteAllText("Resources/TaskTexts_Modified.txt", existingTexts);
+
+                // MacKenzie
+                fName = "Resources/TaskText_All.txt";
+                lines = File.ReadAllLines(fName);
+                existingTexts ="";
+
+                foreach (string line in lines)
+                {
+                    if (line.Length > 1)
+                    {
+                        bool allExist = true;
+
                         string[] words = line.ToLower().Split(' ');
 
                         foreach (string word in words)
@@ -181,6 +284,8 @@ namespace SurfaceKeyboard
                             else
                             {
                                 freqDict[word] = 1;
+                                Console.WriteLine("New Word: " + word);
+                                allExist = false;
                             }
 
                             string code = encodeWord(word);
@@ -204,8 +309,12 @@ namespace SurfaceKeyboard
                                 lenSet[len].Add(word);
                             }
                         }
+
+                        if (allExist)
+                            existingTexts += line + "\n";
                     }
                 }
+                File.WriteAllText("Resources/SelectedTexts.txt", existingTexts);
 
                 string jsonWord = JsonConvert.SerializeObject(freqDict, Formatting.Indented);
                 //Console.WriteLine(jsonWord);
@@ -242,22 +351,22 @@ namespace SurfaceKeyboard
             Console.WriteLine("[" + freqMin + "-" + freqMax + "]" + "Avg:" + freqAvg);
 
             // Load Trie from word-freq dictionary
-            foreach (KeyValuePair<string, int> kvPair in freqDict)
-            {
-                string word = kvPair.Key;
-                int freq = kvPair.Value;
-                if (word.Length < wordGramLen)
-                {
-                    trieFreq.addChild(word, freq);
-                }
-                else
-                {
-                    for (var i = 0; i + wordGramLen <= word.Length; ++i)
-                    {
-                        trieFreq.addChild(word.Substring(i, wordGramLen), freq);
-                    }
-                }
-            }
+            //foreach (KeyValuePair<string, int> kvPair in freqDict)
+            //{
+            //    string word = kvPair.Key;
+            //    int freq = kvPair.Value;
+            //    if (word.Length < wordGramLen)
+            //    {
+            //        trieFreq.addChild(word, freq);
+            //    }
+            //    else
+            //    {
+            //        for (var i = 0; i + wordGramLen <= word.Length; ++i)
+            //        {
+            //            trieFreq.addChild(word.Substring(i, wordGramLen), freq);
+            //        }
+            //    }
+            //}
         }
 
         private void loadKeyboardVectors()

@@ -37,6 +37,8 @@ namespace SurfaceKeyboard
         double           movingSumX;
 
         private static bool     gestureSwitch = false;
+        private static bool     selectionSwitch = true;
+
         public static bool      getGestureSwitch() { return gestureSwitch; }
         public static void      reverseGestureSwitch() { gestureSwitch = !gestureSwitch; }
 
@@ -70,7 +72,7 @@ namespace SurfaceKeyboard
             double moveX = 0, moveY = 0;
             int movementLevel = 0;
 
-            if (_queue.Count > 0 && handPoint.getY() < SELECT_AREA_BOTTOM)
+            if (selectionSwitch && _queue.Count > 0 && handPoint.getY() < SELECT_AREA_BOTTOM)
             {
                 moveX = handPoint.getX() - _queue.Last().getX();
                 moveY = handPoint.getY() - _queue.Last().getY();

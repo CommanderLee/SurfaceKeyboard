@@ -15,9 +15,10 @@ namespace SurfaceKeyboard
         public bool                                 loadStatus;
         public Dictionary<string, int>              freqDict;
         public Dictionary<string, List<string>>     codeSet;
+        public Dictionary<int, List<string>>        lenSet;
 
         public Trie                                 trieFreq;
-        private double[]                            currPntX, currPntY;
+        //private double[]                            currPntX, currPntY;
 
         public Dictionary<string, VectorParameter>  vecParams;
         public Dictionary<char, PointParameter>     pntParams;
@@ -65,6 +66,7 @@ namespace SurfaceKeyboard
             loadStatus = false;
             freqDict = new Dictionary<string, int>();
             codeSet = new Dictionary<string, List<string>>();
+            lenSet = new Dictionary<int, List<string>>();
 
             // Root of the trie struct
             trieFreq = new Trie('$');
@@ -102,8 +104,9 @@ namespace SurfaceKeyboard
         {
             string jsonWordFreqName = "Resources/wordFreq.json";
             string jsonCodeSetName = "Resources/codeSet.json";
+            string jsonLenSetName = "Resources/lenSet.json";
 
-            if (!File.Exists(jsonWordFreqName) || !File.Exists(jsonCodeSetName))
+            if (!File.Exists(jsonWordFreqName) || !File.Exists(jsonCodeSetName) || !File.Exists(jsonLenSetName))
             {
                 // Load from txt fileL: 160000 word corpus.
                 string fName = "Resources/en_US_wordlist.combined";
@@ -146,6 +149,16 @@ namespace SurfaceKeyboard
                         {
                             codeSet[code].Add(word);
                         }
+
+                        int len = word.Length;
+                        if (!lenSet.ContainsKey(len))
+                        {
+                            lenSet[len] = new List<string>();
+                        }
+                        if (!lenSet[len].Contains(word))
+                        {
+                            lenSet[len].Add(word);
+                        }
                     }
                 }
 
@@ -175,11 +188,20 @@ namespace SurfaceKeyboard
                             {
                                 codeSet[code] = new List<string>();
                             }
-
                             if (!codeSet[code].Contains(word))
                             {
                                 codeSet[code].Add(word);
                                 Console.WriteLine("New Word: " + word + "; Code: " + code + ";Num: " + codeSet[code].Count);
+                            }
+
+                            int len = word.Length;
+                            if (!lenSet.ContainsKey(len))
+                            {
+                                lenSet[len] = new List<string>();
+                            }
+                            if (!lenSet[len].Contains(word))
+                            {
+                                lenSet[len].Add(word);
                             }
                         }
                     }
@@ -193,6 +215,9 @@ namespace SurfaceKeyboard
                 //Console.WriteLine(jsonCode);
                 File.WriteAllText(jsonCodeSetName, jsonCode);
 
+                string jsonLen = JsonConvert.SerializeObject(lenSet, Formatting.Indented);
+                File.WriteAllText(jsonLenSetName, jsonLen);
+
                 Console.WriteLine("Corpus JSON Object Saved.");
             }
             else
@@ -204,6 +229,9 @@ namespace SurfaceKeyboard
 
                 string jsonCode = File.ReadAllText(jsonCodeSetName);
                 codeSet = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(jsonCode);
+
+                string jsonLen = File.ReadAllText(jsonLenSetName);
+                lenSet = JsonConvert.DeserializeObject<Dictionary<int, List<string>>>(jsonLen);
                 //Console.WriteLine(codeSet);
 
                 Console.WriteLine("Corpus JSON Object Load");
@@ -238,14 +266,18 @@ namespace SurfaceKeyboard
             if (!File.Exists(jsonKbdVecName))
             {
                 // Load from csv file
-                string fName = "Resources/16users_kbd_vec_v1.2.csv";
+                string fName = "Resources/pointPairResult-16users-v2.5-merged.txt";
                 string[] words = File.ReadAllLines(fName);
 
+                double sumSVX = 0, sumSVY = 0, sumSVL = 0, sumRD = 0;
+                int cnt = 0;
                 for (var i = 1; i < words.Length; ++i)
                 {
                     string[] wordParams = words[i].Split(',');
-                    if (wordParams.Length == 13)
+                    if (wordParams.Length == 12)
                     {
+                        ++cnt;
+
                         string charPair = wordParams[0].Trim('\'');
                         double vecX = Convert.ToDouble(wordParams[3]);
                         double vecY = Convert.ToDouble(wordParams[4]);
@@ -253,9 +285,27 @@ namespace SurfaceKeyboard
                         double rad1 = Convert.ToDouble(wordParams[6]);
                         double rad2 = Convert.ToDouble(wordParams[7]);
 
-                        vecParams[charPair] = new VectorParameter(vecX, vecY, vecLen, rad1, rad2);
+                        double stdVecX = Convert.ToDouble(wordParams[8]);
+                        double stdVecY = Convert.ToDouble(wordParams[9]);
+                        double stdVecLen = Convert.ToDouble(wordParams[10]);
+                        double radDist = Convert.ToDouble(wordParams[11]);
+                        //Console.WriteLine(words[i] + "\n    " + vecX + ", " + stdVecX);
+
+                        vecParams[charPair] = new VectorParameter(vecX, vecY, vecLen, rad1, rad2, 
+                            stdVecX, stdVecY, stdVecLen, radDist);
+
+                        sumSVX += stdVecX;
+                        sumSVY += stdVecY;
+                        sumSVL += stdVecLen;
+                        sumRD += radDist;
                     }
                 }
+
+                // Use general(mean) value for those non-existing vectors
+                double genSVX = sumSVX / cnt;
+                double genSVY = sumSVY / cnt;
+                double genSVL = sumSVL / cnt;
+                double genRD = sumRD / cnt;
 
                 // Fill out other items
                 for (var i = 0; i < 26; ++i)
@@ -270,14 +320,14 @@ namespace SurfaceKeyboard
                             Console.WriteLine("Add: " + charPair);
                             if (i == j)
                             {
-                                vecParams[charPair] = new VectorParameter(0, 0, 0, 0, 0);
+                                vecParams[charPair] = new VectorParameter(0, 0, -1, -1, -1, genSVX, genSVY, genSVL, genRD);
                             }
                             else
                             {
                                 double vecX = pntParams[charB].userPosX - pntParams[charA].userPosX;
                                 double vecY = pntParams[charB].userPosY - pntParams[charA].userPosY;
 
-                                vecParams[charPair] = new VectorParameter(vecX, vecY);
+                                vecParams[charPair] = new VectorParameter(vecX, vecY, -1, -1, -1, genSVX, genSVY, genSVL, genRD);
                             }
                         }
                     }
@@ -418,8 +468,10 @@ namespace SurfaceKeyboard
                 //List<int> myPntIdR = new List<int>();
                 List<Point> myPntL = new List<Point>();
                 List<Point> myPntR = new List<Point>();
-                List<VectorParameter> myVecL = new List<VectorParameter>();
-                List<VectorParameter> myVecR = new List<VectorParameter>();
+                List<Point> myVecL = new List<Point>();
+                List<Point> myVecR = new List<Point>();
+                //List<VectorParameter> myVecL = new List<VectorParameter>();
+                //List<VectorParameter> myVecR = new List<VectorParameter>();
 
                 List<Point> candWordPntL = new List<Point>();
                 List<Point> candWordPntR = new List<Point>();
@@ -447,7 +499,8 @@ namespace SurfaceKeyboard
                                     double vecX = pntListX[i] - myPntL.Last().x;
                                     double vecY = pntListY[i] - myPntL.Last().y;
 
-                                    myVecL.Add(new VectorParameter(vecX, vecY));
+                                    myVecL.Add(new Point(vecX, vecY));
+                                    //myVecL.Add(new VectorParameter(vecX, vecY));
                                 }
                                 myPntL.Add(new Point(pntListX[i], pntListY[i]));
                             }
@@ -458,7 +511,8 @@ namespace SurfaceKeyboard
                                     double vecX = pntListX[i] - myPntR.Last().x;
                                     double vecY = pntListY[i] - myPntR.Last().y;
 
-                                    myVecR.Add(new VectorParameter(vecX, vecY));
+                                    myVecR.Add(new Point(vecX, vecY));
+                                    //myVecR.Add(new VectorParameter(vecX, vecY));
                                 }
                                 myPntR.Add(new Point(pntListX[i], pntListY[i]));
                             }
@@ -475,6 +529,7 @@ namespace SurfaceKeyboard
                             candWordVecR.Clear();
 
                             char lastLeft = ' ', lastRight = ' ';
+                            char firstLeft = ' ', firstRight = ' ';
 
                             for (var i = 0; i < candWord.Length; ++i)
                             {
@@ -489,6 +544,10 @@ namespace SurfaceKeyboard
                                         {
                                             candWordVecL.Add(vecParams[lastLeft.ToString() + currChar.ToString()]);
                                         }
+                                        else
+                                        {
+                                            firstLeft = currChar;
+                                        }
                                         lastLeft = currChar;
                                         candWordPntL.Add(new Point(letterPosX[currCharNo], letterPosY[currCharNo]));
                                     }
@@ -499,6 +558,10 @@ namespace SurfaceKeyboard
                                         {
                                             candWordVecR.Add(vecParams[lastRight.ToString() + currChar.ToString()]);
                                         }
+                                        else
+                                        {
+                                            firstRight = currChar;
+                                        }
                                         lastRight = currChar;
                                         candWordPntR.Add(new Point(letterPosX[currCharNo], letterPosY[currCharNo]));
                                     }
@@ -506,67 +569,143 @@ namespace SurfaceKeyboard
                             }
 
                             // Calculate distance
-                            double distance = 0.0;
+                            //double distance = 0.0;
+                            double distance = (double)(-freqDict[candWord]) / freqMax;
+                            // Calculate cost(probability)
+                            //double prob = Math.Log(freqDict[candWord]);
 
                             for (var i = 0; i < myVecL.Count; ++i)
                             {
-                                VectorParameter mVec = myVecL[i];
+                                //VectorParameter mVec = myVecL[i];
                                 VectorParameter cwVec = candWordVecL[i];
-                                distance += mVec.getDistance(cwVec);
+                                //prob += cwVec.calcProbability(myVecL[i].x, myVecL[i].y);
+                                distance += cwVec.getDistance(myVecL[i].x, myVecL[i].y);
                             }
 
                             if (myPntL.Count == 1)
                             {
-                                VectorParameter pseudoMVec = new VectorParameter(myPntL[0].x, myPntL[0].y, 0, 0, 0);
-                                VectorParameter pseudoCWVec = new VectorParameter(candWordPntL[0].x, candWordPntL[0].y, 0, 0, 0);
-                                distance += pseudoMVec.getDistance(pseudoCWVec) * Math.Exp(-candWord.Length / 10.0);
+                                PointParameter pp = pntParams[firstLeft];
+                                distance += ( Math.Abs(myPntL[0].x - pp.userPosX) / VectorParameter.kbdSizeX +
+                                    Math.Abs(myPntL[0].y  - pp.userPosY) / VectorParameter.kbdSizeY ) *
+                                    Math.Exp(-candWord.Length / 10.0);
 
                                 if (myPntR.Count > 0)
                                 {
-                                    VectorParameter mVec = new VectorParameter(myPntR[0].x - myPntL[0].x, myPntR[0].y - myPntL[0].y);
-                                    VectorParameter cwVec = new VectorParameter(candWordPntR[0].x - candWordPntL[0].x,
-                                        candWordPntR[0].y - candWordPntL[0].y);
-                                    distance += mVec.getDistance(cwVec) * Math.Exp(-candWord.Length / 10.0);
+                                    distance += vecParams[firstLeft.ToString() + firstRight.ToString()].getDistance(
+                                        myPntR[0].x - myPntL[0].x, myPntR[0].y - myPntL[0].y) *
+                                        Math.Exp(-candWord.Length / 10.0);
                                 }
+                                //prob += VectorParameter.logGaussianDistribution(myPntL[0].x, pp.userPosX, pp.userStdX);
+                                //prob += VectorParameter.logGaussianDistribution(myPntL[0].y, pp.userPosY, pp.userStdY);
+                                
+                                //VectorParameter pseudoMVec = new VectorParameter(myPntL[0].x, myPntL[0].y, 0, 0, 0);
+                                //VectorParameter pseudoCWVec = new VectorParameter(candWordPntL[0].x, candWordPntL[0].y, 0, 0, 0);
+                                //distance += pseudoMVec.getDistance(pseudoCWVec) * Math.Exp(-candWord.Length / 10.0);
+
+                                //if (myPntR.Count > 0)
+                                //{
+                                //    VectorParameter mVec = new VectorParameter(myPntR[0].x - myPntL[0].x, myPntR[0].y - myPntL[0].y);
+                                //    VectorParameter cwVec = new VectorParameter(candWordPntR[0].x - candWordPntL[0].x,
+                                //        candWordPntR[0].y - candWordPntL[0].y);
+                                //    distance += mVec.getDistance(cwVec) * Math.Exp(-candWord.Length / 10.0);
+                                //}
                             }
 
                             for (var i = 0; i < myVecR.Count; ++i)
                             {
-                                VectorParameter mVec = myVecR[i];
+                                //VectorParameter mVec = myVecR[i];
                                 VectorParameter cwVec = candWordVecR[i];
-                                distance += mVec.getDistance(cwVec);
+                                //prob += cwVec.calcProbability(myVecR[i].x, myVecR[i].y);
+                                distance += cwVec.getDistance(myVecR[i].x, myVecR[i].y);
                             }
 
                             if (myPntR.Count == 1)
                             {
-                                VectorParameter pseudoMVec = new VectorParameter(myPntR[0].x, myPntR[0].y, 0, 0, 0);
-                                VectorParameter pseudoCWVec = new VectorParameter(candWordPntR[0].x, candWordPntR[0].y, 0, 0, 0);
-                                distance += pseudoMVec.getDistance(pseudoCWVec) * Math.Exp(-candWord.Length / 10.0);
+                                PointParameter pp = pntParams[firstRight];
+
+                                distance += (Math.Abs(myPntR[0].x - pp.userPosX) / VectorParameter.kbdSizeX + 
+                                    Math.Abs(myPntR[0].y - pp.userPosY) / VectorParameter.kbdSizeY) * 
+                                    Math.Exp(-candWord.Length / 10.0);
 
                                 if (myPntL.Count > 0)
                                 {
-                                    VectorParameter mVec = new VectorParameter(myPntL[0].x - myPntR[0].x, myPntL[0].y - myPntR[0].y);
-                                    VectorParameter cwVec = new VectorParameter(candWordPntL[0].x - candWordPntR[0].x,
-                                        candWordPntL[0].y - candWordPntR[0].y);
-                                    distance += mVec.getDistance(cwVec) * Math.Exp(-candWord.Length / 10.0);
+                                    distance += vecParams[firstRight.ToString() + firstLeft.ToString()].getDistance(
+                                        myPntL[0].x - myPntR[0].x, myPntL[0].y - myPntR[0].y) *
+                                        Math.Exp(-candWord.Length / 10.0);
                                 }
+                                //prob += VectorParameter.logGaussianDistribution(myPntR[0].x, pp.userPosX, pp.userStdX);
+                                //prob += VectorParameter.logGaussianDistribution(myPntR[0].y, pp.userPosY, pp.userStdY);
+
+                                //VectorParameter pseudoMVec = new VectorParameter(myPntR[0].x, myPntR[0].y, 0, 0, 0);
+                                //VectorParameter pseudoCWVec = new VectorParameter(candWordPntR[0].x, candWordPntR[0].y, 0, 0, 0);
+                                //distance += pseudoMVec.getDistance(pseudoCWVec) * Math.Exp(-candWord.Length / 10.0);
+
+                                //if (myPntL.Count > 0)
+                                //{
+                                //    VectorParameter mVec = new VectorParameter(myPntL[0].x - myPntR[0].x, myPntL[0].y - myPntR[0].y);
+                                //    VectorParameter cwVec = new VectorParameter(candWordPntL[0].x - candWordPntR[0].x,
+                                //        candWordPntL[0].y - candWordPntR[0].y);
+                                //    distance += mVec.getDistance(cwVec) * Math.Exp(-candWord.Length / 10.0);
+                                //}
                             }
 
                             // distance *= freqDict[candWord]; // / Math.Max(1, 2 - distance / freqAvg);
-
+                            
                             probWords.Add(new KeyValuePair<string, double>(candWord, distance));
-
+                            //Console.WriteLine("Candidates: " + candWord + ", " + distance);
                         }
                     }
                 }
+
+                //probWords.Sort(MyCompareDownn);
+
                 // Smaller distance is better. Sort Up.
                 probWords.Sort(MyCompareUp);
             }
             else
             {
+                probWords.Clear();
+                // argmax P(letter seq) * P(point pos | letter seq)
+                // log version: log(P-Word) + log(P1 * P2 * P3 ... Pn) = log(P-Word) + sum(log(Pi))
+                if (lenSet.ContainsKey(pntListX.Length))
+                {
+                    List<string> selWords = lenSet[pntListX.Length];
+                    foreach (string candWord in selWords)
+                    {
+                        double prob = Math.Log(freqDict[candWord]);
+                        for (var i = 0; i < pntListX.Length; ++i)
+                        {
+                            PointParameter pp = pntParams[candWord[i]];
+
+                            double x = pntListX[i];
+                            double y = pntListY[i];
+                            double muX = pp.userPosX;
+                            double muY = pp.userPosY;
+                            double sigmaX = pp.userStdX;
+                            double sigmaY = pp.userStdY;
+                            double rho = pp.userCorrXY;
+
+                            double sigmaXY = sigmaX * sigmaY;
+                            double sigmaX2 = sigmaX * sigmaX;
+                            double sigmaY2 = sigmaY * sigmaY;
+                            double r = 1 - rho * rho;
+
+                            prob += Math.Log( 1 / (2 * Math.PI * sigmaXY * Math.Sqrt(r)) ) - 1 / (2 * r) * (
+                                (x - muX) * (x - muX) / sigmaX2
+                                - 2 * rho * (x - muX) * (y - muY) / sigmaXY
+                                + (y - muY) * (y - muY) / sigmaY2 );
+                        }
+                        probWords.Add(new KeyValuePair<string, double>(candWord, prob));
+                    }
+
+                    probWords.Sort(MyCompareDownn);
+                }
+
+                /* DFS version */
+                /*
+                
                 currPntX = pntListX;
                 currPntY = pntListY;
-
                 int sentenceLen = currPntX.Length;
                 if (sentenceLen < 10)
                     searchNum = 10;
@@ -585,10 +724,7 @@ namespace SurfaceKeyboard
                         double prob = probWords[i].Value;
                         newProbWords.AddRange(dfs(prob, currPntX.Length - 1, seq));
                     }
-                    //foreach (KeyValuePair<string, double> kvPair in probWords)
-                    //{
-                    //    newProbWords.AddRange(dfs(kvPair.Value, currPntX.Length - 1, kvPair.Key));
-                    //}
+
                     probWords = newProbWords;
                 }
                 else
@@ -598,8 +734,10 @@ namespace SurfaceKeyboard
                 }
 
                 lastSentenceLen = currPntX.Length;
+                
+
                 // Bigger probability is better. Sort Down.
-                probWords.Sort(MyCompareDownn);
+                probWords.Sort(MyCompareDownn);*/
             }
             
             return probWords;
@@ -616,55 +754,55 @@ namespace SurfaceKeyboard
         /// <param name="prob"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        private List<KeyValuePair<string, double>> dfs(double prob, int index, string seq)
-        {
-            List<KeyValuePair<string, double>> ret = new List<KeyValuePair<string, double>>();
+        //private List<KeyValuePair<string, double>> dfs(double prob, int index, string seq)
+        //{
+        //    List<KeyValuePair<string, double>> ret = new List<KeyValuePair<string, double>>();
 
-            // Get candidates
-            List<KeyValuePair<char, double>> tmpProbPair = new List<KeyValuePair<char, double>>();
+        //    // Get candidates
+        //    List<KeyValuePair<char, double>> tmpProbPair = new List<KeyValuePair<char, double>>();
 
-            for (var i = 0; i < 26; ++i)
-            {
-                char c = (char)('a' + i);
-                PointParameter pp = pntParams[c];
-                string tmpSeq = seq + c.ToString();
+        //    for (var i = 0; i < 26; ++i)
+        //    {
+        //        char c = (char)('a' + i);
+        //        PointParameter pp = pntParams[c];
+        //        string tmpSeq = seq + c.ToString();
 
-                // Goal: argmax P(letter seq) * P(point pos | letter seq)
-                // P(letter seq) = P(L1) * P(L2 | L1) * ... * P(Ln | Ln-k..Ln-1)
-                // Calculate P(point pos | letter seq) = P1 * P2 * ... * Pn
-                double currProb = biVarGaussianDistribution(currPntX[index], currPntY[index],
-                    pp.userPosX, pp.userPosY, pp.userStdX, pp.userStdY, pp.userCorrXY);
-                int startIndex = Math.Max(0, index - wordGramLen + 1);
-                if (index - startIndex >= 1)
-                {
-                    currProb *= (double)(trieFreq.findChild(tmpSeq.Substring(startIndex, index - startIndex + 1))) /
-                        trieFreq.findChild(tmpSeq.Substring(startIndex, index - startIndex));
-                }
+        //        // Goal: argmax P(letter seq) * P(point pos | letter seq)
+        //        // P(letter seq) = P(L1) * P(L2 | L1) * ... * P(Ln | Ln-k..Ln-1)
+        //        // Calculate P(point pos | letter seq) = P1 * P2 * ... * Pn
+        //        double currProb = biVarGaussianDistribution(currPntX[index], currPntY[index],
+        //            pp.userPosX, pp.userPosY, pp.userStdX, pp.userStdY, pp.userCorrXY);
+        //        int startIndex = Math.Max(0, index - wordGramLen + 1);
+        //        if (index - startIndex >= 1)
+        //        {
+        //            currProb *= (double)(trieFreq.findChild(tmpSeq.Substring(startIndex, index - startIndex + 1))) /
+        //                trieFreq.findChild(tmpSeq.Substring(startIndex, index - startIndex));
+        //        }
 
-                tmpProbPair.Add(new KeyValuePair<char, double>(c, currProb));
-            }
+        //        tmpProbPair.Add(new KeyValuePair<char, double>(c, currProb));
+        //    }
 
-            tmpProbPair.Sort(MyCompareProb);
+        //    tmpProbPair.Sort(MyCompareProb);
 
-            if (index == currPntX.Length - 1)
-            {
-                // End.
-                for (var i = 0; i < searchNum; ++i)
-                {
-                    ret.Add(new KeyValuePair<string, double>(seq + tmpProbPair[i].Key.ToString(), prob * tmpProbPair[i].Value));
-                }
-            }
-            else
-            {
-                // End.
-                for (var i = 0; i < searchNum; ++i)
-                {
-                    ret.AddRange(dfs(prob * tmpProbPair[i].Value, index + 1, seq + tmpProbPair[i].Key.ToString()));
-                }
-            }
+        //    if (index == currPntX.Length - 1)
+        //    {
+        //        // End.
+        //        for (var i = 0; i < searchNum; ++i)
+        //        {
+        //            ret.Add(new KeyValuePair<string, double>(seq + tmpProbPair[i].Key.ToString(), prob * tmpProbPair[i].Value));
+        //        }
+        //    }
+        //    else
+        //    {
+        //        // End.
+        //        for (var i = 0; i < searchNum; ++i)
+        //        {
+        //            ret.AddRange(dfs(prob * tmpProbPair[i].Value, index + 1, seq + tmpProbPair[i].Key.ToString()));
+        //        }
+        //    }
 
-            return ret;
-        }
+        //    return ret;
+        //}
 
         private double biVarGaussianDistribution(double x, double y, double muX, double muY,
             double sigmaX, double sigmaY, double rho)
@@ -684,5 +822,6 @@ namespace SurfaceKeyboard
             //    - 2 * rho * (x - muX) * (y - muY) / (sigmaX * sigmaY) 
             //    + Math.Pow(y - muY, 2) / Math.Pow(sigmaY, 2)));
         }
+
     }
 }

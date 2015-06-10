@@ -985,10 +985,12 @@ namespace SurfaceKeyboard
                     else
                         myTag += "_KbdOn";
 
-                    if (calibStatus == CalibStatus.Off)
-                        myTag += "_CalibOff";
-                    else
-                        myTag += "_CalibOn";
+                    //if (calibStatus == CalibStatus.Off)
+                    //    myTag += "_CalibOff";
+                    //else
+                    //    myTag += "_CalibOn";
+                    if (testControl)
+                        myTag += "_" + predictMode;
                     break;
             }
 
@@ -1799,15 +1801,24 @@ namespace SurfaceKeyboard
 
         private void switchPredictMode()
         {
-            if (predictMode == PredictionMode.AbsoluteMode)
+            if (predictMode == PredictionMode.DirectMode)
             {
                 PredictBtn.Content = "Relative";
                 predictMode = PredictionMode.RelativeMode;
             }
-            else
+            else if (predictMode == PredictionMode.RelativeMode)
             {
                 PredictBtn.Content = "Absolute";
                 predictMode = PredictionMode.AbsoluteMode;
+            }
+            else if (predictMode == PredictionMode.AbsoluteMode)
+            {
+                PredictBtn.Content = "Direct";
+                predictMode = PredictionMode.DirectMode;
+            }
+            else
+            {
+                Console.WriteLine("Wrong Mode Info");
             }
         }
 

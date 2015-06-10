@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace SurfaceKeyboard
 {
-    enum PredictionMode { RelativeMode, AbsoluteMode };
+    enum PredictionMode { RelativeMode, AbsoluteMode, DirectMode };
 
     class WordPredictor
     {
@@ -31,6 +31,10 @@ namespace SurfaceKeyboard
         private int                                 searchNum = 10;
         // Set up with a large length
         private int                                 lastSentenceLen = 100;
+
+        // Key-Size
+        static double keySizeX = 39.0;
+        static double keySizeY = 42.0;
 
         // Pre-processing: Encode the words. 0:left, 1:right, 2:spacebar.
         // spacebar a b c d e f g
@@ -771,7 +775,7 @@ namespace SurfaceKeyboard
                 // Smaller distance is better. Sort Up.
                 probWords.Sort(MyCompareUp);
             }
-            else
+            else if (predMode == PredictionMode.AbsoluteMode)
             {
                 probWords.Clear();
                 // argmax P(letter seq) * P(point pos | letter seq)
@@ -847,6 +851,36 @@ namespace SurfaceKeyboard
 
                 // Bigger probability is better. Sort Down.
                 probWords.Sort(MyCompareDownn);*/
+            }
+            else if (predMode == PredictionMode.DirectMode)
+            {
+                probWords.Clear();
+                string answer = "";
+
+                double halfKeyX = keySizeX / 2;
+                double halfKeyY = keySizeY / 2;
+
+                for (var i = 0; i < pntListX.Length; ++i)
+                {
+                    int hitIndex = -1;
+                    for (var j = 0; j < 26; ++j)
+                    {
+                        if (pntListX[i] >= letterPosX[j] - halfKeyX && pntListX[i] <= letterPosX[j] + halfKeyX && 
+                            pntListY[i] >= letterPosY[j] - halfKeyY && pntListY[i] <= letterPosY[j] + halfKeyY)
+                        {
+                            hitIndex = j;
+                            break;
+                        }
+                    }
+
+                    if (hitIndex >= 0)
+                        answer += ((char)('a' + hitIndex)).ToString();
+                }
+                probWords.Add(new KeyValuePair<string, double>(answer, 0));
+            }
+            else
+            {
+                Console.WriteLine("Error: Wrong Mode");
             }
             
             return probWords;

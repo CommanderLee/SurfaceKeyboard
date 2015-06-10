@@ -132,6 +132,10 @@ namespace SurfaceKeyboard
         const int           SPACE_LEFT = 760;
         const int           SPACE_RIGHT = 1110;
 
+        const int           TYPE_LEFT = 703;
+        const int           TYPE_RIGHT = 1125;
+        const int           TYPE_TOP = 540;
+
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -569,6 +573,14 @@ namespace SurfaceKeyboard
             circleList.Clear();
         }
 
+        private bool checkValidArea(double x, double y)
+        {
+            bool isValid = true;
+            if (x < TYPE_LEFT || x > TYPE_RIGHT || y < TYPE_TOP)
+                isValid = false;
+            return isValid;
+        }
+
         /// <summary>
         /// Save the point to the 'handPoints' List.
         /// </summary>
@@ -595,6 +607,11 @@ namespace SurfaceKeyboard
             //int hpIndex = currGestures.Count;
             HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Touch);
             handPoints.Add(touchPoint);
+
+            if (testControl && !checkValidArea(x, y))
+            {
+                return;
+            }
 
             // Add new point(should return null because it is new)
             if (updateGesturePoints(touchPoint, id) == null)

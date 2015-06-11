@@ -95,7 +95,7 @@ namespace SurfaceKeyboard
 
         bool                circleControl = false;
         // Circle bias
-        const int           circleBiasY = 50;
+        const int           circleBiasY = 55;
         
         // Size of debug circles
         const int           touchCircleSize = 20;
@@ -112,6 +112,29 @@ namespace SurfaceKeyboard
         Brush               recoverCircleBrush;
 
         List<Ellipse>       circleList = new List<Ellipse>();
+
+        bool                testControl = false;
+        bool                isSpacebar = false;
+        
+        WordPredictor       wordPredictor;
+        PredictionMode      predictMode;
+
+        string              currWord, currSentence;
+
+        // currSelect: highlight current selection. from [0, MAX)
+        int                 currSelect;
+        SolidColorBrush     selectColor = Brushes.DarkBlue;
+        SolidColorBrush     otherColor = Brushes.DarkGreen;
+        TextBlock[]         textHints;
+        const int           MAX_HINT_NUMBER = 5;
+
+        const int           SPACE_TOP = 690;
+        const int           SPACE_LEFT = 760;
+        const int           SPACE_RIGHT = 1110;
+
+        const int           TYPE_LEFT = 703;
+        const int           TYPE_RIGHT = 1125;
+        const int           TYPE_TOP = 540;
 
         /// <summary>
         /// Default constructor.
@@ -186,6 +209,12 @@ namespace SurfaceKeyboard
             userId = userIdWindow.getUserId();
 
             updateWindowTitle();
+
+            wordPredictor = new WordPredictor();
+            predictMode = PredictionMode.AbsoluteMode;
+            currWord = "";
+            currSentence = "";
+            textHints = new TextBlock[] { TextHintBlk0, TextHintBlk1, TextHintBlk2, TextHintBlk3, TextHintBlk4 };
         }
 
         /// <summary>
@@ -296,18 +325,30 @@ namespace SurfaceKeyboard
 
             // Show asterisk feedback for the user 
             Regex rgx = new Regex(@"[^\s]");
-            string typeText = rgx.Replace(currText, "*");
+            string asteriskText = rgx.Replace(currText, "*");
 
             if (calibStatus == CalibStatus.Off || calibStatus == CalibStatus.Done)
             {
-                if (hpNo >= 0 && hpNo <= typeText.Length)
-                    typeText = typeText.Substring(0, hpNo) + "_";
-                TaskTextBlk.Text = currText + "\n" + typeText;
+                if (testControl)
+                {
+                    // Show prediction sentence
+                    string typeText = currSentence + currWord;
+                    if (typeText.Length > currText.Length)
+                        typeText = typeText.Substring(0, currText.Length);
+                    TaskTextBlk.Text = currText + "\n" + typeText + "|";
+                }
+                else
+                {
+                    // Show asterisk feedback
+                    if (hpNo >= 0 && hpNo <= asteriskText.Length)
+                        asteriskText = asteriskText.Substring(0, hpNo) + "|";
+                    TaskTextBlk.Text = currText + "\n" + asteriskText;
+                }
             }
             else
             {
                 // Use asterisk while calibrating 
-                TaskTextBlk.Text = typeText;
+                TaskTextBlk.Text = asteriskText;
             }
         }
 
@@ -482,7 +523,16 @@ namespace SurfaceKeyboard
 
             if (findPoints != null)
             {
-                findPoints.Add(touchPoint);
+                int movementLevel = findPoints.Add(touchPoint);
+                if (testControl && movementLevel != 0)
+                {
+                    findPoints.setStatus(HandStatus.Select); 
+                    updateSelection(movementLevel);
+                    //--hpNo;
+
+                    // Give feedback when moving fingers
+                    updateHint();
+                }
             }
             else
             {
@@ -523,6 +573,14 @@ namespace SurfaceKeyboard
             circleList.Clear();
         }
 
+        private bool checkValidArea(double x, double y)
+        {
+            bool isValid = true;
+            if (x < TYPE_LEFT || x > TYPE_RIGHT || y < TYPE_TOP)
+                isValid = false;
+            return isValid;
+        }
+
         /// <summary>
         /// Save the point to the 'handPoints' List.
         /// </summary>
@@ -550,11 +608,28 @@ namespace SurfaceKeyboard
             HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Touch);
             handPoints.Add(touchPoint);
 
+            if (testControl && predictMode == PredictionMode.DirectMode && !checkValidArea(x, y))
+            {
+                return;
+            }
+
             // Add new point(should return null because it is new)
             if (updateGesturePoints(touchPoint, id) == null)
             {
                 // Real-time UI feedback. Note: Change its status later after released.
                 ++hpNo;
+
+                if (checkSpace(x, y))
+                {
+                    // Disable this space point
+                    GesturePoints thisPoints = findGesturePoints(id);
+                    thisPoints.setStatus(HandStatus.Spacebar);
+                    Console.WriteLine("Set status to Spacebar.");
+                }
+                else
+                {
+                    updateHint();
+                }
                 updateTaskTextBlk();
                 updateStatusBlock();
             }
@@ -791,60 +866,68 @@ namespace SurfaceKeyboard
                 if (myPoints != null)
                 //if (movement.ContainsKey(id))
                 {
-                    // If the status is unknown, try to check its status
-                    if (GesturePoints.getGestureSwitch() && 
-                        (myPoints.getStatus() == HandStatus.Wait || myPoints.getStatus() == HandStatus.Unknown))
+                    if (myPoints.getStatus() == HandStatus.Select)
                     {
-                        HandStatus gestureStatus = myPoints.updateGestureStatus();
-                        // Check Distance 
-                        if (gestureStatus == HandStatus.Backspace)
-                        {
-                            // Reset the hpNo (added one when touching)
-                            --hpNo;
-
-                            // Delete ONE WORD
-                            deleteWord();
-                        }
-                        else if (gestureStatus == HandStatus.Enter)
-                        {
-                            // Reset the hpNo (added one when touching)
-                            --hpNo;
-
-                            // Show the next task 
-                            gotoNextText();
-
-                            // TODO: Output 'Enter' if applicable (in real text editor)
-                        }
-                        // Do not need to do anything when type
-                    }
-
-                    double movingDist = myPoints.calcMovingParam();
-                    Console.WriteLine("Move " + movingDist + " when release.");
-                    // Try to fix a system error of the Surface 2.0 Platform
-                    // When you touch 2 close points, say pA and pB, in a short time, 
-                    // they will be recognized as: pA down -> a short move -> pB up.
-                    if (myPoints.getStatus() == HandStatus.Wait && movingDist > TYPING_DIST_THRE)
-                    {
-                        // Recover the missing point
-                        int newId = id * 10;
-                        Console.WriteLine("Recover missing point:" + x + "," + y + "," + newId);
-                        ++hpIndex;
-                        saveTouchPoints(x, y, newId);
-                        GesturePoints newPoints = findGesturePoints(newId);
-                        newPoints.setStatus(HandStatus.Type);
-                        newPoints.getStartPoint().setType(HPType.Recover);
-                        if (circleControl)
-                        {
-                            drawCircle(x, y, recoverCircleBrush, recoverCircleSize);
-                        }
-                    }
-                    
-                    myPoints.checkTyping();
-                    if (myPoints.getStatus() == HandStatus.Unknown)
-                    {
+                        // Reset the hpNo (added one when touching)
                         --hpNo;
-                        updateStatusBlock();
-                        updateTaskTextBlk();
+                    }
+                    else
+                    {
+                        // If the status is unknown, try to check its status
+                        if (GesturePoints.getGestureSwitch() &&
+                            (myPoints.getStatus() == HandStatus.Wait || myPoints.getStatus() == HandStatus.Unknown))
+                        {
+                            HandStatus gestureStatus = myPoints.updateGestureStatus();
+                            // Check Distance 
+                            if (gestureStatus == HandStatus.Backspace)
+                            {
+                                // Reset the hpNo (added one when touching)
+                                --hpNo;
+
+                                // Delete ONE WORD
+                                deleteWord();
+                            }
+                            else if (gestureStatus == HandStatus.Enter)
+                            {
+                                // Reset the hpNo (added one when touching)
+                                --hpNo;
+
+                                // Show the next task 
+                                gotoNextText();
+
+                                // TODO: Output 'Enter' if applicable (in real text editor)
+                            }
+                            // Do not need to do anything when type
+                        }
+
+                        double movingDist = myPoints.calcMovingParam();
+                        Console.WriteLine("Move " + movingDist + " when release.");
+                        // Try to fix a system error of the Surface 2.0 Platform
+                        // When you touch 2 close points, say pA and pB, in a short time, 
+                        // they will be recognized as: pA down -> a short move -> pB up.
+                        if (myPoints.getStatus() == HandStatus.Wait && movingDist > TYPING_DIST_THRE)
+                        {
+                            // Recover the missing point
+                            int newId = id * 10;
+                            Console.WriteLine("Recover missing point:" + x + "," + y + "," + newId);
+                            ++hpIndex;
+                            saveTouchPoints(x, y, newId);
+                            GesturePoints newPoints = findGesturePoints(newId);
+                            newPoints.setStatus(HandStatus.Type);
+                            newPoints.getStartPoint().setType(HPType.Recover);
+                            if (circleControl)
+                            {
+                                drawCircle(x, y, recoverCircleBrush, recoverCircleSize);
+                            }
+                        }
+
+                        myPoints.checkTyping();
+                        if (myPoints.getStatus() == HandStatus.Unknown)
+                        {
+                            --hpNo;
+                            updateStatusBlock();
+                            updateTaskTextBlk();
+                        }
                     }
                 }
                 else
@@ -919,10 +1002,12 @@ namespace SurfaceKeyboard
                     else
                         myTag += "_KbdOn";
 
-                    if (calibStatus == CalibStatus.Off)
-                        myTag += "_CalibOff";
-                    else
-                        myTag += "_CalibOn";
+                    //if (calibStatus == CalibStatus.Off)
+                    //    myTag += "_CalibOff";
+                    //else
+                    //    myTag += "_CalibOn";
+                    if (testControl)
+                        myTag += "_" + predictMode;
                     break;
             }
 
@@ -958,6 +1043,7 @@ namespace SurfaceKeyboard
             string fTextName = fTime + fTag + "_TaskText.txt";
             string fNameAll = fTime + fTag + ".csv";
             string fNameMajor = fTime + fTag + "_major.csv";
+            string fNameTest = fTime + fTag + "_test.csv";
 
             StatusTextBlk.Text = fPath + fNameAll;
 
@@ -992,6 +1078,26 @@ namespace SurfaceKeyboard
 
                 case InputDevice.Hand:
                 case InputDevice.Mouse:
+                    if (testControl)
+                    {
+                        // Save another file, similar to the Physical Keyboard Test
+                        if (currWord.Length > 0)
+                        {
+                            currSentence += currWord;
+                            phyStrings.Add(currSentence + "," + handPoints.Last().getTime() + "," + deleteNum);
+                        }
+
+                        // Save raw input strings into file 
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameTest, true))
+                        {
+                            file.WriteLine("RawInput,TypingTime,DeleteNumber");
+                            foreach (string str in phyStrings)
+                            {
+                                file.WriteLine(str);
+                            }
+                        }
+                    }
+
                     // Save raw input points into file 
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameAll, true))
                     {
@@ -1007,7 +1113,7 @@ namespace SurfaceKeyboard
                     {
                         foreach (GesturePoints gp in currGestures)
                         {
-                            if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Backspace)
+                            if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Backspace || gp.getStatus() == HandStatus.Spacebar)
                             {
                                 validPoints.Add(gp.getStartPoint());
                             }
@@ -1054,6 +1160,7 @@ namespace SurfaceKeyboard
                 hpNo = 0;
                 hpIndex = -1;
                 isTypingStart = false;
+                isSpacebar = false;
 
                 clearCircles();
 
@@ -1071,7 +1178,7 @@ namespace SurfaceKeyboard
                         {
                             foreach (GesturePoints gp in currGestures)
                             {
-                                if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Backspace)
+                                if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Backspace || gp.getStatus() == HandStatus.Spacebar)
                                 {
                                     validPoints.Add(gp.getStartPoint());
                                 }
@@ -1082,6 +1189,19 @@ namespace SurfaceKeyboard
                         currGestures.Clear();
                         //currValidPoints.Clear();
                         calibPoints.Clear();
+
+                        if (testControl)
+                        {
+                            currSentence += currWord;
+                            resetSelection();
+                            updateHint();
+                            // Save to file/string
+                            phyStrings.Add(currSentence + "," + handPoints.Last().getTime() + "," + deleteNum);
+
+                            Console.WriteLine("Save: " + currSentence);
+                        }
+                        currSentence = "";
+                        currWord = "";
 
                         // Clear the status if the calibration mode is ON 
                         if (calibStatus != CalibStatus.Off)
@@ -1131,9 +1251,15 @@ namespace SurfaceKeyboard
                 calibStatus = CalibStatus.Preparing;
             }
 
+            currWord = "";
+            currSentence = "";
+            resetSelection();
+
             currTyping = "";
             isTypingStart = false;
+            isSpacebar = false;
             clearCircles();
+            updateHint();
             updateStatusBlock();
             updateTaskTextBlk();
         }
@@ -1257,13 +1383,31 @@ namespace SurfaceKeyboard
             string currText = taskTexts[taskIndex % taskSize];
             int removeStart = Math.Min(currText.Length, hpNo) - 1;
 
+            isSpacebar = false;
+
             // Delete at least one character 
             if (removeStart >= 0)
             {
-                for (; removeStart > 0; --removeStart)
+                if (testControl)
                 {
-                    if (currText[removeStart - 1] == ' ')
-                        break;
+                    if (removeStart >= currSentence.Length)
+                        removeStart = currSentence.Length;
+                    else
+                    {
+                        for (; removeStart > 0; --removeStart)
+                        {
+                            if (currSentence[removeStart - 1] == ' ')
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    for (; removeStart > 0; --removeStart)
+                    {
+                        if (currText[removeStart - 1] == ' ')
+                            break;
+                    }
                 }
 
                 switch (currDevice)
@@ -1292,10 +1436,24 @@ namespace SurfaceKeyboard
 
                 hpNo = removeStart;
                 ++deleteNum;
-            }
 
-            updateStatusBlock();
-            updateTaskTextBlk();
+                if (testControl)
+                {
+                    currWord = "";
+                    // Delete word and affect currSentence. If not, only affect currWord.
+                    if (hpNo < currSentence.Length)
+                    {
+                        currSentence = currSentence.Substring(0, hpNo);
+                    }
+                    updateHint();
+                }
+                updateStatusBlock();
+                updateTaskTextBlk();
+            }
+            else
+            {
+                clearSentence();
+            }
         }
 
         private void DeleteBtn_TouchDown(object sender, TouchEventArgs e)
@@ -1319,7 +1477,7 @@ namespace SurfaceKeyboard
         {
             string currText = taskTexts[taskIndex % taskSize];
             int removeStart = Math.Min(currText.Length, hpNo) - 1;
-
+            isSpacebar = false;
             // Delete at least one character 
             if (removeStart >= 0)
             {
@@ -1350,10 +1508,30 @@ namespace SurfaceKeyboard
 
                 hpNo = removeStart;
                 ++deleteNum;
-            }
 
-            updateStatusBlock();
-            updateTaskTextBlk();
+                if (testControl)
+                {
+                    // Doesnot affect currSentence if hpNo >= currSentenceLen. 
+                    if (hpNo < currSentence.Length)
+                    {
+                        // Affect a char of currSentence
+                        for (; removeStart > 0; --removeStart)
+                        {
+                            if (currSentence[removeStart - 1] == ' ')
+                                break;
+                        }
+                        currSentence = currSentence.Substring(0, removeStart);
+                    }
+                    currWord = "";
+                    updateHint();
+                }
+                updateStatusBlock();
+                updateTaskTextBlk();
+            }
+            else
+            {
+                clearSentence();
+            }
         }
 
         private void BackspaceBtn_TouchDown(object sender, TouchEventArgs e)
@@ -1441,16 +1619,299 @@ namespace SurfaceKeyboard
             clearKbdFocus(CircleBtn);
         }
 
+        private void resetSelection(int target = 0)
+        {
+            textHints[currSelect].Background = otherColor;
+            currSelect = target;
+            textHints[currSelect].Background = selectColor;
+        }
+
+        private void updateSelection(int movementLevel)
+        {
+            // Find existing one:
+            if (movementLevel > 0)
+            {
+                // Move to right
+                int maxI = Math.Min(MAX_HINT_NUMBER - 1, currSelect + movementLevel);
+                for (var i = currSelect; i <= maxI; ++i)
+                {
+                    if (textHints[i].Text == "")
+                    {
+                        // Exceed.
+                        break;
+                    }
+                    else
+                    {
+                        textHints[currSelect].Background = otherColor;
+                        currSelect = i;
+                        textHints[currSelect].Background = selectColor;
+                    }
+                }
+            }
+            else
+            {
+                // Move to left. Note: movementLevel < 0.
+                int minI = Math.Max(0, currSelect + movementLevel);
+                resetSelection(minI);
+            }
+            
+            updateHint();
+            currWord = textHints[currSelect].Text;
+            updateTaskTextBlk();
+            //Console.WriteLine("Update: " + movementLevel);
+            //Console.WriteLine("Change to: " + currWord + "(" + TaskTextBlk.Text + ")");
+        }
+
+        private bool checkSpace(double x, double y)
+        {
+            bool thisIsSpacebar = false;
+            if (x > SPACE_LEFT && x < SPACE_RIGHT && y > SPACE_TOP)
+            {
+                thisIsSpacebar = true;
+                Console.WriteLine("Space.");
+            }
+
+            // Process space: last char is space
+            if (testControl)
+            {   
+                // This char is space
+                if (thisIsSpacebar)
+                {
+                    currWord += " ";
+                }
+
+                // Last char is space
+                if (isSpacebar)
+                {
+                    currSentence += currWord;
+                    currWord = "";
+                    resetSelection();
+                }
+            }
+            isSpacebar = thisIsSpacebar;
+            return thisIsSpacebar;
+        }
+
+        private void updateHint()
+        {
+            if (testControl)
+            {
+                // Convert currGesture -> double array X/Y
+                int maxListLen = 20;
+                int counter = 0;
+                List<double> listX, listY;
+                listX = new List<double>();
+                listY = new List<double>();
+
+                Console.WriteLine("UpdateHint: Search from " + currGestures.Count + " points.");
+                Console.WriteLine("    currSentence:" + currSentence + "; currWord:" + currWord);
+
+                // counter: [0...currSentenceLen-1][currSLen...currSLen+MaxListLen]
+                foreach (GesturePoints gp in currGestures)
+                {
+                    if (counter >= maxListLen + currSentence.Length)
+                    {
+                        break;
+                    }
+                    else if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Wait || gp.getStatus() == HandStatus.Spacebar)
+                    {
+                        if (counter >= currSentence.Length && (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Wait))
+                        {
+                            listX.Add(gp.getStartPoint().getX());
+                            listY.Add(gp.getStartPoint().getY());
+                        }
+                        ++counter;
+                    }
+                }
+
+                //Console.WriteLine("    " + listX.Count + " valid touch points.");
+
+                if (listX.Count > 0)
+                {
+                    List<KeyValuePair<string, double>> probWords = wordPredictor.predict(listX.ToArray(), listY.ToArray(), predictMode);
+                    //Console.WriteLine("    " + probWords + " probable words.");
+
+                    // Show hint in the TextHintBlock
+                    counter = 0;
+
+                    Console.WriteLine("Candidates:");
+                    for (var i = 0; i < probWords.Count; ++i)
+                    {
+                        string tempWord = probWords[i].Key;
+                        Console.WriteLine("    :" + tempWord + ", " + probWords[i].Value);
+                        if (counter >= MAX_HINT_NUMBER)
+                        {
+                            break;
+                        }
+                        //else if (tempWord.Contains('\'') || (i > 0 && probWords[i - 1].Key == tempWord))
+                        //{
+                        //    // ignore same word or strange word(I'm Jack's .etc.)
+                        //    continue;
+                        //}
+                        else
+                        {
+                            // Update default prediction:
+                            if (counter == currSelect)
+                            {
+                                currWord = tempWord;
+                                textHints[counter].Background = selectColor;
+                                Console.WriteLine("Default Word: " + currWord);
+                            }
+                            else
+                            {
+                                textHints[counter].Background = otherColor;
+                            }
+                            textHints[counter].Text = tempWord;
+                            ++counter;
+                        }
+                    }
+                    for (var c = counter; c < MAX_HINT_NUMBER; ++c)
+                    {
+                        textHints[c].Text = "";
+                    }
+                }
+                else
+                {
+                    foreach (TextBlock tb in textHints)
+                    {
+                        tb.Text = "";
+                    }
+                }
+            }
+        }
+
+        private void switchTest()
+        {
+            if (testControl)
+            {
+                TestBtn.Content = "Test OFF";
+            }
+            else
+            {
+                if (!wordPredictor.loadStatus)
+                {
+                    wordPredictor.initialize();
+
+                    // Debug:
+                    //double[] x = new double[] {1,2,3};
+                    //double[] y = new double[] {4,5,6};
+                    //List<string> probWords = wordPredictor.predict(x, y);
+                }
+                TestBtn.Content = "Test ON";
+            }
+            testControl = !testControl;
+        }
+
         private void TestBtn_TouchDown(object sender, TouchEventArgs e)
         {
-
+            switchTest();
+            clearKbdFocus(TestBtn);
         }
 
         private void TestBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (currDevice != InputDevice.Hand)
+                switchTest();
 
+            clearKbdFocus(TestBtn);
         }
 
+        private void switchPredictMode()
+        {
+            if (predictMode == PredictionMode.DirectMode)
+            {
+                PredictBtn.Content = "Relative";
+                predictMode = PredictionMode.RelativeMode;
+            }
+            else if (predictMode == PredictionMode.RelativeMode)
+            {
+                PredictBtn.Content = "Absolute";
+                predictMode = PredictionMode.AbsoluteMode;
+            }
+            else if (predictMode == PredictionMode.AbsoluteMode)
+            {
+                PredictBtn.Content = "Direct";
+                predictMode = PredictionMode.DirectMode;
+            }
+            else
+            {
+                Console.WriteLine("Wrong Mode Info");
+            }
+        }
+
+        private void PredictBtn_TouchDown(object sender, TouchEventArgs e)
+        {
+            switchPredictMode();
+            clearKbdFocus(PredictBtn);
+        }
+
+        private void PredictBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (currDevice != InputDevice.Hand)
+                switchPredictMode();
+
+            clearKbdFocus(PredictBtn);
+        }
+
+        private void clickOnTextHint(int num)
+        {
+            if (testControl)
+            {
+                resetSelection(num);
+                currWord = textHints[num].Text;
+                updateTaskTextBlk();
+            }
+        }
+
+        private void TextHintBlk0_TouchDown(object sender, TouchEventArgs e)
+        {
+            clickOnTextHint(0);
+        }
+
+        private void TextHintBlk0_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            clickOnTextHint(0);
+        }
+
+        private void TextHintBlk1_TouchDown(object sender, TouchEventArgs e)
+        {
+            clickOnTextHint(1);
+        }
+
+        private void TextHintBlk1_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            clickOnTextHint(1);
+        }
+
+        private void TextHintBlk2_TouchDown(object sender, TouchEventArgs e)
+        {
+            clickOnTextHint(2);
+        }
+
+        private void TextHintBlk2_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            clickOnTextHint(2);
+        }
+
+        private void TextHintBlk3_TouchDown(object sender, TouchEventArgs e)
+        {
+            clickOnTextHint(3);
+        }
+
+        private void TextHintBlk3_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            clickOnTextHint(3);
+        }
+
+        private void TextHintBlk4_TouchDown(object sender, TouchEventArgs e)
+        {
+            clickOnTextHint(4);
+        }
+
+        private void TextHintBlk4_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            clickOnTextHint(4);
+        }
 
     }
 }

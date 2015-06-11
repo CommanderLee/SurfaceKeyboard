@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SurfaceKeyboard
 {
-    enum HandStatus { Away, Backspace, Enter, Type, Rest, Wait, Unknown };
+    enum HandStatus { Away, Backspace, Enter, Select, Type, Spacebar, Wait, Unknown };
 
     /// <summary>
     /// A queue of consecutive data points.
@@ -23,6 +23,10 @@ namespace SurfaceKeyboard
         const double     BACK_DIST_THRE = 200;
         const double     ENTER_DIST_THRE = 200;
 
+        // Distance threshold for selecting gesture
+        const double     SELECT_WORD_THRE = 50;
+        const double     SELECT_AREA_BOTTOM = 550;
+
         Queue<HandPoint> _queue;
         HandStatus       _status;
         double           _startTime = -1;
@@ -30,8 +34,11 @@ namespace SurfaceKeyboard
 
         int              movingDirection;
         double           movingDistance;
+        double           movingSumX;
 
         private static bool     gestureSwitch = false;
+        private static bool     selectionSwitch = true;
+
         public static bool      getGestureSwitch() { return gestureSwitch; }
         public static void      reverseGestureSwitch() { gestureSwitch = !gestureSwitch; }
 
@@ -39,6 +46,7 @@ namespace SurfaceKeyboard
         {
             _queue = new Queue<HandPoint>();
             _status = HandStatus.Wait;
+            movingSumX = 0;
         }
 
         public GesturePoints(HandPoint startPoint, HandStatus status)
@@ -50,16 +58,41 @@ namespace SurfaceKeyboard
             _startPoint = startPoint;
 
             _status = status;
+
+            movingSumX = 0;
             Console.WriteLine("Create new start point:" + _startPoint.ToString());
         }
 
-        public void Add(HandPoint handPoint)
+        /// <summary>
+        /// Add new point and return movement level.
+        /// </summary>
+        /// <param name="handPoint"></param>
+        public int Add(HandPoint handPoint)
         {
+            double moveX = 0, moveY = 0;
+            int movementLevel = 0;
+
+            if (selectionSwitch && _queue.Count > 0 && handPoint.getY() < SELECT_AREA_BOTTOM)
+            {
+                moveX = handPoint.getX() - _queue.Last().getX();
+                moveY = handPoint.getY() - _queue.Last().getY();
+
+                movingSumX += moveX;
+
+                if (Math.Abs(movingSumX) > SELECT_WORD_THRE)
+                {
+                    movementLevel = (int)(movingSumX / SELECT_WORD_THRE);
+                    movingSumX -= movementLevel * SELECT_WORD_THRE;
+                }
+            }
+
             while (_queue.Count > 0 && handPoint.getTime() - _queue.Peek().getTime() > GESTURE_TIME_MAX)
             {
                 _queue.Dequeue();
             }
             _queue.Enqueue(handPoint);
+
+            return movementLevel;
         }
 
         public void setStatus(HandStatus status)

@@ -112,11 +112,14 @@ namespace SurfaceKeyboard
 
             if (!File.Exists(jsonWordFreqName) || !File.Exists(jsonCodeSetName) || !File.Exists(jsonLenSetName))
             {
-                int maxLen = 20000;
+                int maxLen = 50000;
 
                 // Load from Android Source. txt fileL: 160000 word corpus.
                 string fName = "Resources/en_US_wordlist.combined";
                 string[] lines = File.ReadAllLines(fName);
+                Dictionary<string, int> tempFreqDict = new Dictionary<string, int>();
+                Dictionary<string, List<string>> tempCodeSet = new Dictionary<string,List<string>>();
+                Dictionary<int, List<string>> tempLenSet = new Dictionary<int, List<string>>();
                 
                 int selectLen = Math.Min(maxLen, lines.Length);
                 for (var i = 1; i < selectLen; ++i)
@@ -138,41 +141,69 @@ namespace SurfaceKeyboard
                         }
                         word = tmpWord;
 
-                        if (freqDict.ContainsKey(word))
+                        if (tempFreqDict.ContainsKey(word))
                         {
-                            freqDict[word] += freq + 1;
+                            tempFreqDict[word] += freq + 1;
                         }
                         else
                         {
-                            freqDict[word] = freq + 1;
+                            tempFreqDict[word] = freq + 1;
                         }
 
                         string code = encodeWord(word);
-                        if (!codeSet.ContainsKey(code))
+                        if (!tempCodeSet.ContainsKey(code))
                         {
-                            codeSet[code] = new List<string>();
+                            tempCodeSet[code] = new List<string>();
                         }
-                        if (!codeSet[code].Contains(word))
+                        if (!tempCodeSet[code].Contains(word))
                         {
-                            codeSet[code].Add(word);
+                            tempCodeSet[code].Add(word);
                         }
 
                         int len = word.Length;
-                        if (!lenSet.ContainsKey(len))
+                        if (!tempLenSet.ContainsKey(len))
                         {
-                            lenSet[len] = new List<string>();
+                            tempLenSet[len] = new List<string>();
                         }
-                        if (!lenSet[len].Contains(word))
+                        if (!tempLenSet[len].Contains(word))
                         {
-                            lenSet[len].Add(word);
+                            tempLenSet[len].Add(word);
                         }
+
+                        //if (freqDict.ContainsKey(word))
+                        //{
+                        //    freqDict[word] += freq + 1;
+                        //}
+                        //else
+                        //{
+                        //    freqDict[word] = freq + 1;
+                        //}
+
+                        //string code = encodeWord(word);
+                        //if (!codeSet.ContainsKey(code))
+                        //{
+                        //    codeSet[code] = new List<string>();
+                        //}
+                        //if (!codeSet[code].Contains(word))
+                        //{
+                        //    codeSet[code].Add(word);
+                        //}
+
+                        //int len = word.Length;
+                        //if (!lenSet.ContainsKey(len))
+                        //{
+                        //    lenSet[len] = new List<string>();
+                        //}
+                        //if (!lenSet[len].Contains(word))
+                        //{
+                        //    lenSet[len].Add(word);
+                        //}
                     }
                 }
 
                 // Load from ANC Written Corpus.
                 fName = "Resources/ANC-written-count.txt";
                 lines = File.ReadAllLines(fName);
-                int commonWords = 0;
 
                 selectLen = Math.Min(maxLen, lines.Length);
                 for (var i = 0; i < selectLen; ++i)
@@ -194,35 +225,61 @@ namespace SurfaceKeyboard
                         }
                         word = tmpWord;
 
-                        if (freqDict.ContainsKey(word))
+                        // Get Intersection
+                        if (tempFreqDict.ContainsKey(word))
                         {
-                            freqDict[word] += freq + 1;
-                            ++commonWords;
-                        }
-                        else
-                        {
-                            freqDict[word] = freq + 1;
+                            freqDict[word] = tempFreqDict[word];
+
+                            string code = encodeWord(word);
+                            if (!codeSet.ContainsKey(code))
+                            {
+                                codeSet[code] = new List<string>();
+                            }
+                            if (!codeSet[code].Contains(word))
+                            {
+                                codeSet[code].Add(word);
+                            }
+
+                            int len = word.Length;
+                            if (!lenSet.ContainsKey(len))
+                            {
+                                lenSet[len] = new List<string>();
+                            }
+                            if (!lenSet[len].Contains(word))
+                            {
+                                lenSet[len].Add(word);
+                            }
                         }
 
-                        string code = encodeWord(word);
-                        if (!codeSet.ContainsKey(code))
-                        {
-                            codeSet[code] = new List<string>();
-                        }
-                        if (!codeSet[code].Contains(word))
-                        {
-                            codeSet[code].Add(word);
-                        }
+                        //if (freqDict.ContainsKey(word))
+                        //{
+                        //    freqDict[word] += freq + 1;
+                        //    ++commonWords;
+                        //}
+                        //else
+                        //{
+                        //    freqDict[word] = freq + 1;
+                        //}
 
-                        int len = word.Length;
-                        if (!lenSet.ContainsKey(len))
-                        {
-                            lenSet[len] = new List<string>();
-                        }
-                        if (!lenSet[len].Contains(word))
-                        {
-                            lenSet[len].Add(word);
-                        }
+                        //string code = encodeWord(word);
+                        //if (!codeSet.ContainsKey(code))
+                        //{
+                        //    codeSet[code] = new List<string>();
+                        //}
+                        //if (!codeSet[code].Contains(word))
+                        //{
+                        //    codeSet[code].Add(word);
+                        //}
+
+                        //int len = word.Length;
+                        //if (!lenSet.ContainsKey(len))
+                        //{
+                        //    lenSet[len] = new List<string>();
+                        //}
+                        //if (!lenSet[len].Contains(word))
+                        //{
+                        //    lenSet[len].Add(word);
+                        //}
                     }
                 }
 

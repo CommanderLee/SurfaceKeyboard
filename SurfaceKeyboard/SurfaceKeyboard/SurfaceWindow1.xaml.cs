@@ -608,7 +608,7 @@ namespace SurfaceKeyboard
             HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Touch);
             handPoints.Add(touchPoint);
 
-            if (testControl && !checkValidArea(x, y))
+            if (testControl && predictMode == PredictionMode.DirectMode && !checkValidArea(x, y))
             {
                 return;
             }

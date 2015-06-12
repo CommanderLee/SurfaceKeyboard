@@ -26,6 +26,8 @@ namespace SurfaceKeyboard
         public static double kbdSizeY = 175.0;
         public static double kbdSizeLen = 443.02821580572044;
 
+        static double log2pi = Math.Log(2 * Math.PI);
+
         public VectorParameter() { }
 
         public VectorParameter(double vX, double vY, double vLen, double r1, double r2, 
@@ -134,8 +136,21 @@ namespace SurfaceKeyboard
 
         public static double logGaussianDistribution(double x, double mu, double sigma)
         {
-            double ret = Math.Log(1 / (Math.Sqrt(2 * Math.PI) * sigma)) - (x - mu) * (x - mu) / (2 * sigma * sigma);
+            double ret = -log2pi - Math.Log(sigma) - (x - mu) * (x - mu) / (2 * sigma * sigma);
             //Console.WriteLine("LogNorm:" + x + ", " + mu + ", " + sigma + "value: " + ret);
+
+            return ret;
+        }
+
+        public static double logBiGaussianDistribution(double x, double y, double muX, double muY, double sigmaX, double sigmaY, double rho)
+        {
+            double sigmaXY = sigmaX * sigmaY;
+            double sigmaX2 = sigmaX * sigmaX;
+            double sigmaY2 = sigmaY * sigmaY;
+            double r = 1 - rho * rho;
+
+            double ret = -( (x - muX) * (x - muX) / sigmaX2 - 2 * rho * (x - muX) * (y - muY) / sigmaXY + (y - muY) * (y - muY) / sigmaY2 ) 
+                / (2 * r) - log2pi - Math.Log(sigmaXY) - 0.5 * Math.Log(r);
 
             return ret;
         }

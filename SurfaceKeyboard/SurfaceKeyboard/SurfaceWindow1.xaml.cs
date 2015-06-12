@@ -128,13 +128,22 @@ namespace SurfaceKeyboard
         TextBlock[]         textHints;
         const int           MAX_HINT_NUMBER = 5;
 
-        const int           SPACE_TOP = 690;
-        const int           SPACE_LEFT = 760;
-        const int           SPACE_RIGHT = 1110;
+        //const int           SPACE_TOP = 690;
+        //const int           SPACE_LEFT = 760;
+        //const int           SPACE_RIGHT = 1110;
 
-        const int           TYPE_LEFT = 703;
-        const int           TYPE_RIGHT = 1125;
-        const int           TYPE_TOP = 540;
+        //const int           TYPE_LEFT = 703;
+        //const int           TYPE_RIGHT = 1284;
+        //const int           TYPE_TOP = 507;
+
+        //Point               BACKSPACE_TOP_LEFT = new Point(1214, 507);
+        //Point               BACKSPACE_BOTTOM_RIGHT = new Point(1284, 553);
+
+        //Point               DEL_TOP_LEFT = new Point(1234, 553);
+        //Point               DEL_BOTTOM_RIGHT = new Point(1284, 597);
+
+        //Point               ENTER_TOP_LEFT = new Point(1173, 597);
+        //Point               ENTER_BOTTOM_RIGHT = new Point(1281, 642);
 
         /// <summary>
         /// Default constructor.
@@ -375,8 +384,8 @@ namespace SurfaceKeyboard
                         {
                             HandPoint hpLast = handPoints.Last();
 
-                            StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}",
-                                taskIndex + 1, taskSize, hpIndex, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId());
+                            StatusTextBlk.Text = String.Format("Task:{0}/{1}\n({2}) X:{3}, Y:{4}, Time:{5}, ID:{6}\nhpNo:{7}",
+                                taskIndex + 1, taskSize, hpIndex, hpLast.getX(), hpLast.getY(), hpLast.getTime(), hpLast.getId(), hpNo);
                         }
                         // points == 0 or PhysicalKeyboard Mode
                         else
@@ -534,10 +543,17 @@ namespace SurfaceKeyboard
                     updateHint();
                 }
             }
-            else
+            else 
             {
-                GesturePoints myPoints = new GesturePoints(touchPoint, HandStatus.Wait);
-                currGestures.Add(myPoints);
+                double x = touchPoint.getX();
+                double y = touchPoint.getY();
+
+                if (!(testControl && predictMode == PredictionMode.DirectMode && (
+                                wordPredictor.isBackspace(x, y) || wordPredictor.isDel(x, y) || wordPredictor.isEnter(x, y))))
+                {
+                    GesturePoints myPoints = new GesturePoints(touchPoint, HandStatus.Wait);
+                    currGestures.Add(myPoints);
+                }
             }
 
             return findPoints;
@@ -573,12 +589,38 @@ namespace SurfaceKeyboard
             circleList.Clear();
         }
 
-        private bool checkValidArea(double x, double y)
+        //private bool checkValidArea(double x, double y)
+        //{
+        //    bool isValid = true;
+        //    if (x < TYPE_LEFT || x > TYPE_RIGHT || y < TYPE_TOP)
+        //        isValid = false;
+        //    return isValid;
+        //}
+
+        private bool checkSpecialBtn(double x, double y)
         {
-            bool isValid = true;
-            if (x < TYPE_LEFT || x > TYPE_RIGHT || y < TYPE_TOP)
-                isValid = false;
-            return isValid;
+            bool isSpecial = false;
+            //if ( (x >= BACKSPACE_TOP_LEFT.X && x <= BACKSPACE_BOTTOM_RIGHT.X && y >= BACKSPACE_TOP_LEFT.Y && y <= BACKSPACE_BOTTOM_RIGHT.Y) ||
+            //    (x >= DEL_TOP_LEFT.X && x <= DEL_BOTTOM_RIGHT.X && y >= DEL_TOP_LEFT.Y && y <= DEL_BOTTOM_RIGHT.Y) )
+            if (wordPredictor.isBackspace(x, y) || wordPredictor.isDel(x, y))
+            {
+                // Backspace & Del
+                deleteCharacter();
+                isSpecial = true;
+            }
+            //else if (x >= ENTER_TOP_LEFT.X && x <= ENTER_BOTTOM_RIGHT.X && y >= ENTER_TOP_LEFT.Y && y <= ENTER_BOTTOM_RIGHT.Y)
+            else if (wordPredictor.isEnter(x, y))
+            {
+                // Enter
+                gotoNextText();
+                isSpecial = true;
+            }
+            else
+            {
+                isSpecial = false;
+            }
+            //Console.WriteLine("Special: " + isSpecial);
+            return isSpecial;
         }
 
         /// <summary>
@@ -608,10 +650,13 @@ namespace SurfaceKeyboard
             HandPoint touchPoint = new HandPoint(x, y, timeStamp, taskIndex + "_" + hpIndex + "_" + id, HPType.Touch);
             handPoints.Add(touchPoint);
 
-            if (testControl && predictMode == PredictionMode.DirectMode && !checkValidArea(x, y))
+            if (testControl && predictMode == PredictionMode.DirectMode && checkSpecialBtn(x, y))
             {
+                --hpIndex;
                 return;
             }
+
+            Console.WriteLine("~~~~~DoubleCheck:" + wordPredictor.isDel(x, y) + wordPredictor.isBackspace(x, y));
 
             // Add new point(should return null because it is new)
             if (updateGesturePoints(touchPoint, id) == null)
@@ -912,12 +957,16 @@ namespace SurfaceKeyboard
                             Console.WriteLine("Recover missing point:" + x + "," + y + "," + newId);
                             ++hpIndex;
                             saveTouchPoints(x, y, newId);
-                            GesturePoints newPoints = findGesturePoints(newId);
-                            newPoints.setStatus(HandStatus.Type);
-                            newPoints.getStartPoint().setType(HPType.Recover);
-                            if (circleControl)
+                            if (!(testControl && predictMode == PredictionMode.DirectMode && (
+                                wordPredictor.isBackspace(x, y) || wordPredictor.isDel(x, y) || wordPredictor.isEnter(x, y) || wordPredictor.isSpacebar(x, y))))
                             {
-                                drawCircle(x, y, recoverCircleBrush, recoverCircleSize);
+                                GesturePoints newPoints = findGesturePoints(newId);
+                                newPoints.setStatus(HandStatus.Type);
+                                newPoints.getStartPoint().setType(HPType.Recover);
+                                if (circleControl)
+                                {
+                                    drawCircle(x, y, recoverCircleBrush, recoverCircleSize);
+                                }
                             }
                         }
 
@@ -1475,6 +1524,7 @@ namespace SurfaceKeyboard
         /// </summary>
         private void deleteCharacter()
         {
+            //Console.WriteLine("Delete: hpNo:" + hpNo);
             string currText = taskTexts[taskIndex % taskSize];
             int removeStart = Math.Min(currText.Length, hpNo) - 1;
             isSpacebar = false;
@@ -1492,17 +1542,17 @@ namespace SurfaceKeyboard
                         int validNum = 0;
                         foreach (GesturePoints gp in currGestures)
                         {
-                            if (gp.getStatus() == HandStatus.Type)
+                            if (gp.getStatus() == HandStatus.Type || gp.getStatus() == HandStatus.Spacebar)
                             {
                                 ++validNum;
                                 if (validNum > removeStart)
                                 {
                                     gp.setStatus(HandStatus.Backspace);
-                                    //Console.WriteLine("Delete.");
+                                    //Console.WriteLine("----Delete. validNum:" + validNum);
                                 }
                             }
                         }
-                        //currValidPoints.RemoveRange(removeStart, hpNo - removeStart);
+                        //Console.WriteLine("----Valid Num:" + validNum);
                         break;
                 }
 
@@ -1665,7 +1715,7 @@ namespace SurfaceKeyboard
         private bool checkSpace(double x, double y)
         {
             bool thisIsSpacebar = false;
-            if (x > SPACE_LEFT && x < SPACE_RIGHT && y > SPACE_TOP)
+            if (wordPredictor.isSpacebar(x, y))
             {
                 thisIsSpacebar = true;
                 Console.WriteLine("Space.");
@@ -1697,7 +1747,7 @@ namespace SurfaceKeyboard
             if (testControl)
             {
                 // Convert currGesture -> double array X/Y
-                int maxListLen = 20;
+                int maxListLen = 100;
                 int counter = 0;
                 List<double> listX, listY;
                 listX = new List<double>();

@@ -37,7 +37,7 @@ namespace SurfaceKeyboard
         double           movingSumX;
 
         private static bool     gestureSwitch = false;
-        private static bool     selectionSwitch = true;
+        private static bool     selectionSwitch = false;
 
         public static bool      getGestureSwitch() { return gestureSwitch; }
         public static void      reverseGestureSwitch() { gestureSwitch = !gestureSwitch; }

@@ -125,6 +125,7 @@
     <Resource Include="Resources\keyboard_close.png" />
     <Resource Include="Resources\keyboard_physical.png" />
     <Resource Include="Resources\keyboard_surface.png" />
+    <Resource Include="Resources\keyboard_physical_shape.png" />
     <Content Include="SurfaceKeyboard.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>

@@ -120,6 +120,7 @@ namespace SurfaceKeyboard
         PredictionMode      predictMode;
 
         string              currWord, currSentence;
+        string              selectSeq;
 
         // currSelect: highlight current selection. from [0, MAX)
         int                 currSelect;
@@ -190,7 +191,7 @@ namespace SurfaceKeyboard
             int statusId = (int)KbdImgStatus.SurfSize;
             kbdImages[statusId] = new BitmapImage();
             kbdImages[statusId].BeginInit();
-            kbdImages[statusId].UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_surface.png");
+            kbdImages[statusId].UriSource = new Uri(BaseUriHelper.GetBaseUri(this), "Resources/keyboard_physical_shape.png");
             kbdImages[statusId].EndInit();
 
             // Physical Keyboard Image 
@@ -223,6 +224,7 @@ namespace SurfaceKeyboard
             predictMode = PredictionMode.AbsoluteMode;
             currWord = "";
             currSentence = "";
+            selectSeq = "";
             textHints = new TextBlock[] { TextHintBlk0, TextHintBlk1, TextHintBlk2, TextHintBlk3, TextHintBlk4 };
         }
 
@@ -1133,13 +1135,13 @@ namespace SurfaceKeyboard
                         if (currWord.Length > 0)
                         {
                             currSentence += currWord;
-                            phyStrings.Add(currSentence + "," + handPoints.Last().getTime() + "," + deleteNum);
+                            phyStrings.Add(currSentence + "," + handPoints.Last().getTime() + "," + deleteNum + "," + selectSeq);
                         }
 
                         // Save raw input strings into file 
                         using (System.IO.StreamWriter file = new System.IO.StreamWriter(fPath + fNameTest, true))
                         {
-                            file.WriteLine("RawInput,TypingTime,DeleteNumber");
+                            file.WriteLine("RawInput,TypingTime,DeleteNumber, SelectSequence");
                             foreach (string str in phyStrings)
                             {
                                 file.WriteLine(str);
@@ -1245,12 +1247,13 @@ namespace SurfaceKeyboard
                             resetSelection();
                             updateHint();
                             // Save to file/string
-                            phyStrings.Add(currSentence + "," + handPoints.Last().getTime() + "," + deleteNum);
+                            phyStrings.Add(currSentence + "," + handPoints.Last().getTime() + "," + deleteNum + "," + selectSeq);
 
                             Console.WriteLine("Save: " + currSentence);
                         }
                         currSentence = "";
                         currWord = "";
+                        selectSeq = "";
 
                         // Clear the status if the calibration mode is ON 
                         if (calibStatus != CalibStatus.Off)
@@ -1302,6 +1305,7 @@ namespace SurfaceKeyboard
 
             currWord = "";
             currSentence = "";
+            selectSeq = "";
             resetSelection();
 
             currTyping = "";
@@ -1728,6 +1732,10 @@ namespace SurfaceKeyboard
                 if (thisIsSpacebar)
                 {
                     currWord += " ";
+                    foreach (TextBlock tb in textHints)
+                    {
+                        tb.Text += " ";
+                    }
                 }
 
                 // Last char is space
@@ -1909,6 +1917,10 @@ namespace SurfaceKeyboard
             {
                 resetSelection(num);
                 currWord = textHints[num].Text;
+                if (selectSeq == "")
+                    selectSeq += currWord + ":" + num.ToString();
+                else
+                    selectSeq += "-" + currWord + ":" + num.ToString();
                 updateTaskTextBlk();
             }
         }

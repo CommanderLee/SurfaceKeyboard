@@ -260,7 +260,10 @@ namespace SurfaceKeyboard
                         // Get Intersection
                         if (tempFreqDict.ContainsKey(word))
                         {
-                            freqDict[word] = tempFreqDict[word];
+                            if (freqDict.ContainsKey(word))
+                                freqDict[word] += freq;
+                            else
+                                freqDict[word] = freq;// tempFreqDict[word];
 
                             string code = encodeWord(word);
                             if (!codeSet.ContainsKey(code))
@@ -821,7 +824,7 @@ namespace SurfaceKeyboard
                                 }
                             }
 
-                            if (candWordPntIdL.Count == 1)
+                            if (candWordPntIdL.Count >= 1)
                             {
                                 // Left Point
                                 int pos = candWordPntIdL[0];
@@ -838,26 +841,26 @@ namespace SurfaceKeyboard
                                 prob += VectorParameter.logBiGaussianDistribution(x, y, muX, muY, sigmaX, sigmaY, rho);
                                 //Console.WriteLine("    LP1" + candWord + ": " + prob);
 
-                                if (candWordPntIdR.Count > 0)
-                                {
-                                    // Left Point - Right Point
-                                    int posR = candWordPntIdR[0];
-                                    double kbdVecX = letterPosX[candWord[posR] - 'a'] - letterPosX[candWord[pos] - 'a'];
-                                    double kbdVecY = letterPosY[candWord[posR] - 'a'] - letterPosY[candWord[pos] - 'a'];
+                                //if (candWordPntIdR.Count > 0)
+                                //{
+                                //    // Left Point - Right Point
+                                //    int posR = candWordPntIdR[0];
+                                //    double kbdVecX = letterPosX[candWord[posR] - 'a'] - letterPosX[candWord[pos] - 'a'];
+                                //    double kbdVecY = letterPosY[candWord[posR] - 'a'] - letterPosY[candWord[pos] - 'a'];
 
-                                    double myX = pntListX[posR] - x;
-                                    muX = xParamA * kbdVecX + xParamB * kbdVecY + xParamC;
-                                    sigmaX = xParamD * kbdVecX + xParamE * kbdVecY + xParamF;
-                                    //prob += VectorParameter.logGaussianDistribution(myX, muX, sigmaX);
+                                //    double myX = pntListX[posR] - x;
+                                //    muX = xParamA * kbdVecX + xParamB * kbdVecY + xParamC;
+                                //    sigmaX = xParamD * kbdVecX + xParamE * kbdVecY + xParamF;
+                                //    //prob += VectorParameter.logGaussianDistribution(myX, muX, sigmaX);
 
-                                    double myY = pntListX[posR] - y;
-                                    muY = meanVecY[(int)kbdVecY / 40 + 2];
-                                    sigmaY = stdVecY[(int)kbdVecY / 40 + 2];
-                                    //prob += VectorParameter.logGaussianDistribution(myY, muY, sigmaY);
-                                }
+                                //    double myY = pntListX[posR] - y;
+                                //    muY = meanVecY[(int)kbdVecY / 40 + 2];
+                                //    sigmaY = stdVecY[(int)kbdVecY / 40 + 2];
+                                //    //prob += VectorParameter.logGaussianDistribution(myY, muY, sigmaY);
+                                //}
                             }
 
-                            if (candWordPntIdR.Count == 1)
+                            if (candWordPntIdR.Count >= 1)
                             {
                                 int pos = candWordPntIdR[0];
                                 double x = pntListX[pos];
@@ -873,23 +876,23 @@ namespace SurfaceKeyboard
                                 prob += VectorParameter.logBiGaussianDistribution(x, y, muX, muY, sigmaX, sigmaY, rho);
                                 //Console.WriteLine("    RP1" + candWord + ": " + prob);
 
-                                if (candWordPntIdL.Count > 0)
-                                {
-                                    // Right Point - Left Point
-                                    int posL = candWordPntIdL[0];
-                                    double kbdVecX = letterPosX[candWord[posL] - 'a'] - letterPosX[candWord[pos] - 'a'];
-                                    double kbdVecY = letterPosY[candWord[posL] - 'a'] - letterPosY[candWord[pos] - 'a'];
+                                //if (candWordPntIdL.Count > 0)
+                                //{
+                                //    // Right Point - Left Point
+                                //    int posL = candWordPntIdL[0];
+                                //    double kbdVecX = letterPosX[candWord[posL] - 'a'] - letterPosX[candWord[pos] - 'a'];
+                                //    double kbdVecY = letterPosY[candWord[posL] - 'a'] - letterPosY[candWord[pos] - 'a'];
 
-                                    double myX = pntListX[posL] - x;
-                                    muX = xParamA * kbdVecX + xParamB * kbdVecY + xParamC;
-                                    sigmaX = xParamD * kbdVecX + xParamE * kbdVecY + xParamF;
-                                    //prob += VectorParameter.logGaussianDistribution(myX, muX, sigmaX);
+                                //    double myX = pntListX[posL] - x;
+                                //    muX = xParamA * kbdVecX + xParamB * kbdVecY + xParamC;
+                                //    sigmaX = xParamD * kbdVecX + xParamE * kbdVecY + xParamF;
+                                //    //prob += VectorParameter.logGaussianDistribution(myX, muX, sigmaX);
 
-                                    double myY = pntListX[posL] - y;
-                                    muY = meanVecY[(int)kbdVecY / 40 + 2];
-                                    sigmaY = stdVecY[(int)kbdVecY / 40 + 2];
-                                    //prob += VectorParameter.logGaussianDistribution(myY, muY, sigmaY);
-                                }
+                                //    double myY = pntListX[posL] - y;
+                                //    muY = meanVecY[(int)kbdVecY / 40 + 2];
+                                //    sigmaY = stdVecY[(int)kbdVecY / 40 + 2];
+                                //    //prob += VectorParameter.logGaussianDistribution(myY, muY, sigmaY);
+                                //}
                             }
 
                             probWords.Add(new KeyValuePair<string, double>(candWord, prob));

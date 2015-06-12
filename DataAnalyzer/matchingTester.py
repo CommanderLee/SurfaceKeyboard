@@ -184,7 +184,8 @@ if openFiles:
                     charNo = ord(char) - ord('a')
                     absX = listX[i + listNo]
                     absY = listY[i + listNo]
-                    totalPointPos.append((char, absX, absY, absX-startX, absY-startY, startX, startY, letterPosX[charNo], letterPosY[charNo]))
+                    totalPointPos.append((char, absX, absY, fileNameAbbr))
+                    # totalPointPos.append((char, absX, absY, absX-startX, absY-startY, startX, startY, letterPosX[charNo], letterPosY[charNo]))
                     
                     # Save point pairs
                     if i > 0:
@@ -230,8 +231,8 @@ if openFiles:
                         # Save spacebar(replaced by '-') point information
                         absX = listX[wordLen + listNo]
                         absY = listY[wordLen + listNo]
-                        totalPointPos.append(('-', absX, absY, absX-startX, absY-startY, startX, startY, -1, -1))
-                    
+                        # totalPointPos.append(('-', absX, absY, absX-startX, absY-startY, startX, startY, -1, -1))
+                        totalPointPos.append(('-', absX, absY, fileNameAbbr))
 
                 # Calculate user codes
                 # userCodes = calcUserCodes(listX[listNo:listNo+wordLen], midX, rangeX)
@@ -313,7 +314,7 @@ if openFiles:
                                     distLen = abs(mVecLen - vecLen)
                                     distRad = min(abs(mRad1-rad1), abs(mRad2-rad2))
 
-                                    distance += 2.5 * distLen / kbdSizeLen + distRad / math.pi + distX / kbdSizeX + distY / kbdSizeY
+                                    distance += distLen / kbdSizeLen + distRad / math.pi + distX / kbdSizeX + distY / kbdSizeY
                                     # distance += math.pow(distLen / kbdSizeLen, 2) + math.pow(distRad / math.pi, 2)
                                     # print '1:%f' % (distLen / kbdSizeLen + distRad / math.pi)
 
@@ -343,7 +344,7 @@ if openFiles:
                                     distLen = abs(mVecLen - vecLen)
                                     distRad = min(abs(mRad1-rad1), abs(mRad2-rad2))
 
-                                    distance += 2.5 * distLen / kbdSizeLen + distRad / math.pi + distX / kbdSizeX + distY / kbdSizeY
+                                    distance += distLen / kbdSizeLen + distRad / math.pi + distX / kbdSizeX + distY / kbdSizeY
                                     # distance += math.pow(distLen / kbdSizeLen, 2) + math.pow(distRad / math.pi, 2)
                                     # print '3:%f' % (distLen / kbdSizeLen + distRad / math.pi)
 
@@ -509,7 +510,7 @@ if openFiles:
     #     print result
 
     print 'Save to files...'
-    resultStr = '-16users-v2.3'
+    resultStr = '-16users-v2.5'
 
     saveErrorPatternResults('Result/matchingResult%s.csv' % (resultStr), totalErrorPattern, totalWordPattern, wordDic)
     print 'Matching Result Done.'

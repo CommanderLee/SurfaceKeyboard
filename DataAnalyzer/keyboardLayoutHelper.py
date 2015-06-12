@@ -321,8 +321,8 @@ if __name__ == '__main__':
                     if charI == charJ:
                         vecParams[charIJ] = (0, 0, 0, 0, 0)
                     else:
-                        vX = userX[j+1] - userX[i+1]
-                        vY = userY[j+1] - userY[i+1]
+                        vX = userX[j] - userX[i]
+                        vY = userY[j] - userY[i]
                         vL = math.sqrt(math.pow(vX, 2) + math.pow(vY, 2))
                         r1 = 0
                         r2 = 0

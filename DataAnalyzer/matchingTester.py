@@ -184,7 +184,7 @@ if openFiles:
                     charNo = ord(char) - ord('a')
                     absX = listX[i + listNo]
                     absY = listY[i + listNo]
-                    totalPointPos.append((char, absX, absY, fileNameAbbr))
+                    totalPointPos.append((char, absX, absY, letterPosX[charNo], letterPosY[charNo], fileNameAbbr))
                     # totalPointPos.append((char, absX, absY, absX-startX, absY-startY, startX, startY, letterPosX[charNo], letterPosY[charNo]))
                     
                     # Save point pairs
@@ -232,7 +232,7 @@ if openFiles:
                         absX = listX[wordLen + listNo]
                         absY = listY[wordLen + listNo]
                         # totalPointPos.append(('-', absX, absY, absX-startX, absY-startY, startX, startY, -1, -1))
-                        totalPointPos.append(('-', absX, absY, fileNameAbbr))
+                        totalPointPos.append(('-', absX, absY, letterPosX[charNo], letterPosY[charNo], fileNameAbbr))
 
                 # Calculate user codes
                 # userCodes = calcUserCodes(listX[listNo:listNo+wordLen], midX, rangeX)

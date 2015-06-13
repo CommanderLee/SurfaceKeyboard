@@ -87,7 +87,7 @@ def parseData(dataCSV, isKbd, textList):
     WPM = charCnt / timeCnt * 60 / 5
     return WPM
 
-# Main Procedure
+b# Main Procedure
 if __name__ == '__main__':
     [dataFileNames, textFileNames] = loadFiles()
     for (dataFileName, textFileName) in zip(dataFileNames, textFileNames):

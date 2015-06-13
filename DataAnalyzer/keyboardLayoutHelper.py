@@ -112,8 +112,8 @@ def calcKeyboardLayout():
     # Coordinate for 'Q', 'A', 'Z'
     qX1, qY1 = 89, 52
     qX2, qY2 = 126, 92
-    aX1, aY1 = 108, 97
-    aX2, aY2 = 145, 137
+    aX1, aY1 = 108, 96
+    aX2, aY2 = 145, 136
     zX1, zY1 = 129, 140
     zX2, zY2 = 166, 180
     gapX = 41

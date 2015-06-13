@@ -1271,6 +1271,10 @@ namespace SurfaceKeyboard
                 {
                     MessageBox.Show("Congratulations! You have finished the [" + currDevice + "] test.");
                 }
+                else if (taskIndex % 10 == 0)
+                {
+                    MessageBox.Show("You have finished Session #" + (taskIndex / 10) + ".");
+                }
             }
         }
 

@@ -1301,6 +1301,7 @@ namespace SurfaceKeyboard
             //currValidPoints.Clear();
             calibPoints.Clear();
             hpNo = 0;
+            deleteNum = 0;
 
             if (calibStatus != CalibStatus.Off)
             {

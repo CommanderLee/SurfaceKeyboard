@@ -42,15 +42,21 @@ if openFiles:
     print 'Load %d data sets.' % (len(openMajorCSVFiles))
 
     # Start:
-    # result: Name, Mode, SessionNum, RawInput, TaskText, TypingTime, DeleteNumber, SelectSequence, SelectionNum, WordNum, DeleteCharNum, UncErrRate, WPM
+    # result: Name, Mode, Order, SessionNum, RawInput, TaskText, TypingTime, DeleteNumber, SelectSequence, SelectionNum, WordNum, DeleteCharNum, UncErrRate, WPM
     resultLines = []
     for openMajorCSVFile in openMajorCSVFiles:
         majorCSVFileName = openMajorCSVFile.name
         taskTextFileName = majorCSVFileName[0:len(majorCSVFileName)-9] + 'TaskText.txt'
         testCSVFileName = majorCSVFileName[0:len(majorCSVFileName)-9] + 'test.csv'
+        
         testerName = majorCSVFileName.split('_')[4]
         testMode = majorCSVFileName.split('_')[6]
-        print '(' + testerName + ', ' + testMode + ')'
+        
+        DeviceOrders = ['DAR', 'DRA', 'ADR', 'ARD', 'RDA', 'RAD']
+        testerId = int(testerName[1:])
+        deviceOrder = DeviceOrders[testerId % 6]
+
+        print '(%s, %s, %s)' % (testerName, testMode, deviceOrder)
 
         # Load 'xxx_TaskText.txt'
         taskTextFile = open(taskTextFileName, 'r')
@@ -112,10 +118,10 @@ if openFiles:
         print '    xxx_test.csv'
 
         for i in range(len(RawInput)):
-            resultLines.append('%s, %s, %d, %s, %s, %f, %d, %s, %d, %d, %d, %f, %f\n' %
-                (testerName, testMode, SessionNum[i], RawInput[i], taskTexts[i], TypingTime[i], DeleteNumber[i], SelectSequence[i], SelectionNum[i], WordNum[i], DeleteCharNum[i], UncErrRate[i], WPM[i]))
+            resultLines.append('%s, %s, %s, %d, %s, %s, %f, %d, %s, %d, %d, %d, %f, %f\n' %
+                (testerName, testMode, deviceOrder, SessionNum[i], RawInput[i], taskTexts[i], TypingTime[i], DeleteNumber[i], SelectSequence[i], SelectionNum[i], WordNum[i], DeleteCharNum[i], UncErrRate[i], WPM[i]))
     
-    writeFile = open('AllData-%dpersons.csv' % (len(openMajorCSVFiles)/3), 'w')
-    writeFile.write('Name, Mode, SessionNum, RawInput, TaskText, TypingTime, DeleteNumber, SelectSequence, SelectionNum, WordNum, DeleteCharNum, UncErrRate, WPM\n')
+    writeFile = open('Result-2/AllData-%dpersons.csv' % (len(openMajorCSVFiles)/3), 'w')
+    writeFile.write('Name, Mode, Order, SessionNum, RawInput, TaskText, TypingTime, DeleteNumber, SelectSequence, SelectionNum, WordNum, DeleteCharNum, UncErrRate, WPM\n')
     for line in resultLines:
         writeFile.write(line)

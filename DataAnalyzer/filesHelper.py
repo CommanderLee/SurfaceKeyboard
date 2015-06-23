@@ -79,15 +79,18 @@ def saveWordPositionResults(fileName, wordPos, wordDic):
 def saveSinglePointResults(fileName, pointPos):
     "Save the position of single points"
     
+    # totalPointPos.append((char, absX, absY, letterPosX[charNo], letterPosY[charNo], fileNameAbbr))
     # (char, absX, absY, absX-startX, absY-startY, startX, startY, letterPosX[charNo], letterPosY[charNo]))
     char = [pPos[0] for pPos in pointPos]
     absX = [pPos[1] for pPos in pointPos]
     absY = [pPos[2] for pPos in pointPos]
-    userName = [pPos[3].split('_')[0] for pPos in pointPos]
+    letterX = [pPos[3] for pPos in pointPos]
+    letterY = [pPos[4] for pPos in pointPos]
+    userName = [pPos[5].split('_')[0] for pPos in pointPos]
     validMarkQ = np.ones(len(char), int)
 
-    totalArray = np.array(zip(char, userName, absX, absY, validMarkQ), 
-        dtype=[('char', 'S5'), ('userName', 'S5'), ('absX', float), ('absY', float), ('validMarkQ', int)])
+    totalArray = np.array(zip(char, userName, absX, absY, letterX, letterY, validMarkQ), 
+        dtype=[('char', 'S5'), ('userName', 'S5'), ('absX', float), ('absY', float), ('letterX', float), ('letterY', float), ('validMarkQ', int)])
     totalArray.sort(order='char')
 
     char = totalArray['char']
@@ -118,7 +121,7 @@ def saveSinglePointResults(fileName, pointPos):
             lastChar = i + 1
 
     writeFile = open(fileName, 'w')
-    writeFile.write('char, userName, absX, absY, validMarkQ\n')
+    writeFile.write('char, userName, absX, absY, letterX, letterY, validMarkQ\n')
     for array in totalArray:
         writeFile.write(str(array).strip('()') + '\n')
     # writeFile.write('targetChar,absoluteX,absoluteY,relativeX,relativeY,leftUpX,leftUpY,standardX,standardY\n')

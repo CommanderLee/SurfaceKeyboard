@@ -1,0 +1,18 @@
+﻿<Window x:Class="SurfaceKeyboard_Mobile.WindowUserId"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="WindowUserId" Height="300" Width="300"
+        Topmost="True" WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing">
+    <Grid>
+        <Label Content="User ID:" Height="30" Width="80" FontSize="16"
+               HorizontalAlignment="Left" Margin="35,70,0,0" Name="labelUserId" VerticalAlignment="Top" BorderBrush="#FFABADB3" Background="White" Foreground="Black" />
+
+        <TextBox Height="40" Width="100" HorizontalAlignment="Right" Margin="0,70,43,0" 
+                 Name="textBoxUserId" VerticalAlignment="Top" FontSize="15" />
+
+        <Button Content="OK" Height="30" Width="80" 
+                HorizontalAlignment="Left" Margin="100,175,0,0" Name="button1" VerticalAlignment="Top" 
+                Click="button1_Click" IsDefault="True" />
+    </Grid>
+</Window>
